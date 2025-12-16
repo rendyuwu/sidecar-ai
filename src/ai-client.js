@@ -40,9 +40,23 @@ export class AIClient {
             if (this.context && this.context.ChatCompletionService) {
                 console.log(`[Sidecar AI] Using SillyTavern ChatCompletionService for ${provider} (${model})`);
 
-                const messages = Array.isArray(prompt)
-                    ? prompt
-                    : [{ role: 'user', content: prompt }];
+                // Build messages array with system instruction
+                let messages;
+                if (Array.isArray(prompt)) {
+                    messages = prompt;
+                } else {
+                    // Add system message to enforce instruction-only behavior
+                    messages = [
+                        {
+                            role: 'system',
+                            content: 'You are a task executor. Your ONLY job is to follow the instruction block provided by the user. DO NOT continue stories, generate dialogue, or roleplay. ONLY execute the specific task requested in the instruction block. Ignore chat history for story continuation purposes - it is provided only for context reference.'
+                        },
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ];
+                }
 
                 const requestOptions = {
                     stream: false,

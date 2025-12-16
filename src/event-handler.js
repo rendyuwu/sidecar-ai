@@ -22,7 +22,7 @@ export class EventHandler {
 
             if (eventSource && event_types) {
                 console.log('[Sidecar AI] Available event types:', Object.keys(event_types));
-                
+
                 // Listen for new messages - try multiple event types
                 const messageEvents = [
                     event_types.MESSAGE_RECEIVED,
@@ -64,7 +64,7 @@ export class EventHandler {
      */
     setupFallbackListeners() {
         console.log('[Sidecar AI] Setting up fallback listeners using MutationObserver');
-        
+
         // Use MutationObserver to watch for new messages
         const chatContainer = document.querySelector('#chat_container') ||
             document.querySelector('.chat_container') ||
@@ -72,16 +72,16 @@ export class EventHandler {
 
         if (chatContainer) {
             let lastMessageCount = 0;
-            
+
             const observer = new MutationObserver((mutations) => {
                 // Get current message count
                 const messages = chatContainer.querySelectorAll('.mes, .message');
                 const currentCount = messages.length;
-                
+
                 // Only process if new message was added
                 if (currentCount > lastMessageCount) {
                     lastMessageCount = currentCount;
-                    
+
                     // Get the latest message
                     const latestMessage = messages[messages.length - 1];
                     if (latestMessage) {
@@ -126,7 +126,7 @@ export class EventHandler {
                 .filter(addon => addon.triggerMode === 'auto');
 
             console.log(`[Sidecar AI] Found ${autoAddons.length} auto-triggered add-on(s)`);
-            
+
             if (autoAddons.length === 0) {
                 console.log('[Sidecar AI] No auto-triggered add-ons found');
                 return;
@@ -175,7 +175,7 @@ export class EventHandler {
                     return false;
                 }
             }
-            
+
             // Check message object properties
             if (message.is_user !== undefined) {
                 return message.is_user === true;
@@ -187,7 +187,7 @@ export class EventHandler {
                 return false;
             }
         }
-        
+
         // Default: assume it's an AI message if we can't determine
         // (better to trigger than miss)
         return false;
