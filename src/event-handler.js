@@ -254,15 +254,15 @@ export class EventHandler {
         // Group add-ons by request mode
         const grouped = this.addonManager.getGroupedAddons(addons);
 
-        // Process batch groups
-        for (const batchGroup of grouped.batch) {
-            await this.processBatchGroup(batchGroup, message);
-        }
+        // Process all groups and standalone addons in parallel
+        const promises = [
+            // Process batch groups
+            ...grouped.batch.map(batchGroup => this.processBatchGroup(batchGroup, message)),
+            // Process standalone add-ons
+            ...grouped.standalone.map(addon => this.processStandaloneAddon(addon, message))
+        ];
 
-        // Process standalone add-ons
-        for (const addon of grouped.standalone) {
-            await this.processStandaloneAddon(addon, message);
-        }
+        await Promise.all(promises);
     }
 
     /**
