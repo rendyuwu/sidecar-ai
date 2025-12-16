@@ -916,25 +916,52 @@ export class ResultFormatter {
         }
 
         try {
-            // Initialize message.extra if it doesn't exist
-            if (!message.extra) {
-                message.extra = {};
+            // Get current swipe_id to store result per variant
+            const swipeId = message.swipe_id ?? 0;
+            
+            // Initialize swipe_info if needed (for compatibility with SillyTavern's swipe system)
+            if (!Array.isArray(message.swipe_info)) {
+                message.swipe_info = [];
+            }
+            
+            // Initialize swipe_info[swipeId] if needed
+            if (!message.swipe_info[swipeId]) {
+                message.swipe_info[swipeId] = {
+                    send_date: message.send_date,
+                    gen_started: message.gen_started,
+                    gen_finished: message.gen_finished,
+                    extra: {}
+                };
+            }
+            
+            // Initialize extra for this swipe variant
+            if (!message.swipe_info[swipeId].extra) {
+                message.swipe_info[swipeId].extra = {};
             }
 
-            // Initialize sidecar results storage
-            if (!message.extra.sidecarResults) {
-                message.extra.sidecarResults = {};
+            // Initialize sidecar results storage for this swipe variant
+            if (!message.swipe_info[swipeId].extra.sidecarResults) {
+                message.swipe_info[swipeId].extra.sidecarResults = {};
             }
 
-            // Store result with timestamp and metadata
-            message.extra.sidecarResults[addon.id] = {
+            // Store result with timestamp and metadata IN THE CURRENT SWIPE VARIANT
+            message.swipe_info[swipeId].extra.sidecarResults[addon.id] = {
                 result: result,
                 addonName: addon.name,
                 timestamp: Date.now(),
                 formatStyle: addon.formatStyle || 'html-css'
             };
 
-            console.log(`[Sidecar AI] Saved result in message.extra for ${addon.name} (${result.length} chars)`);
+            // Also update message.extra for backward compatibility and immediate access
+            if (!message.extra) {
+                message.extra = {};
+            }
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
+            }
+            message.extra.sidecarResults[addon.id] = message.swipe_info[swipeId].extra.sidecarResults[addon.id];
+
+            console.log(`[Sidecar AI] Saved result for ${addon.name} in swipe variant ${swipeId} (${result.length} chars)`);
             return true;
         } catch (error) {
             console.error(`[Sidecar AI] Error saving result metadata:`, error);
@@ -943,6 +970,7 @@ export class ResultFormatter {
                 addonName: addon?.name,
                 resultLength: result?.length,
                 messageId: message?.uid || message?.id,
+                swipeId: message?.swipe_id,
                 errorMessage: error.message
             });
             return false;
@@ -1359,6 +1387,90 @@ export class ResultFormatter {
         } catch (error) {
             console.error('[Sidecar AI] Error hiding all sidecar cards:', error);
             return 0;
+        }
+    }
+
+    /**
+     * Handle swipe variant change: hide current sidecars, restore sidecars for the new variant
+     * @param {number} messageIndex - The message index that was swiped
+     * @param {Object} addonManager - Addon manager to get enabled addons
+     */
+    async handleSwipeVariantChange(messageIndex, addonManager) {
+        try {
+            console.log(`[Sidecar AI] Handling swipe variant change for message ${messageIndex}`);
+            
+            // Get the message from chat log
+            const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
+            if (messageIndex < 0 || messageIndex >= chatLog.length) {
+                console.warn(`[Sidecar AI] Invalid message index: ${messageIndex}`);
+                return;
+            }
+
+            const message = chatLog[messageIndex];
+            const messageId = this.getMessageId(message);
+            const swipeId = message.swipe_id ?? 0;
+
+            console.log(`[Sidecar AI] Message ${messageIndex} is now on swipe variant ${swipeId}`);
+
+            // Step 1: Hide all current sidecars for this message
+            this.hideSidecarCardsForMessage(messageIndex);
+
+            // Step 2: Wait a bit for DOM to update
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Step 3: Check if this swipe variant has saved sidecars
+            const hasStoredResults = message.swipe_info?.[swipeId]?.extra?.sidecarResults;
+            
+            if (hasStoredResults && Object.keys(hasStoredResults).length > 0) {
+                console.log(`[Sidecar AI] Found ${Object.keys(hasStoredResults).length} stored sidecar(s) for variant ${swipeId}`);
+                
+                // Copy swipe variant's extra to message.extra (following SillyTavern's pattern)
+                if (!message.extra) {
+                    message.extra = {};
+                }
+                message.extra.sidecarResults = message.swipe_info[swipeId].extra.sidecarResults;
+                
+                // Restore sidecars for this variant
+                const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(messageIndex);
+                if (messageElement) {
+                    const allAddons = addonManager.getAllAddons();
+                    let restoredCount = 0;
+                    
+                    for (const addon of allAddons) {
+                        if (!addon.enabled) continue;
+                        
+                        const stored = hasStoredResults[addon.id];
+                        if (!stored) continue;
+                        
+                        // Check if block already exists
+                        const existingBlock = messageElement.querySelector(`.addon_section-${addon.id}`);
+                        if (!existingBlock && addon.responseLocation === 'outsideChatlog') {
+                            // Restore the dropdown block
+                            const formatted = this.formatResult(addon, stored.result, message, true);
+                            const success = this.injectIntoDropdown(addon, formatted, messageId, messageElement);
+                            if (success) {
+                                const container = messageElement.querySelector('.sidecar-container');
+                                if (container) {
+                                    container.style.display = ''; // Show it
+                                    this.markContainerAsRestored(container);
+                                }
+                                restoredCount++;
+                                console.log(`[Sidecar AI] Restored sidecar for ${addon.name} from variant ${swipeId}`);
+                            }
+                        }
+                    }
+                    
+                    if (restoredCount > 0) {
+                        console.log(`[Sidecar AI] Restored ${restoredCount} sidecar(s) for variant ${swipeId}`);
+                    }
+                } else {
+                    console.warn(`[Sidecar AI] Message element not found for restoration`);
+                }
+            } else {
+                console.log(`[Sidecar AI] No stored sidecars found for variant ${swipeId} - cards remain hidden`);
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Error handling swipe variant change:', error);
         }
     }
 

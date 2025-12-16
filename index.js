@@ -313,15 +313,14 @@ async function loadModules() {
 
             // Listen for message swipe events
             // MESSAGE_SWIPED fires when switching between response variants (swipe_id) of the same message
-            // Each message can have multiple response variants, and sidecars belong to specific variants
+            // Each message can have multiple response variants, and sidecars are stored per variant
             const swipeEvent = context.event_types.MESSAGE_SWIPED || 'MESSAGE_SWIPED';
             if (swipeEvent) {
-                context.eventSource.on(swipeEvent, (messageIndex) => {
+                context.eventSource.on(swipeEvent, async (messageIndex) => {
                     console.log(`[Sidecar AI] Message swipe event detected: ${swipeEvent}`, messageIndex);
                     if (typeof messageIndex === 'number') {
-                        // Hide sidecars for the swiped message, since we're viewing a different response variant now
-                        // The user will need to regenerate sidecars for this variant if they want them
-                        resultFormatter.hideSidecarCardsForMessage(messageIndex);
+                        // Handle swipe: hide current sidecars, then restore for the new variant
+                        await resultFormatter.handleSwipeVariantChange(messageIndex, addonManager);
                     } else {
                         console.warn('[Sidecar AI] MESSAGE_SWIPED event did not provide message index');
                     }
