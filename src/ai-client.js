@@ -586,43 +586,42 @@ export class AIClient {
     }
 
     /**
-     * Try to import secret_state and findSecret from SillyTavern's secrets.js
-     * This is a fallback if they're not available on window
+     * Get secret_state from window (if available)
+     * secret_state only contains metadata, not actual API keys
      */
-    async getSecretStateAndFindSecret() {
-        let secretState = null;
-        let findSecretFn = null;
-
-        // Method 1: Try window.secret_state (might be available globally)
+    getSecretState() {
         if (typeof window !== 'undefined') {
-            secretState = window.secret_state;
-            findSecretFn = window.findSecret;
-            
-            // Method 2: Try SillyTavern global object
-            if (!secretState && window.SillyTavern) {
-                secretState = window.SillyTavern.secret_state;
-                findSecretFn = window.SillyTavern.findSecret;
-            }
-
-            // Method 3: Try dynamic import (for third-party extensions)
-            if (!secretState || !findSecretFn) {
-                try {
-                    // Try to import from secrets.js - path depends on extension location
-                    // For third-party extensions in extensions/third-party/sidecar-ai/
-                    // secrets.js is at ../../secrets.js
-                    const secretsModule = await import('../../secrets.js');
-                    if (secretsModule) {
-                        secretState = secretsModule.secret_state || secretState;
-                        findSecretFn = secretsModule.findSecret || findSecretFn;
-                    }
-                } catch (error) {
-                    // Dynamic import might fail - that's okay, we'll use other methods
-                    console.log('[Sidecar AI] Could not dynamically import secrets.js:', error.message);
-                }
-            }
+            return window.secret_state || (window.SillyTavern && window.SillyTavern.secret_state) || null;
         }
+        return null;
+    }
 
-        return { secretState, findSecretFn };
+    /**
+     * Call SillyTavern's /api/secrets/find endpoint to get actual API key value
+     * This is equivalent to findSecret() function
+     */
+    async findSecret(key, id = null) {
+        try {
+            const headers = this.context.getRequestHeaders ? this.context.getRequestHeaders() : {
+                'Content-Type': 'application/json'
+            };
+
+            const response = await fetch('/api/secrets/find', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ key, id }),
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const data = await response.json();
+            return data.value || null;
+        } catch (error) {
+            console.warn('[Sidecar AI] Failed to fetch secret via API:', error);
+            return null;
+        }
     }
 
     /**
@@ -638,40 +637,38 @@ export class AIClient {
 
         console.log(`[Sidecar AI] getProviderApiKey: Looking for API key for provider: ${provider}`);
 
-        // Try to get secret_state and findSecret
-        const { secretState, findSecretFn } = await this.getSecretStateAndFindSecret();
-
+        // Get secret_state (metadata only, doesn't contain actual keys)
+        const secretState = this.getSecretState();
         console.log('[Sidecar AI] secret_state available:', !!secretState);
-        console.log('[Sidecar AI] findSecret available:', !!findSecretFn);
 
         // Method 1: Check Connection Manager profiles (ST's primary method)
         // Connection Manager profiles store secret-id, not the actual key
         if (this.context && this.context.extensionSettings && this.context.extensionSettings.connectionManager) {
             const profiles = this.context.extensionSettings.connectionManager.profiles || [];
             console.log(`[Sidecar AI] Found ${profiles.length} connection manager profiles`);
-            
+
             for (const profile of profiles) {
                 console.log(`[Sidecar AI] Checking profile:`, { api: profile?.api, name: profile?.name, hasSecretId: !!profile?.['secret-id'] });
-                
+
                 // Check if profile matches provider (case-insensitive)
                 const profileApi = profile?.api?.toLowerCase();
                 const providerLower = provider?.toLowerCase();
-                
+
                 if (profile && profileApi === providerLower && profile['secret-id']) {
                     const secretId = profile['secret-id'];
                     const secretKey = this.getSecretKeyForProvider(provider);
-                    
+
                     console.log(`[Sidecar AI] Found matching profile! secretId: ${secretId}, secretKey: ${secretKey}`);
 
                     if (secretKey && secretState && secretState[secretKey]) {
                         // Check secret_state for the matching secret ID
                         const secrets = secretState[secretKey];
                         console.log(`[Sidecar AI] Found secrets array for ${secretKey}:`, Array.isArray(secrets) ? secrets.length : 'not an array');
-                        
+
                         if (Array.isArray(secrets)) {
                             const secret = secrets.find(s => s.id === secretId);
                             console.log(`[Sidecar AI] Found secret by ID:`, !!secret, secret ? { hasValue: !!secret.value, hasLabel: !!secret.label } : null);
-                            
+
                             if (secret && secret.value) {
                                 console.log(`[Sidecar AI] Returning API key from secret_state`);
                                 return secret.value;
@@ -679,17 +676,13 @@ export class AIClient {
                         }
                     }
 
-                    // If secret_state doesn't have the value, try to fetch it via findSecret
-                    if (secretKey && findSecretFn && typeof findSecretFn === 'function') {
-                        try {
-                            console.log(`[Sidecar AI] Attempting to fetch secret via findSecret(${secretKey}, ${secretId})`);
-                            const apiKey = await findSecretFn(secretKey, secretId);
-                            if (apiKey) {
-                                console.log(`[Sidecar AI] Successfully fetched API key via findSecret`);
-                                return apiKey;
-                            }
-                        } catch (error) {
-                            console.warn('[Sidecar AI] Failed to fetch secret via findSecret:', error);
+                    // secret_state doesn't have the actual value, fetch it via API
+                    if (secretKey) {
+                        console.log(`[Sidecar AI] Attempting to fetch secret via API: ${secretKey}, id: ${secretId}`);
+                        const apiKey = await this.findSecret(secretKey, secretId);
+                        if (apiKey) {
+                            console.log(`[Sidecar AI] Successfully fetched API key via API`);
+                            return apiKey;
                         }
                     }
                 }
@@ -699,16 +692,16 @@ export class AIClient {
         // Method 2: Check secret_state directly for active secrets (fallback if no Connection Manager profile)
         const secretKey = this.getSecretKeyForProvider(provider);
         console.log(`[Sidecar AI] Method 2: secretKey for ${provider}: ${secretKey}`);
-        
+
         if (secretKey && secretState && secretState[secretKey]) {
             const secrets = secretState[secretKey];
             console.log(`[Sidecar AI] Found secrets in secret_state for ${secretKey}:`, Array.isArray(secrets) ? secrets.length : 'not an array');
-            
+
             if (Array.isArray(secrets)) {
                 // Find active secret
                 const activeSecret = secrets.find(s => s.active);
                 console.log(`[Sidecar AI] Active secret found:`, !!activeSecret, activeSecret ? { hasValue: !!activeSecret.value } : null);
-                
+
                 if (activeSecret && activeSecret.value) {
                     console.log(`[Sidecar AI] Returning API key from active secret`);
                     return activeSecret.value;
@@ -721,19 +714,15 @@ export class AIClient {
             }
         }
 
-        // Method 3: Try to fetch via findSecret for active secret
-        if (secretKey && findSecretFn && typeof findSecretFn === 'function') {
-            try {
-                console.log(`[Sidecar AI] Method 3: Attempting findSecret(${secretKey})`);
-                const apiKey = await findSecretFn(secretKey);
+            // Method 3: Try to fetch via API for active secret
+            if (secretKey) {
+                console.log(`[Sidecar AI] Method 3: Attempting API fetch for ${secretKey}`);
+                const apiKey = await this.findSecret(secretKey);
                 if (apiKey) {
-                    console.log(`[Sidecar AI] Successfully fetched API key via findSecret (no ID)`);
+                    console.log(`[Sidecar AI] Successfully fetched API key via API (no ID)`);
                     return apiKey;
                 }
-            } catch (error) {
-                console.warn('[Sidecar AI] Failed to fetch secret via findSecret:', error);
             }
-        }
 
         // Method 4: Legacy fallback - check old connection_profiles structure
         if (this.context && this.context.connection_profiles) {
