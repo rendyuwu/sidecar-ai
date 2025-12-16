@@ -143,12 +143,31 @@ export class ResultFormatter {
     hideLoadingIndicator(messageId, addon) {
         try {
             const messageElement = this.findMessageElement(messageId);
-            if (!messageElement) return;
+            if (!messageElement) {
+                console.warn(`[Sidecar AI] Message element not found for hiding loading indicator: ${messageId}`);
+                // Try to find loading indicator by addon ID in any sidecar container
+                const loadingDiv = document.querySelector(`.sidecar-loading-${addon.id}`);
+                if (loadingDiv) {
+                    console.log(`[Sidecar AI] Found loading indicator by addon ID, removing`);
+                    loadingDiv.remove();
+                }
+                return;
+            }
 
             const sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`);
             if (sidecarContainer) {
                 const loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
                 if (loadingDiv) {
+                    console.log(`[Sidecar AI] Removing loading indicator for ${addon.name}`);
+                    loadingDiv.remove();
+                } else {
+                    console.warn(`[Sidecar AI] Loading indicator not found in container for ${addon.name}`);
+                }
+            } else {
+                // Try to find loading indicator by addon ID anywhere
+                const loadingDiv = document.querySelector(`.sidecar-loading-${addon.id}`);
+                if (loadingDiv) {
+                    console.log(`[Sidecar AI] Found loading indicator outside container, removing`);
                     loadingDiv.remove();
                 }
             }
@@ -280,38 +299,90 @@ export class ResultFormatter {
 
     /**
      * Find message element by ID or other identifier
+     * Specifically finds AI messages (not user messages)
      */
     findMessageElement(messageId) {
         // Try direct ID lookup
         let element = document.getElementById(messageId);
         if (element) {
-            return element;
+            // Verify it's an AI message
+            if (this.isAIMessageElement(element)) {
+                return element;
+            }
         }
 
         // Try data attribute
         element = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (element) {
+        if (element && this.isAIMessageElement(element)) {
             return element;
         }
 
         // Try finding by message index in chat
         if (this.context.chat && Array.isArray(this.context.chat)) {
             const messageIndex = this.context.chat.findIndex(msg =>
-                msg.uid === messageId || msg.id === messageId
+                (msg.uid === messageId || msg.id === messageId) && !msg.is_user
             );
 
             if (messageIndex !== -1) {
-                // Try to find corresponding DOM element
+                // Try to find corresponding DOM element - specifically AI messages
                 const messageElements = document.querySelectorAll('.mes, .message');
-                if (messageElements[messageIndex]) {
-                    return messageElements[messageIndex];
+                for (let i = messageElements.length - 1; i >= 0; i--) {
+                    if (this.isAIMessageElement(messageElements[i])) {
+                        return messageElements[i];
+                    }
                 }
             }
         }
 
-        // Fallback: get last message element
+        // Fallback: get last AI message element (not user message)
         const messageElements = document.querySelectorAll('.mes, .message');
-        return messageElements[messageElements.length - 1] || null;
+        for (let i = messageElements.length - 1; i >= 0; i--) {
+            if (this.isAIMessageElement(messageElements[i])) {
+                return messageElements[i];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a DOM element is an AI message (not user message)
+     */
+    isAIMessageElement(element) {
+        if (!element) return false;
+
+        // Check for AI message classes (vanilla JS)
+        if (element.classList.contains('assistant') || 
+            element.classList.contains('mes_assistant') ||
+            element.querySelector('.mes_assistant')) {
+            return true;
+        }
+
+        // Check if it's NOT a user message
+        if (element.classList.contains('user') || 
+            element.classList.contains('mes_user') ||
+            element.querySelector('.mes_user')) {
+            return false;
+        }
+
+        // Check data attributes
+        const isUser = element.getAttribute('data-is-user');
+        if (isUser === 'true') {
+            return false;
+        }
+        if (isUser === 'false') {
+            return true;
+        }
+
+        // Check for role attribute
+        const role = element.getAttribute('data-role');
+        if (role === 'user' || role === 'assistant') {
+            return role === 'assistant';
+        }
+
+        // Default: if we can't determine, assume it's AI (better to attach than miss)
+        // But prefer elements that don't have user indicators
+        return true;
     }
 
     /**

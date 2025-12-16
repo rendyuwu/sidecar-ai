@@ -380,12 +380,18 @@ export class EventHandler {
     }
 
     /**
-     * Get latest message from chat
+     * Get latest message from chat (specifically AI message)
      */
     getLatestMessage() {
         const chatLog = this.contextBuilder.getChatLog();
         if (chatLog && chatLog.length > 0) {
-            return chatLog[chatLog.length - 1];
+            // Find the most recent AI message (not user message)
+            for (let i = chatLog.length - 1; i >= 0; i--) {
+                const msg = chatLog[i];
+                if (msg && !msg.is_user) {
+                    return msg;
+                }
+            }
         }
         return null;
     }
