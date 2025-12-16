@@ -14,10 +14,11 @@
 
 /* Define local variables mapped to ST variables */
 #sidecar_ai_settings {
-    --sidecar-border: var(--SmartThemeBorderColor, #ccc);
+    --sidecar-border: var(--SmartThemeBorderColor, #555);
     --sidecar-bg: var(--SmartThemeBodyColor, #1e1e1e);
     --sidecar-text: var(--SmartThemeBodyColor, #eee);
     --sidecar-accent: var(--SmartThemeEmColor, #9fc);
+    --sidecar-blur-tint: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3));
 }
 
 /* Service Provider Dropdown (OpenRouter) - Make scrollable */
@@ -71,17 +72,18 @@
 /* Add-on Item Card */
 #sidecar_ai_settings .add_ons_item {
     margin: 0 0.5em;
-    padding: 10px;
-    border: 1px solid var(--sidecar-border);
+    padding: 12px;
+    border: 1px solid var(--SmartThemeBorderColor, #555);
     border-radius: 5px;
-    box-shadow: -1px 1px 5px rgba(0, 0, 0, 0.3);
-    background: var(--sidecar-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: var(--SmartThemeBodyColor, #1e1e1e);
+    color: var(--SmartThemeBodyColor, #eee);
     transition: all 0.2s ease;
 }
 
 #sidecar_ai_settings .add_ons_item:hover {
-    border-color: var(--sidecar-accent);
-    box-shadow: -1px 1px 8px rgba(0, 0, 0, 0.4);
+    border-color: var(--SmartThemeEmColor, #9fc);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 #sidecar_ai_settings .add_ons_item_header {
@@ -93,45 +95,60 @@
 }
 
 #sidecar_ai_settings .add_ons_item_info h4 {
-    margin: 0 0 5px 0;
+    margin: 0 0 8px 0;
     font-size: 1.1em;
     font-weight: 600;
+    color: var(--SmartThemeBodyColor, #eee);
 }
 
 #sidecar_ai_settings .add_ons_item_meta {
     display: flex;
-    gap: 5px;
+    gap: 6px;
     flex-wrap: wrap;
-    font-size: 0.8em;
-    opacity: 0.8;
+    font-size: 0.85em;
+    margin-top: 4px;
 }
 
 #sidecar_ai_settings .add_ons_badge {
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: rgba(128, 128, 128, 0.2);
-    border: 1px solid rgba(128, 128, 128, 0.3);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: 500;
+    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2));
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7));
+    white-space: nowrap;
 }
 
 #sidecar_ai_settings .add_ons_badge_enabled {
     color: #4cd137;
     border-color: #4cd137;
-    background: rgba(76, 209, 55, 0.1);
+    background: rgba(76, 209, 55, 0.15);
+    font-weight: 600;
 }
 
 #sidecar_ai_settings .add_ons_badge_disabled {
     color: #e84118;
     border-color: #e84118;
-    background: rgba(232, 65, 24, 0.1);
+    background: rgba(232, 65, 24, 0.15);
+    font-weight: 600;
 }
 
 #sidecar_ai_settings .add_ons_item_description {
     margin: 0;
     font-size: 0.9em;
-    opacity: 0.8;
+    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7));
     line-height: 1.4;
-    padding-top: 5px;
-    border-top: 1px solid rgba(128, 128, 128, 0.1);
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2));
+}
+
+#sidecar_ai_settings .add_ons_item_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 /* Controls */
@@ -402,35 +419,41 @@
 /* Button Styles - Scoped to avoid overriding global .menu_button */
 #sidecar_ai_settings .menu_button,
 .add_ons_modal .menu_button {
-    padding: 8px 16px !important;
-    border: 1px solid var(--SmartThemeBorderColor, #ccc) !important;
+    padding: 6px 12px !important;
+    border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
     background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
-    color: var(--SmartThemeBodyColor) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s;
     font-weight: 500;
+    font-size: 0.9em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 #sidecar_ai_settings .menu_button:hover,
 .add_ons_modal .menu_button:hover {
-    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.3)) !important;
-    background-color: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.3)) !important;
+    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
+    background-color: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
     border-color: var(--SmartThemeEmColor, #9fc) !important;
-    color: var(--SmartThemeBodyColor) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
 }
 
 #sidecar_ai_settings .add_ons_button_danger,
 .add_ons_modal .add_ons_button_danger {
-    color: #ff6b6b;
-    border-color: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b !important;
+    border-color: rgba(255, 107, 107, 0.4) !important;
+    background: rgba(255, 107, 107, 0.1) !important;
 }
 
 #sidecar_ai_settings .add_ons_button_danger:hover,
 .add_ons_modal .add_ons_button_danger:hover {
-    background: rgba(255, 107, 107, 0.1);
-    border-color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.2) !important;
+    border-color: #ff6b6b !important;
+    color: #ff6b6b !important;
 }
 
 #sidecar_ai_settings .add_ons_button_small {
@@ -459,7 +482,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #555;
+    background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.4));
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.5));
     transition: .4s;
     border-radius: 20px;
 }
@@ -467,17 +491,23 @@
 #sidecar_ai_settings .add_ons_toggle_slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
+    height: 14px;
+    width: 14px;
     left: 2px;
     bottom: 2px;
-    background-color: white;
+    background-color: var(--SmartThemeBodyColor, #fff);
     transition: .4s;
     border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 #sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider {
     background-color: var(--SmartThemeEmColor, #9fc);
+    border-color: var(--SmartThemeEmColor, #9fc);
+}
+
+#sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider:before {
+    transform: translateX(20px);
 }
 
 #sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider:before {
