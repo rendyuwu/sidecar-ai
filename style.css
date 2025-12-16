@@ -1,0 +1,439 @@
+/**
+ * Add-Ons Extension Styles
+ */
+
+/* Settings UI */
+.add_ons_extension_settings {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.add_ons_header {
+    margin-bottom: 30px;
+}
+
+.add_ons_header h3 {
+    margin: 0 0 10px 0;
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_description {
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.8;
+    margin: 0;
+}
+
+.add_ons_list_container {
+    background: var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.add_ons_controls {
+    margin-bottom: 20px;
+}
+
+.add_ons_button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: var(--SmartThemeBodyColor);
+    color: var(--SmartThemeBorderColor);
+}
+
+.add_ons_button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.add_ons_button_primary {
+    background: var(--SmartThemeEmColor);
+    color: white;
+}
+
+.add_ons_button_small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.add_ons_button_danger {
+    background: #dc3545;
+    color: white;
+}
+
+.add_ons_list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.add_ons_item {
+    background: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.2s;
+}
+
+.add_ons_item:hover {
+    border-color: var(--SmartThemeEmColor);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add_ons_item_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.add_ons_item_info h4 {
+    margin: 0 0 8px 0;
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_item_meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.add_ons_badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--SmartThemeBorderColor);
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_badge_enabled {
+    background: #28a745;
+    color: white;
+}
+
+.add_ons_badge_disabled {
+    background: #6c757d;
+    color: white;
+}
+
+.add_ons_item_actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.add_ons_toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.add_ons_toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.add_ons_toggle_slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.add_ons_toggle_slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.add_ons_toggle input:checked + .add_ons_toggle_slider {
+    background-color: var(--SmartThemeEmColor);
+}
+
+.add_ons_toggle input:checked + .add_ons_toggle_slider:before {
+    transform: translateX(20px);
+}
+
+.add_ons_item_description {
+    margin: 0;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.7;
+    font-size: 13px;
+}
+
+.add_ons_empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.6;
+}
+
+/* Modal */
+.add_ons_modal {
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add_ons_modal_content {
+    background: var(--SmartThemeBodyColor);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.add_ons_modal_header {
+    padding: 20px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add_ons_modal_header h3 {
+    margin: 0;
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_modal_close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.7;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add_ons_modal_close:hover {
+    opacity: 1;
+}
+
+.add_ons_modal_body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.add_ons_modal_footer {
+    padding: 20px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Form */
+.add_ons_form_group {
+    margin-bottom: 20px;
+}
+
+.add_ons_form_group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_form_group input[type="text"],
+.add_ons_form_group input[type="number"],
+.add_ons_form_group input[type="password"],
+.add_ons_form_group select,
+.add_ons_form_group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    background: var(--SmartThemeBodyColor);
+    color: var(--SmartThemeBodyColor);
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.add_ons_form_group textarea {
+    resize: vertical;
+    font-family: monospace;
+}
+
+.add_ons_form_hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.6;
+}
+
+.add_ons_form_row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.add_ons_form_section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.add_ons_form_section h4 {
+    margin: 0 0 15px 0;
+    color: var(--SmartThemeBodyColor);
+}
+
+.add_ons_form_checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.add_ons_checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.add_ons_checkbox input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.add_ons_checkbox span {
+    color: var(--SmartThemeBodyColor);
+}
+
+/* Dropdown UI (for outsideChatlog results) */
+.add_ons_dropdown_container {
+    margin: 20px;
+    padding: 15px;
+    background: var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.addon_result_section {
+    margin-bottom: 15px;
+    background: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.addon_result_summary {
+    padding: 12px 15px;
+    cursor: pointer;
+    background: var(--SmartThemeBorderColor);
+    font-weight: 500;
+    color: var(--SmartThemeBodyColor);
+    user-select: none;
+}
+
+.addon_result_summary:hover {
+    background: var(--SmartThemeEmColor);
+    opacity: 0.9;
+}
+
+.addon_result_content {
+    padding: 15px;
+}
+
+.addon_result_item {
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    border-left: 3px solid var(--SmartThemeEmColor);
+}
+
+.addon_result_item:last-child {
+    margin-bottom: 0;
+}
+
+.addon_result_timestamp {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.6;
+}
+
+/* Manual Trigger Button */
+.add_ons_trigger_button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    background: var(--SmartThemeEmColor);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.add_ons_trigger_button:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.add_ons_trigger_button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.add_ons_trigger_button i {
+    font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add_ons_form_row {
+        grid-template-columns: 1fr;
+    }
+    
+    .add_ons_modal_content {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .add_ons_trigger_button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}

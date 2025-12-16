@@ -1,0 +1,398 @@
+<script id="add-ons-extension-settings-template" type="text/x-handlebars-template">
+<div class="add_ons_extension_settings">
+    <div class="add_ons_header">
+        <h3>Add-Ons Extension Settings</h3>
+        <p class="add_ons_description">Define custom prompts that execute using cheaper AI models. Use variables like {{lastMessages}}, {{charCard}}, {{userCard}}, {{worldCard}}, {{currentMessage}} in your prompts.</p>
+    </div>
+
+    <div class="add_ons_list_container">
+        <div class="add_ons_controls">
+            <button class="add_ons_button add_ons_button_primary" id="add_ons_add_button">
+                <i class="fa-solid fa-plus"></i> Add New Add-On
+            </button>
+        </div>
+
+        <div class="add_ons_list" id="add_ons_list">
+            {{#each addons}}
+            <div class="add_ons_item" data-addon-id="{{id}}">
+                <div class="add_ons_item_header">
+                    <div class="add_ons_item_info">
+                        <h4>{{name}}</h4>
+                        <span class="add_ons_item_meta">
+                            {{#if enabled}}<span class="add_ons_badge add_ons_badge_enabled">Enabled</span>{{else}}<span class="add_ons_badge add_ons_badge_disabled">Disabled</span>{{/if}}
+                            <span class="add_ons_badge">{{triggerMode}}</span>
+                            <span class="add_ons_badge">{{requestMode}}</span>
+                            <span class="add_ons_badge">{{responseLocation}}</span>
+                        </span>
+                    </div>
+                    <div class="add_ons_item_actions">
+                        <label class="add_ons_toggle">
+                            <input type="checkbox" {{#if enabled}}checked{{/if}} data-addon-id="{{id}}" class="add_ons_enable_toggle">
+                            <span class="add_ons_toggle_slider"></span>
+                        </label>
+                        <button class="add_ons_button add_ons_button_small" data-action="edit" data-addon-id="{{id}}">
+                            <i class="fa-solid fa-edit"></i> Edit
+                        </button>
+                        <button class="add_ons_button add_ons_button_small add_ons_button_danger" data-action="delete" data-addon-id="{{id}}">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                {{#if description}}
+                <p class="add_ons_item_description">{{description}}</p>
+                {{/if}}
+            </div>
+            {{else}}
+            <div class="add_ons_empty">
+                <p>No add-ons configured. Click "Add New Add-On" to create one.</p>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+
+    <!-- Add/Edit Form Modal -->
+    <div class="add_ons_modal" id="add_ons_modal" style="display: none;">
+        <div class="add_ons_modal_content">
+            <div class="add_ons_modal_header">
+                <h3 id="add_ons_modal_title">Add New Add-On</h3>
+                <button class="add_ons_modal_close" id="add_ons_modal_close">&times;</button>
+            </div>
+            <div class="add_ons_modal_body">
+                <form id="add_ons_form">
+                    <input type="hidden" id="add_ons_form_id" name="id">
+
+                    <div class="add_ons_form_group">
+                        <label for="add_ons_form_name">Name *</label>
+                        <input type="text" id="add_ons_form_name" name="name" required placeholder="e.g., Gemini Nazi Module">
+                    </div>
+
+                    <div class="add_ons_form_group">
+                        <label for="add_ons_form_description">Description</label>
+                        <textarea id="add_ons_form_description" name="description" rows="2" placeholder="Brief description of what this add-on does"></textarea>
+                    </div>
+
+                    <div class="add_ons_form_group">
+                        <label for="add_ons_form_prompt">Prompt Template *</label>
+                        <textarea id="add_ons_form_prompt" name="prompt" rows="10" required placeholder="Enter your prompt template here. Use variables: {{lastMessages}}, {{charCard}}, {{userCard}}, {{worldCard}}, {{currentMessage}}"></textarea>
+                        <small class="add_ons_form_hint">Available variables: {{lastMessages}}, {{charCard}}, {{userCard}}, {{worldCard}}, {{currentMessage}}</small>
+                    </div>
+
+                    <div class="add_ons_form_row">
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_trigger_mode">Trigger Mode *</label>
+                            <select id="add_ons_form_trigger_mode" name="triggerMode" required>
+                                <option value="auto">Auto (after each AI response)</option>
+                                <option value="manual">Manual (triggered by button)</option>
+                            </select>
+                        </div>
+
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_request_mode">Request Mode *</label>
+                            <select id="add_ons_form_request_mode" name="requestMode" required>
+                                <option value="standalone">Standalone</option>
+                                <option value="batch">Batch (group with same provider/model)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="add_ons_form_row">
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_ai_provider">AI Provider *</label>
+                            <select id="add_ons_form_ai_provider" name="aiProvider" required>
+                                <option value="openai">OpenAI</option>
+                                <option value="deepseek">Deepseek</option>
+                                <option value="anthropic">Anthropic (Claude)</option>
+                                <option value="google">Google (Gemini)</option>
+                                <option value="cohere">Cohere</option>
+                            </select>
+                        </div>
+
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_ai_model">AI Model *</label>
+                            <input type="text" id="add_ons_form_ai_model" name="aiModel" required placeholder="e.g., gpt-3.5-turbo" value="gpt-3.5-turbo">
+                        </div>
+                    </div>
+
+                    <div class="add_ons_form_group">
+                        <label for="add_ons_form_api_key">API Key (Optional)</label>
+                        <input type="password" id="add_ons_form_api_key" name="apiKey" placeholder="Leave empty to use SillyTavern's configured key">
+                        <small class="add_ons_form_hint">If left empty, will use the API key configured in SillyTavern settings</small>
+                    </div>
+
+                    <div class="add_ons_form_row">
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_result_format">Result Format *</label>
+                            <select id="add_ons_form_result_format" name="resultFormat" required>
+                                <option value="append">Append (inline)</option>
+                                <option value="separate">Separate Block</option>
+                                <option value="collapsible" selected>Collapsible</option>
+                            </select>
+                        </div>
+
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_response_location">Response Location *</label>
+                            <select id="add_ons_form_response_location" name="responseLocation" required>
+                                <option value="chatHistory">Chat History (HTML comment, accessible to main AI)</option>
+                                <option value="outsideChatlog" selected>Outside Chatlog (dropdown below chat)</option>
+                            </select>
+                            <small class="add_ons_form_hint" id="add_ons_response_location_hint">
+                                Results appear in expandable dropdown below chat area
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="add_ons_form_section">
+                        <h4>Context Settings</h4>
+                        
+                        <div class="add_ons_form_group">
+                            <label for="add_ons_form_messages_count">Number of Messages</label>
+                            <input type="number" id="add_ons_form_messages_count" name="messagesCount" min="1" max="50" value="10">
+                        </div>
+
+                        <div class="add_ons_form_checkboxes">
+                            <label class="add_ons_checkbox">
+                                <input type="checkbox" id="add_ons_form_include_char_card" name="includeCharCard" checked>
+                                <span>Include Character Card</span>
+                            </label>
+                            <label class="add_ons_checkbox">
+                                <input type="checkbox" id="add_ons_form_include_user_card" name="includeUserCard" checked>
+                                <span>Include User Card</span>
+                            </label>
+                            <label class="add_ons_checkbox">
+                                <input type="checkbox" id="add_ons_form_include_world_card" name="includeWorldCard" checked>
+                                <span>Include World Card</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="add_ons_modal_footer">
+                <button class="add_ons_button" id="add_ons_form_cancel">Cancel</button>
+                <button class="add_ons_button add_ons_button_primary" id="add_ons_form_save">Save Add-On</button>
+            </div>
+        </div>
+    </div>
+</div>
+</script>
+
+<script>
+(function() {
+    'use strict';
+
+    // Settings UI handler
+    if (typeof window.addOnsExtensionSettings === 'undefined') {
+        window.addOnsExtensionSettings = {
+            init: function() {
+                this.bindEvents();
+                this.loadSettings();
+            },
+
+            bindEvents: function() {
+                const self = this;
+
+                // Add button
+                $(document).on('click', '#add_ons_add_button', function() {
+                    self.openModal();
+                });
+
+                // Modal close
+                $(document).on('click', '#add_ons_modal_close, #add_ons_form_cancel', function() {
+                    self.closeModal();
+                });
+
+                // Edit button
+                $(document).on('click', '[data-action="edit"]', function() {
+                    const addonId = $(this).data('addon-id');
+                    self.openModal(addonId);
+                });
+
+                // Delete button
+                $(document).on('click', '[data-action="delete"]', function() {
+                    const addonId = $(this).data('addon-id');
+                    if (confirm('Are you sure you want to delete this add-on?')) {
+                        self.deleteAddon(addonId);
+                    }
+                });
+
+                // Enable toggle
+                $(document).on('change', '.add_ons_enable_toggle', function() {
+                    const addonId = $(this).data('addon-id');
+                    const enabled = $(this).is(':checked');
+                    self.toggleAddon(addonId, enabled);
+                });
+
+                // Save form
+                $(document).on('click', '#add_ons_form_save', function() {
+                    self.saveAddon();
+                });
+
+                // Response location hint
+                $(document).on('change', '#add_ons_form_response_location', function() {
+                    const location = $(this).val();
+                    const hint = $('#add_ons_response_location_hint');
+                    if (location === 'chatHistory') {
+                        hint.text('Results hidden in HTML comment at end of message, accessible to main AI');
+                    } else {
+                        hint.text('Results appear in expandable dropdown below chat area');
+                    }
+                });
+            },
+
+            loadSettings: function() {
+                // Settings are loaded via Handlebars template
+                // This function can be used for additional initialization
+            },
+
+            openModal: function(addonId = null) {
+                const modal = $('#add_ons_modal');
+                const form = $('#add_ons_form')[0];
+                
+                if (addonId) {
+                    // Edit mode
+                    const addonManager = window.addOnsExtension?.getAddonManager();
+                    if (addonManager) {
+                        const addon = addonManager.getAddon(addonId);
+                        if (addon) {
+                            this.populateForm(addon);
+                            $('#add_ons_modal_title').text('Edit Add-On');
+                        }
+                    }
+                } else {
+                    // Add mode
+                    form.reset();
+                    $('#add_ons_form_id').val('');
+                    $('#add_ons_modal_title').text('Add New Add-On');
+                }
+                
+                modal.show();
+            },
+
+            closeModal: function() {
+                $('#add_ons_modal').hide();
+                $('#add_ons_form')[0].reset();
+            },
+
+            populateForm: function(addon) {
+                $('#add_ons_form_id').val(addon.id);
+                $('#add_ons_form_name').val(addon.name);
+                $('#add_ons_form_description').val(addon.description);
+                $('#add_ons_form_prompt').val(addon.prompt);
+                $('#add_ons_form_trigger_mode').val(addon.triggerMode);
+                $('#add_ons_form_request_mode').val(addon.requestMode);
+                $('#add_ons_form_ai_provider').val(addon.aiProvider);
+                $('#add_ons_form_ai_model').val(addon.aiModel);
+                $('#add_ons_form_api_key').val(addon.apiKey || '');
+                $('#add_ons_form_result_format').val(addon.resultFormat);
+                $('#add_ons_form_response_location').val(addon.responseLocation);
+                
+                const ctx = addon.contextSettings || {};
+                $('#add_ons_form_messages_count').val(ctx.messagesCount || 10);
+                $('#add_ons_form_include_char_card').prop('checked', ctx.includeCharCard !== false);
+                $('#add_ons_form_include_user_card').prop('checked', ctx.includeUserCard !== false);
+                $('#add_ons_form_include_world_card').prop('checked', ctx.includeWorldCard !== false);
+            },
+
+            saveAddon: function() {
+                const form = $('#add_ons_form')[0];
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const formData = {
+                    id: $('#add_ons_form_id').val(),
+                    name: $('#add_ons_form_name').val(),
+                    description: $('#add_ons_form_description').val(),
+                    prompt: $('#add_ons_form_prompt').val(),
+                    triggerMode: $('#add_ons_form_trigger_mode').val(),
+                    requestMode: $('#add_ons_form_request_mode').val(),
+                    aiProvider: $('#add_ons_form_ai_provider').val(),
+                    aiModel: $('#add_ons_form_ai_model').val(),
+                    apiKey: $('#add_ons_form_api_key').val(),
+                    resultFormat: $('#add_ons_form_result_format').val(),
+                    responseLocation: $('#add_ons_form_response_location').val(),
+                    contextSettings: {
+                        messagesCount: parseInt($('#add_ons_form_messages_count').val()) || 10,
+                        includeCharCard: $('#add_ons_form_include_char_card').is(':checked'),
+                        includeUserCard: $('#add_ons_form_include_user_card').is(':checked'),
+                        includeWorldCard: $('#add_ons_form_include_world_card').is(':checked')
+                    },
+                    enabled: true
+                };
+
+                const addonManager = window.addOnsExtension?.getAddonManager();
+                if (!addonManager) {
+                    alert('Extension not initialized. Please refresh the page.');
+                    return;
+                }
+
+                try {
+                    if (formData.id) {
+                        addonManager.updateAddon(formData.id, formData);
+                    } else {
+                        addonManager.createAddon(formData);
+                    }
+                    
+                    this.closeModal();
+                    this.refreshSettings();
+                } catch (error) {
+                    console.error('Error saving add-on:', error);
+                    alert('Error saving add-on: ' + error.message);
+                }
+            },
+
+            deleteAddon: function(addonId) {
+                const addonManager = window.addOnsExtension?.getAddonManager();
+                if (!addonManager) {
+                    alert('Extension not initialized. Please refresh the page.');
+                    return;
+                }
+
+                try {
+                    addonManager.deleteAddon(addonId);
+                    this.refreshSettings();
+                } catch (error) {
+                    console.error('Error deleting add-on:', error);
+                    alert('Error deleting add-on: ' + error.message);
+                }
+            },
+
+            toggleAddon: function(addonId, enabled) {
+                const addonManager = window.addOnsExtension?.getAddonManager();
+                if (!addonManager) {
+                    return;
+                }
+
+                try {
+                    const addon = addonManager.getAddon(addonId);
+                    if (addon) {
+                        addon.enabled = enabled;
+                        addonManager.updateAddon(addonId, { enabled: enabled });
+                    }
+                } catch (error) {
+                    console.error('Error toggling add-on:', error);
+                }
+            },
+
+            refreshSettings: function() {
+                // Trigger settings refresh in SillyTavern
+                if (window.getContext && window.getContext().saveSettingsDebounced) {
+                    window.getContext().saveSettingsDebounced();
+                }
+                
+                // Reload page or refresh UI
+                location.reload();
+            }
+        };
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                window.addOnsExtensionSettings.init();
+            });
+        } else {
+            window.addOnsExtensionSettings.init();
+        }
+    }
+})();
+</script>
