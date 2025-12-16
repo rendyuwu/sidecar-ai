@@ -54,7 +54,7 @@ export class ContextBuilder {
         parts.push('IGNORE the chat history for story purposes - it is provided ONLY for context reference.');
         parts.push('ONLY execute what the instruction block explicitly asks you to do.');
         parts.push('If the instruction asks you to add something to the response, add ONLY that - do not write new story content.');
-        parts.push('Any styling you will apply will be in the context of the chat - NEVER apply any styling that will affect global styles.');
+        parts.push('Any styling you will apply will be in the context of the chat - NEVER apply any styling that will affect global styles. This is NON negotiable CRITICAL INSTRUCTION.');
         parts.push('');
         parts.push('OUTPUT FORMATTING:');
 

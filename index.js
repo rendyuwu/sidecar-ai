@@ -41,6 +41,12 @@ async function loadSettingsHTML() {
     console.log('[Sidecar AI] Loading settings.html...');
 
     try {
+        // Avoid duplicating settings if already injected
+        if (document.getElementById('sidecar_ai_settings')) {
+            console.log('[Sidecar AI] settings.html already injected, skipping reload');
+            return true;
+        }
+
         const module_dir = getExtensionDirectory();
         const path = `${module_dir}/settings.html`;
 
@@ -63,6 +69,11 @@ async function loadSettingsHTML() {
             setTimeout(async () => {
                 const retryContainer = document.getElementById('extensions_settings2');
                 if (retryContainer) {
+                    // Avoid double-inject on retry
+                    if (document.getElementById('sidecar_ai_settings')) {
+                        console.log('[Sidecar AI] settings.html already present on retry, skipping insert');
+                        return;
+                    }
                     retryContainer.insertAdjacentHTML('beforeend', html);
                     console.log('[Sidecar AI] Loaded settings.html on retry');
                     // Initialize UI after retry load if it exists
@@ -220,6 +231,12 @@ async function loadModules() {
             const chatContainer = document.querySelector('#chat_container') || document.querySelector('.chat_container');
             if (!chatContainer) {
                 console.warn('[Sidecar AI] Chat container not found, dropdown UI may not work');
+                return;
+            }
+
+            // Avoid duplicating the dropdown container
+            if (document.getElementById('add-ons-dropdown-container')) {
+                console.log('[Sidecar AI] Dropdown UI already initialized');
                 return;
             }
 

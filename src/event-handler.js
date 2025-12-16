@@ -13,6 +13,8 @@ export class EventHandler {
         this.isProcessing = false;
         // Performance: Debounce save operations
         this.saveChatTimeout = null;
+        // Prevent double-processing the same message id
+        this.lastProcessedMessageId = null;
     }
 
     /**
@@ -162,8 +164,18 @@ export class EventHandler {
                 return;
             }
 
+            // Avoid processing the same message twice
+            const aiMessageId = this.resultFormatter.getMessageId(aiMessage);
+            if (aiMessageId && aiMessageId === this.lastProcessedMessageId) {
+                console.log('[Sidecar AI] Latest AI message already processed, skipping duplicate trigger');
+                return;
+            }
+
             // Process add-ons with the confirmed AI message
             await this.processAddons(autoAddons, aiMessage);
+
+            // Record the processed message id to avoid duplicates
+            this.lastProcessedMessageId = aiMessageId || this.lastProcessedMessageId;
         } catch (error) {
             console.error('[Sidecar AI] Error handling message:', error);
         } finally {

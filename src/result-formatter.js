@@ -26,8 +26,6 @@ export class ResultFormatter {
         if (forDropdown) {
             // Clean up any existing wrapper tags that might conflict
             formatted = this.cleanResponseForDropdown(aiResponse);
-            // Convert Markdown to HTML if needed
-            formatted = this.markdownToHtml(formatted);
             return formatted;
         }
 
@@ -73,111 +71,13 @@ export class ResultFormatter {
     }
 
     /**
-     * Convert Markdown to HTML (simplified and more robust)
+     * Pass-through - SillyTavern handles Markdown/HTML/XML/CSS natively
+     * No parsing needed
      */
-    markdownToHtml(markdown) {
-        if (!markdown || typeof markdown !== 'string') {
-            return markdown;
-        }
-
-        // If it already contains HTML tags, assume it's already HTML and return as-is
-        if (markdown.match(/<[a-z][\s\S]*>/i)) {
-            return markdown;
-        }
-
-        let html = markdown;
-
-        // Code blocks first (protect from other conversions)
-        html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-            return `<pre><code>${code.trim()}</code></pre>`;
-        });
-        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-        // Headers (process line by line to avoid matching within text)
-        html = html.split('\n').map(line => {
-            if (line.match(/^#{1,6}\s/)) {
-                const level = line.match(/^#+/)[0].length;
-                const text = line.replace(/^#+\s*/, '');
-                return `<h${level}>${text}</h${level}>`;
-            }
-            return line;
-        }).join('\n');
-
-        // Bold and italic - using non-greedy matching
-        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-        html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>');
-        html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
-
-        // Links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-
-        // Horizontal rules
-        html = html.replace(/^[-*]{3,}$/gm, '<hr>');
-
-        // Lists - improved handling
-        const lines = html.split('\n');
-        let inList = false;
-        let result = [];
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const listMatch = line.match(/^[-*]\s+(.+)$/);
-            const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
-
-            if (listMatch) {
-                if (!inList) {
-                    result.push('<ul>');
-                    inList = 'ul';
-                }
-                result.push(`<li>${listMatch[1]}</li>`);
-            } else if (orderedMatch) {
-                if (!inList) {
-                    result.push('<ol>');
-                    inList = 'ol';
-                } else if (inList === 'ul') {
-                    result.push('</ul>');
-                    result.push('<ol>');
-                    inList = 'ol';
-                }
-                result.push(`<li>${orderedMatch[1]}</li>`);
-            } else {
-                if (inList) {
-                    result.push(inList === 'ul' ? '</ul>' : '</ol>');
-                    inList = false;
-                }
-                result.push(line);
-            }
-        }
-
-        if (inList) {
-            result.push(inList === 'ul' ? '</ul>' : '</ol>');
-        }
-
-        html = result.join('\n');
-
-        // Normalize whitespace - remove excessive blank lines
-        html = html.replace(/\n{3,}/g, '\n\n');
-
-        // Convert paragraphs - wrap consecutive non-block lines in <p> tags
-        // Split by double newlines to identify paragraphs
-        const paragraphs = html.split(/\n\n+/);
-        html = paragraphs.map(para => {
-            const trimmed = para.trim();
-            if (!trimmed) return '';
-
-            // If it's already a block element, return as-is
-            if (trimmed.match(/^<(h\d|ul|ol|pre|blockquote|hr|div)/i)) {
-                return trimmed;
-            }
-
-            // Otherwise wrap in <p> tag
-            // Convert single newlines within paragraph to <br>
-            const withBreaks = trimmed.replace(/\n(?!$)/g, '<br>');
-            return `<p>${withBreaks}</p>`;
-        }).filter(p => p).join('\n\n');
-
-        return html;
+    markdownToHtml(response) {
+        // SillyTavern's message renderer handles all formats natively
+        // Just return the response as-is
+        return response;
     }
 
     /**
@@ -287,7 +187,6 @@ export class ResultFormatter {
         if (!sidecarContainer) {
             sidecarContainer = document.createElement('div');
             sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
-            sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
             // Insert after message content (inside the AI message container)
             const messageContent = messageElement.querySelector('.mes_text') ||
@@ -305,7 +204,6 @@ export class ResultFormatter {
         if (!loadingDiv) {
             loadingDiv = document.createElement('div');
             loadingDiv.className = `sidecar-loading sidecar-loading-${addon.id}`;
-            loadingDiv.style.cssText = 'padding: 8px; display: flex; align-items: center; gap: 8px; color: rgba(255, 255, 255, 0.7) !important; background: transparent !important; background-color: transparent !important;';
             loadingDiv.innerHTML = `
                 <i class="fa-solid fa-spinner fa-spin"></i>
                 <span>Processing ${addon.name}...</span>
@@ -417,7 +315,6 @@ export class ResultFormatter {
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
-                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
                 const messageContent = messageElement.querySelector('.mes_text') || messageElement;
                 if (messageContent.nextSibling) {
@@ -429,7 +326,6 @@ export class ResultFormatter {
 
             const errorDiv = document.createElement('div');
             errorDiv.className = `sidecar-error sidecar-error-${addon.id}`;
-            errorDiv.style.cssText = 'padding: 8px; color: #ff6b6b !important; background: rgba(255, 107, 107, 0.1) !important; background-color: rgba(255, 107, 107, 0.1) !important; border: 1px solid rgba(255, 107, 107, 0.3) !important; border-radius: 3px !important; display: flex; flex-direction: column; gap: 5px;';
 
             const errorMsg = document.createElement('div');
             errorMsg.innerHTML = `<i class="fa-solid fa-exclamation-triangle"></i> Error processing ${addon.name}: ${error.message || error}`;
@@ -438,7 +334,6 @@ export class ResultFormatter {
             const retryBtn = document.createElement('button');
             retryBtn.className = 'menu_button';
             retryBtn.innerHTML = '<i class="fa-solid fa-redo"></i> Retry';
-            retryBtn.style.cssText = 'align-self: flex-start; padding: 4px 8px; font-size: 0.9em;';
 
             retryBtn.onclick = (e) => {
                 e.preventDefault();
@@ -483,7 +378,6 @@ export class ResultFormatter {
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${messageId}`;
-                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
                 // Insert after message content
                 const messageContent = messageElement.querySelector('.mes_text') ||
@@ -497,16 +391,15 @@ export class ResultFormatter {
             }
 
             // Create or update add-on section
-            let addonSection = sidecarContainer.querySelector(`.addon-section-${addon.id}`);
+            let addonSection = sidecarContainer.querySelector(`.addon_section-${addon.id}`);
 
             if (!addonSection) {
                 addonSection = document.createElement('details');
-                addonSection.className = `addon-result-section addon-section-${addon.id}`;
+                addonSection.className = `addon_result_section addon_section-${addon.id}`;
                 addonSection.open = true;
 
                 const summary = document.createElement('summary');
-                summary.className = 'addon-result-summary';
-                summary.style.cssText = 'cursor: pointer; padding: 8px; background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; border-radius: 3px; color: #eee !important; display: flex; justify-content: space-between; align-items: center;';
+                summary.className = 'addon_result_summary';
 
                 // Add title
                 const titleSpan = document.createElement('span');
@@ -515,15 +408,13 @@ export class ResultFormatter {
 
                 // Add actions container to summary
                 const actionsDiv = document.createElement('div');
-                actionsDiv.style.display = 'flex';
-                actionsDiv.style.gap = '5px';
+                actionsDiv.className = 'addon_result_actions';
 
                 // Edit button
                 const editBtn = document.createElement('button');
                 editBtn.innerHTML = '<i class="fa-solid fa-edit"></i>';
                 editBtn.className = 'menu_button';
                 editBtn.title = 'Edit Result';
-                editBtn.style.cssText = 'padding: 2px 6px; font-size: 0.8em; height: auto; min-height: 0; background: transparent; border: none; opacity: 0.7;';
 
                 editBtn.onclick = (e) => {
                     e.preventDefault();
@@ -536,7 +427,6 @@ export class ResultFormatter {
                 copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>';
                 copyBtn.className = 'menu_button';
                 copyBtn.title = 'Copy Result';
-                copyBtn.style.cssText = 'padding: 2px 6px; font-size: 0.8em; height: auto; min-height: 0; background: transparent; border: none; opacity: 0.7;';
 
                 copyBtn.onclick = (e) => {
                     e.preventDefault();
@@ -555,9 +445,8 @@ export class ResultFormatter {
                 summary.appendChild(actionsDiv);
 
                 const content = document.createElement('div');
-                content.className = 'addon-result-content';
+                content.className = 'addon_result_content';
                 content.id = `addon-content-${addon.id}`;
-                content.style.cssText = 'padding: 10px; margin-top: 8px; background: #1e1e1e !important; background-color: #1e1e1e !important; color: #eee !important; max-height: 500px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;';
 
                 addonSection.appendChild(summary);
                 addonSection.appendChild(content);
@@ -565,24 +454,22 @@ export class ResultFormatter {
             }
 
             // Update content
-            const content = addonSection.querySelector('.addon-result-content');
+            const content = addonSection.querySelector('.addon_result_content');
             if (content) {
                 // Clear existing content and add new result
                 content.innerHTML = '';
 
                 // Append new result
                 const resultDiv = document.createElement('div');
-                resultDiv.className = 'addon-result-item';
-                resultDiv.style.cssText = 'background: transparent !important; background-color: transparent !important; color: #eee !important;';
+                resultDiv.className = 'addon_result_item';
                 resultDiv.innerHTML = formattedResult;
 
                 // Store raw content for editing
                 resultDiv.setAttribute('data-raw-content', formattedResult); // Note: this stores formatted HTML, we might want raw markdown
 
                 const timestamp = document.createElement('div');
-                timestamp.className = 'addon-result-timestamp';
+                timestamp.className = 'addon_result_timestamp';
                 timestamp.textContent = `Generated at ${new Date().toLocaleTimeString()}`;
-                timestamp.style.cssText = 'font-size: 0.8em; color: rgba(255, 255, 255, 0.5) !important; background: transparent !important; background-color: transparent !important; margin-top: 8px; font-style: italic;';
 
                 resultDiv.appendChild(timestamp);
                 content.appendChild(resultDiv);
@@ -609,7 +496,7 @@ export class ResultFormatter {
         const contentDiv = messageElement.querySelector(`#addon-content-${addon.id}`);
         if (!contentDiv) return;
 
-        const resultItem = contentDiv.querySelector('.addon-result-item');
+        const resultItem = contentDiv.querySelector('.addon_result_item');
         if (!resultItem) return;
 
         // Retrieve content - try to get raw content if we stored it, or decode from metadata
@@ -701,14 +588,12 @@ export class ResultFormatter {
             // Re-render
             contentDiv.innerHTML = '';
             const newResultItem = document.createElement('div');
-            newResultItem.className = 'addon-result-item';
-            newResultItem.style.cssText = 'background: transparent !important; background-color: transparent !important; color: #eee !important;';
+            newResultItem.className = 'addon_result_item';
             newResultItem.innerHTML = formatted;
 
             const timestamp = document.createElement('div');
-            timestamp.className = 'addon-result-timestamp';
+            timestamp.className = 'addon_result_timestamp';
             timestamp.textContent = `Edited at ${new Date().toLocaleTimeString()}`;
-            timestamp.style.cssText = 'font-size: 0.8em; color: rgba(255, 255, 255, 0.5) !important; background: transparent !important; background-color: transparent !important; margin-top: 8px; font-style: italic;';
 
             newResultItem.appendChild(timestamp);
             contentDiv.appendChild(newResultItem);
