@@ -397,13 +397,13 @@ export class AIClient {
                     if (chatServiceError && typeof chatServiceError === 'object') {
                         // Try to extract error message from various possible structures
                         // Common structures: {error: {...}}, {error: "message"}, {message: "..."}, {error: true, ...}
-                        
+
                         // Check for nested error.message (most common)
                         if (chatServiceError.error && typeof chatServiceError.error === 'object') {
-                            errorMsg = chatServiceError.error.message || 
-                                      chatServiceError.error.error?.message ||
-                                      chatServiceError.error.error ||
-                                      JSON.stringify(chatServiceError.error);
+                            errorMsg = chatServiceError.error.message ||
+                                chatServiceError.error.error?.message ||
+                                chatServiceError.error.error ||
+                                JSON.stringify(chatServiceError.error);
                         }
                         // Check for string error
                         else if (chatServiceError.error && typeof chatServiceError.error === 'string') {
@@ -802,7 +802,7 @@ export class AIClient {
             for (const profile of profiles) {
                 const profileApi = profile?.api?.toLowerCase();
                 console.log(`[Sidecar AI] Profile: api=${profileApi}, hasSecretId=${!!profile?.['secret-id']}`);
-                
+
                 if (profile && profileApi === providerLower && profile['secret-id']) {
                     console.log(`[Sidecar AI] Found connection profile with secret-id for ${provider}`);
                     return true;
@@ -810,18 +810,29 @@ export class AIClient {
             }
         }
 
-        // Method 2: Check secret_state metadata
+        // Method 2: Check secret_state metadata (even if not in connection profile)
+        // This checks if the API key exists in SillyTavern's secret storage
         const secretState = this.getSecretState();
         if (secretState) {
             const secretKey = this.getSecretKeyForProvider(provider);
             console.log(`[Sidecar AI] Checking secret_state for key: ${secretKey}`);
+            
             if (secretKey && secretState[secretKey]) {
                 const secrets = secretState[secretKey];
-                if (Array.isArray(secrets) && secrets.length > 0) {
-                    console.log(`[Sidecar AI] Found secret_state entry for ${provider} (${secrets.length} secrets)`);
+                // secret_state can be an array of secrets or a truthy value
+                if (Array.isArray(secrets)) {
+                    if (secrets.length > 0) {
+                        console.log(`[Sidecar AI] Found secret_state entry for ${provider} (${secrets.length} secrets)`);
+                        return true;
+                    }
+                } else if (secrets) {
+                    // If it's not an array but truthy, the key exists
+                    console.log(`[Sidecar AI] Found secret_state entry for ${provider} (non-array)`);
                     return true;
                 }
             }
+        } else {
+            console.log(`[Sidecar AI] secret_state not available for checking`);
         }
 
         console.log(`[Sidecar AI] No API key found for ${provider}`);

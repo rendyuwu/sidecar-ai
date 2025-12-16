@@ -273,7 +273,7 @@ export class SettingsUI {
             '#openrouter_group_models_chat',
             '#openrouter_sort_models_chat'
         ];
-        
+
         const domSelectors = [
             `#model_${provider}_select`, // Most common format (e.g., #model_openrouter_select)
             `#model_${provider}`, // Alternative format
@@ -289,28 +289,28 @@ export class SettingsUI {
                 if (excludeSelectors.some(exclude => selector.includes(exclude))) {
                     continue;
                 }
-                
+
                 const $el = $(selector);
                 if ($el.length && $el.is('select') && $el.find('option').length > 1) {
                     // Check if this is a sorting/grouping dropdown by examining option values
                     const firstOption = $el.find('option').eq(0).val();
-                    const isSortingDropdown = firstOption === 'alphabetically' || 
-                                             firstOption === 'price' || 
-                                             firstOption === 'context' ||
-                                             $el.attr('id')?.includes('sort') ||
-                                             $el.attr('id')?.includes('group');
-                    
+                    const isSortingDropdown = firstOption === 'alphabetically' ||
+                        firstOption === 'price' ||
+                        firstOption === 'context' ||
+                        $el.attr('id')?.includes('sort') ||
+                        $el.attr('id')?.includes('group');
+
                     if (isSortingDropdown) {
                         console.log(`[Sidecar AI] Skipping sorting/grouping dropdown: ${selector}`);
                         continue;
                     }
-                    
+
                     console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${$el.find('option').length} options`);
                     $el.find('option').each(function () {
                         const val = $(this).val();
                         const txt = $(this).text();
                         // Exclude sorting options and empty values
-                        if (val && val !== '' && 
+                        if (val && val !== '' &&
                             val !== 'Select a model...' && val !== 'Select...' &&
                             val !== 'alphabetically' && val !== 'price' && val !== 'context' &&
                             !txt.toLowerCase().includes('alphabetically') &&
