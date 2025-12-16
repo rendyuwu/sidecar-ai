@@ -143,7 +143,7 @@ export class ResultFormatter {
 
     /**
      * Fix WCAG contrast issues by replacing low-contrast color combinations
-     * Detects common low-contrast patterns and replaces them with high-contrast alternatives
+     * Aggressively detects and fixes white-on-white and other bad combinations
      */
     fixWCAGContrast(html) {
         if (!html || typeof html !== 'string') {
@@ -152,25 +152,150 @@ export class ResultFormatter {
 
         let fixed = html;
 
-        // Fix 1: Replace light gray hex colors (#aaa, #bbb, #ccc, #ddd, #eee, etc.) with dark
-        fixed = fixed.replace(/color\s*:\s*#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/gi, (match, color) => {
+        // Helper function to get brightness from hex color
+        const getBrightness = (hex) => {
+            if (!hex) return 0;
+            // Remove # if present
+            hex = hex.replace('#', '');
             // Convert 3-digit to 6-digit
-            if (color.length === 3) {
-                color = color.split('').map(c => c + c).join('');
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
             }
-            // Check if it's a light gray (high values: a-f, A-F)
-            const r = parseInt(color.substring(0, 2), 16);
-            const g = parseInt(color.substring(2, 4), 16);
-            const b = parseInt(color.substring(4, 6), 16);
-            const brightness = (r + g + b) / 3;
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return (r + g + b) / 3;
+        };
 
-            // If brightness > 170 (light gray), use black. If < 85 (dark gray), use white
-            if (brightness > 170) {
-                return 'color: #000000';
-            } else if (brightness < 85) {
-                return 'color: #ffffff';
+        // Helper function to check if color is white/very light
+        const isWhiteOrVeryLight = (colorStr) => {
+            if (!colorStr) return false;
+            const normalized = colorStr.toLowerCase().trim();
+            // Check for white keywords
+            if (normalized === 'white' || normalized === '#fff' || normalized === '#ffffff') {
+                return true;
             }
-            return match;
+            // Check for rgb(255,255,255) or rgba(255,255,255,...)
+            if (/rgba?\(\s*255\s*,\s*255\s*,\s*255/i.test(colorStr)) {
+                return true;
+            }
+            // Check hex brightness
+            const hexMatch = colorStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness > 240; // Very light (almost white)
+            }
+            return false;
+        };
+
+        // Helper function to check if color is dark
+        const isDark = (colorStr) => {
+            if (!colorStr) return false;
+            const hexMatch = colorStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness < 85;
+            }
+            // Check for black keywords
+            const normalized = colorStr.toLowerCase().trim();
+            if (normalized === 'black' || normalized === '#000' || normalized === '#000000') {
+                return true;
+            }
+            return false;
+        };
+
+        // Helper function to check if background is light
+        const isLightBackground = (bgStr) => {
+            if (!bgStr) return false;
+            const normalized = bgStr.toLowerCase().trim();
+            // Check for white/light keywords
+            if (normalized === 'white' || normalized === '#fff' || normalized === '#ffffff' ||
+                normalized === '#f5f5f5' || normalized === '#f0f0f0' || normalized === '#e8e8e8' ||
+                normalized === '#e3f2fd' || normalized === '#fff3cd') {
+                return true;
+            }
+            // Check for rgb/rgba with high values
+            const rgbMatch = bgStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
+                const brightness = (r + g + b) / 3;
+                return brightness > 200; // Light background
+            }
+            // Check hex brightness
+            const hexMatch = bgStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness > 200; // Light background
+            }
+            return false;
+        };
+
+        // CRITICAL FIX: Detect and fix white text on white/light backgrounds in style attributes
+        fixed = fixed.replace(/style\s*=\s*["']([^"']*)["']/gi, (match, styles) => {
+            let newStyles = styles;
+            let modified = false;
+
+            // Extract background color
+            const bgMatch = styles.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+            const bgColor = bgMatch ? bgMatch[1].trim() : null;
+
+            // Extract text color
+            const colorMatch = styles.match(/color\s*:\s*([^;]+)/i);
+            const textColor = colorMatch ? colorMatch[1].trim() : null;
+
+            // Check if background is light
+            const hasLightBg = bgColor ? isLightBackground(bgColor) : false;
+
+            // Check if text is white/light
+            const hasWhiteText = textColor ? isWhiteOrVeryLight(textColor) : false;
+
+            // CRITICAL: If white text on light background, FORCE dark text
+            if (hasLightBg && hasWhiteText) {
+                newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
+                modified = true;
+                console.warn('[Sidecar AI] Fixed white-on-white: Changed white text to black on light background');
+            }
+            // If light background but no color specified, add dark color
+            else if (hasLightBg && !textColor) {
+                newStyles = newStyles + '; color: #000000 !important';
+                modified = true;
+            }
+            // If light background but light text (not white), force dark
+            else if (hasLightBg && textColor) {
+                const hexMatch = textColor.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+                if (hexMatch) {
+                    const brightness = getBrightness(hexMatch[0]);
+                    if (brightness > 170) {
+                        newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
+                        modified = true;
+                    }
+                }
+            }
+
+            // Check if background is dark
+            const hasDarkBg = bgColor ? isDark(bgColor) : false;
+            // If dark background but dark text, force light
+            if (hasDarkBg && textColor) {
+                const hexMatch = textColor.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+                if (hexMatch) {
+                    const brightness = getBrightness(hexMatch[0]);
+                    if (brightness < 85) {
+                        newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #ffffff !important');
+                        modified = true;
+                    }
+                }
+            }
+
+            return modified ? match.replace(styles, newStyles) : match;
+        });
+
+        // Fix 1: Replace white/light text colors that might be on light backgrounds
+        fixed = fixed.replace(/color\s*:\s*(white|#fff|#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))/gi, (match) => {
+            // Check context - if we're in a style with light background, this will be caught above
+            // But also fix standalone white colors that might be problematic
+            return 'color: #000000'; // Default to black, will be overridden if background is dark
         });
 
         // Fix 2: Replace rgba/rgb with low opacity or light colors
@@ -178,7 +303,7 @@ export class ResultFormatter {
             const brightness = (parseInt(r) + parseInt(g) + parseInt(b)) / 3;
             const opacity = a ? parseFloat(a) : 1.0;
 
-            // If opacity is low or color is light, use solid dark/light
+            // If opacity is low or color is light, use solid dark
             if (opacity < 0.6 || brightness > 170) {
                 return 'color: #000000';
             } else if (brightness < 85) {
@@ -187,26 +312,11 @@ export class ResultFormatter {
             return match;
         });
 
-        // Fix 3: In style attributes, if background is light, ensure text is dark
-        fixed = fixed.replace(/style\s*=\s*["']([^"']*)["']/gi, (match, styles) => {
-            // Check if background is light (contains light colors)
-            const hasLightBg = /background[^:;]*:\s*(?:rgba?\([^)]*\)|#[eEfF][a-fA-F0-9]{2}[a-fA-F0-9]{3}|#[eEfF][a-fA-F0-9]{1}|#[fF]{3,6}|#[0-9a-fA-F]{6}(?:[eEfF]{2}|[dD][eEfF]))/i.test(styles);
-
-            if (hasLightBg) {
-                // If no color specified, add dark color
-                if (!/color\s*:/i.test(styles)) {
-                    return match.replace(styles, styles + '; color: #000000 !important');
-                } else {
-                    // Replace existing color with dark if it's light
-                    return match.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
-                }
-            }
-
-            return match;
-        });
-
-        // Fix 4: Common low-contrast color names and values
+        // Fix 3: Common low-contrast color names and values
         const lowContrastColors = {
+            'white': '#000000',
+            '#fff': '#000000',
+            '#ffffff': '#000000',
             '#aaa': '#000000',
             '#bbb': '#000000',
             '#ccc': '#000000',
@@ -222,7 +332,7 @@ export class ResultFormatter {
         };
 
         for (const [badColor, goodColor] of Object.entries(lowContrastColors)) {
-            fixed = fixed.replace(new RegExp(`color\\s*:\\s*${badColor.replace('#', '\\#')}`, 'gi'), `color: ${goodColor}`);
+            fixed = fixed.replace(new RegExp(`color\\s*:\\s*${badColor.replace('#', '\\#')}\\b`, 'gi'), `color: ${goodColor}`);
         }
 
         return fixed;
@@ -346,6 +456,13 @@ export class ResultFormatter {
             } else {
                 messageElement.appendChild(sidecarContainer);
             }
+
+            // Mark as recently restored to protect from cleanup
+            this.markContainerAsRestored(sidecarContainer);
+        } else if (sidecarContainer.style.display === 'none') {
+            // If container exists but is hidden (e.g. from previous swipe), show it
+            sidecarContainer.style.display = '';
+            this.markContainerAsRestored(sidecarContainer);
         }
 
         // Check if loading indicator already exists for this addon - avoid duplicates
@@ -472,6 +589,9 @@ export class ResultFormatter {
                 } else {
                     messageElement.appendChild(sidecarContainer);
                 }
+
+                // Mark as recently restored to protect from cleanup
+                this.markContainerAsRestored(sidecarContainer);
             }
 
             // Check if error indicator already exists for this addon - remove old one
@@ -559,6 +679,15 @@ export class ResultFormatter {
                 } else {
                     messageElement.appendChild(sidecarContainer);
                 }
+
+                // Mark as recently restored to protect from cleanup
+                this.markContainerAsRestored(sidecarContainer);
+            } else {
+                // Also mark existing containers as restored when updating
+                if (sidecarContainer.style.display === 'none') {
+                    sidecarContainer.style.display = '';
+                }
+                this.markContainerAsRestored(sidecarContainer);
             }
 
             // Check if addon section already exists - if so, just update it
@@ -794,25 +923,52 @@ export class ResultFormatter {
         }
 
         try {
-            // Initialize message.extra if it doesn't exist
-            if (!message.extra) {
-                message.extra = {};
+            // Get current swipe_id to store result per variant
+            const swipeId = message.swipe_id ?? 0;
+
+            // Initialize swipe_info if needed (for compatibility with SillyTavern's swipe system)
+            if (!Array.isArray(message.swipe_info)) {
+                message.swipe_info = [];
             }
 
-            // Initialize sidecar results storage
-            if (!message.extra.sidecarResults) {
-                message.extra.sidecarResults = {};
+            // Initialize swipe_info[swipeId] if needed
+            if (!message.swipe_info[swipeId]) {
+                message.swipe_info[swipeId] = {
+                    send_date: message.send_date,
+                    gen_started: message.gen_started,
+                    gen_finished: message.gen_finished,
+                    extra: {}
+                };
             }
 
-            // Store result with timestamp and metadata
-            message.extra.sidecarResults[addon.id] = {
+            // Initialize extra for this swipe variant
+            if (!message.swipe_info[swipeId].extra) {
+                message.swipe_info[swipeId].extra = {};
+            }
+
+            // Initialize sidecar results storage for this swipe variant
+            if (!message.swipe_info[swipeId].extra.sidecarResults) {
+                message.swipe_info[swipeId].extra.sidecarResults = {};
+            }
+
+            // Store result with timestamp and metadata IN THE CURRENT SWIPE VARIANT
+            message.swipe_info[swipeId].extra.sidecarResults[addon.id] = {
                 result: result,
                 addonName: addon.name,
                 timestamp: Date.now(),
                 formatStyle: addon.formatStyle || 'html-css'
             };
 
-            console.log(`[Sidecar AI] Saved result in message.extra for ${addon.name} (${result.length} chars)`);
+            // Also update message.extra for backward compatibility and immediate access
+            if (!message.extra) {
+                message.extra = {};
+            }
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
+            }
+            message.extra.sidecarResults[addon.id] = message.swipe_info[swipeId].extra.sidecarResults[addon.id];
+
+            console.log(`[Sidecar AI] Saved result for ${addon.name} in swipe variant ${swipeId} (${result.length} chars)`);
             return true;
         } catch (error) {
             console.error(`[Sidecar AI] Error saving result metadata:`, error);
@@ -821,6 +977,7 @@ export class ResultFormatter {
                 addonName: addon?.name,
                 resultLength: result?.length,
                 messageId: message?.uid || message?.id,
+                swipeId: message?.swipe_id,
                 errorMessage: error.message
             });
             return false;
@@ -895,17 +1052,31 @@ export class ResultFormatter {
             return false;
         }
 
-        // 1. Update in message.extra (modern storage)
         try {
-            if (!message.extra) {
-                message.extra = {};
+            // Get current swipe_id
+            const swipeId = message.swipe_id ?? 0;
+
+            // Initialize swipe_info if needed
+            if (!Array.isArray(message.swipe_info)) {
+                message.swipe_info = [];
             }
-            if (!message.extra.sidecarResults) {
-                message.extra.sidecarResults = {};
+            if (!message.swipe_info[swipeId]) {
+                message.swipe_info[swipeId] = {
+                    send_date: message.send_date,
+                    gen_started: message.gen_started,
+                    gen_finished: message.gen_finished,
+                    extra: {}
+                };
+            }
+            if (!message.swipe_info[swipeId].extra) {
+                message.swipe_info[swipeId].extra = {};
+            }
+            if (!message.swipe_info[swipeId].extra.sidecarResults) {
+                message.swipe_info[swipeId].extra.sidecarResults = {};
             }
 
-            // Update or create entry
-            message.extra.sidecarResults[addonId] = {
+            // Update in current swipe variant
+            message.swipe_info[swipeId].extra.sidecarResults[addonId] = {
                 result: newContent,
                 addonName: addon?.name || 'Unknown',
                 timestamp: Date.now(),
@@ -913,7 +1084,16 @@ export class ResultFormatter {
                 edited: true
             };
 
-            console.log(`[Sidecar AI] Updated result in message.extra for addon ${addonId}`);
+            // Also update message.extra for backward compatibility
+            if (!message.extra) {
+                message.extra = {};
+            }
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
+            }
+            message.extra.sidecarResults[addonId] = message.swipe_info[swipeId].extra.sidecarResults[addonId];
+
+            console.log(`[Sidecar AI] Updated result for addon ${addonId} in swipe variant ${swipeId}`);
         } catch (e) {
             console.error('[Sidecar AI] Error updating metadata:', e);
             return false;
@@ -1042,12 +1222,401 @@ export class ResultFormatter {
     }
 
     /**
+     * Check if a message element is currently visible in the viewport
+     * Handles various ways SillyTavern might hide/show messages during swipe
+     */
+    isMessageVisible(messageElement) {
+        if (!messageElement) return false;
+
+        // Check if element exists in DOM
+        if (!document.contains(messageElement)) return false;
+
+        // Check computed style for visibility
+        const style = window.getComputedStyle(messageElement);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            return false;
+        }
+
+        // Check if element is positioned off-screen (common in swipe implementations)
+        const rect = messageElement.getBoundingClientRect();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+        // If element is completely outside viewport, it's not visible
+        if (rect.right < 0 || rect.left > viewportWidth || rect.bottom < 0 || rect.top > viewportHeight) {
+            return false;
+        }
+
+        // Check if element has very large transform (moved off-screen)
+        const transform = style.transform;
+        if (transform && transform !== 'none') {
+            const matrix = new DOMMatrix(transform);
+            // If translated far off-screen (more than viewport width), consider hidden
+            if (Math.abs(matrix.e) > viewportWidth * 2 || Math.abs(matrix.f) > viewportHeight * 2) {
+                return false;
+            }
+        }
+
+        // Check if parent containers are visible
+        let parent = messageElement.parentElement;
+        while (parent && parent !== document.body) {
+            const parentStyle = window.getComputedStyle(parent);
+            if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') {
+                return false;
+            }
+
+            // Check if parent is off-screen too
+            const parentRect = parent.getBoundingClientRect();
+            if (parentRect.right < -100 || parentRect.left > viewportWidth + 100) {
+                return false;
+            }
+
+            parent = parent.parentElement;
+        }
+
+        // Check for SillyTavern-specific classes that might indicate hidden state
+        // Some implementations use classes like 'hidden', 'inactive', 'swiped-away', etc.
+        const hiddenClasses = ['hidden', 'inactive', 'swiped-away', 'swipe-hidden', 'off-screen'];
+        if (hiddenClasses.some(cls => messageElement.classList.contains(cls))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the currently active/visible message ID
+     * In swipe mode, this should be the message currently in viewport
+     */
+    getActiveMessageId() {
+        try {
+            // Try to find message in viewport center
+            const viewportCenter = window.innerHeight / 2;
+            const messages = document.querySelectorAll('[id^="mes_"], [data-message-id]');
+
+            let activeMessage = null;
+            let minDistance = Infinity;
+
+            messages.forEach(msg => {
+                const rect = msg.getBoundingClientRect();
+                // Check if message is in viewport
+                if (rect.top <= viewportCenter && rect.bottom >= viewportCenter) {
+                    const distance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        activeMessage = msg;
+                    }
+                }
+            });
+
+            if (activeMessage) {
+                return activeMessage.id || activeMessage.getAttribute('data-message-id');
+            }
+
+            // Fallback: find message closest to viewport top
+            let closestToTop = null;
+            let closestTop = Infinity;
+            messages.forEach(msg => {
+                const rect = msg.getBoundingClientRect();
+                if (rect.top >= 0 && rect.top < closestTop) {
+                    closestTop = rect.top;
+                    closestToTop = msg;
+                }
+            });
+
+            if (closestToTop) {
+                return closestToTop.id || closestToTop.getAttribute('data-message-id');
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[Sidecar AI] Error getting active message ID:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Clean up orphaned sidecar containers (containers without a parent message element)
+     * This is a minimal cleanup that only removes truly orphaned containers.
+     * We no longer clean up based on visibility since swipe navigation is handled by events.
+     */
+    cleanupHiddenSidecarCards() {
+        try {
+            // Find all sidecar containers
+            const allContainers = document.querySelectorAll('.sidecar-container');
+            let cleanedCount = 0;
+
+            allContainers.forEach(container => {
+                // Find the parent message element
+                let messageElement = container.closest('[id^="mes_"], [data-message-id]');
+
+                // If not found, try to find by traversing up
+                if (!messageElement) {
+                    let parent = container.parentElement;
+                    while (parent && parent !== document.body) {
+                        if (parent.id && parent.id.startsWith('mes_')) {
+                            messageElement = parent;
+                            break;
+                        }
+                        if (parent.getAttribute('data-message-id')) {
+                            messageElement = parent;
+                            break;
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+
+                // Only remove if we can't find the message element (truly orphaned)
+                if (!messageElement) {
+                    container.remove();
+                    cleanedCount++;
+                    console.log(`[Sidecar AI] Cleaned up orphaned sidecar container`);
+                }
+            });
+
+            if (cleanedCount > 0) {
+                console.log(`[Sidecar AI] Cleaned up ${cleanedCount} orphaned sidecar container(s)`);
+            }
+
+            return cleanedCount;
+        } catch (error) {
+            console.error('[Sidecar AI] Error cleaning up orphaned sidecar cards:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Mark a container as recently restored (protect from cleanup)
+     */
+    markContainerAsRestored(container) {
+        if (!this._restoredContainers) {
+            this._restoredContainers = new Map();
+        }
+        this._restoredContainers.set(container, Date.now());
+    }
+
+    /**
+     * Hide all sidecar cards
+     * Used when swiping to a new message or when generation starts
+     */
+    hideAllSidecarCards() {
+        try {
+            const allContainers = document.querySelectorAll('.sidecar-container');
+            let hiddenCount = 0;
+            allContainers.forEach(container => {
+                // Use display: none instead of remove() so we can restore later
+                if (container.style.display !== 'none') {
+                    container.style.display = 'none';
+                    hiddenCount++;
+                }
+            });
+            if (hiddenCount > 0) {
+                console.log(`[Sidecar AI] Hid ${hiddenCount} sidecar container(s)`);
+            }
+            return hiddenCount;
+        } catch (error) {
+            console.error('[Sidecar AI] Error hiding all sidecar cards:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Handle swipe variant change: hide current sidecars, restore sidecars for the new variant
+     * @param {number} messageIndex - The message index that was swiped
+     * @param {Object} addonManager - Addon manager to get enabled addons
+     */
+    /**
+     * Handle swipe variant change: Clear container and render sidecars for the new variant
+     * @param {number} messageIndex - The message index that was swiped
+     * @param {Object} addonManager - Addon manager to get enabled addons
+     */
+    async handleSwipeVariantChange(messageIndex, addonManager) {
+        try {
+            console.log(`[Sidecar AI] Handling swipe variant change for message ${messageIndex}`);
+
+            // Get the message from chat log
+            const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
+            if (messageIndex < 0 || messageIndex >= chatLog.length) {
+                return;
+            }
+
+            const message = chatLog[messageIndex];
+            const messageId = this.getMessageId(message);
+            const swipeId = message.swipe_id ?? 0;
+
+            console.log(`[Sidecar AI] Message ${messageIndex} is now on swipe variant ${swipeId}`);
+
+            // Find the message element
+            const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(messageIndex);
+            if (!messageElement) {
+                return;
+            }
+
+            // Find the sidecar container
+            const sidecarContainer = messageElement.querySelector('.sidecar-container');
+            if (sidecarContainer) {
+                // CLEAR the container contents completely
+                // This removes any sidecars from the previous variant
+                sidecarContainer.innerHTML = '';
+                sidecarContainer.style.display = ''; // Ensure it's visible
+
+                // If this is a new swipe (empty), we leave it empty.
+                // If it's an existing swipe with stored results, we render them below.
+            }
+
+            // Check if this swipe variant has saved sidecars
+            const hasStoredResults = message.swipe_info?.[swipeId]?.extra?.sidecarResults;
+
+            if (hasStoredResults && Object.keys(hasStoredResults).length > 0) {
+                console.log(`[Sidecar AI] Found ${Object.keys(hasStoredResults).length} stored sidecar(s) for variant ${swipeId}`);
+
+                // Restore sidecars for this variant
+                const allAddons = addonManager.getAllAddons();
+
+                for (const addon of allAddons) {
+                    if (!addon.enabled) continue;
+
+                    const stored = hasStoredResults[addon.id];
+                    if (!stored) continue;
+
+                    if (addon.responseLocation === 'outsideChatlog') {
+                        const formatted = this.formatResult(addon, stored.result, message, true);
+                        this.injectIntoDropdown(addon, formatted, messageId, messageElement);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Error handling swipe variant change:', error);
+        }
+    }
+
+    /**
+     * Show sidecar cards for a specific message
+     * Used after initial restoration to ensure cards are visible
+     * @param {string|number} messageId - The message ID or index to show sidecars for
+     */
+    showSidecarCardsForMessage(messageId) {
+        try {
+            // If messageId is a number (index), get the actual message from chat log
+            let targetMessageId = messageId;
+            if (typeof messageId === 'number') {
+                const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
+                if (messageId >= 0 && messageId < chatLog.length) {
+                    const message = chatLog[messageId];
+                    targetMessageId = this.getMessageId(message);
+                } else {
+                    console.warn(`[Sidecar AI] Invalid message index: ${messageId}`);
+                    return 0;
+                }
+            }
+
+            // Find the message element
+            const messageElement = this.findMessageElement(targetMessageId);
+            if (!messageElement) {
+                return 0;
+            }
+
+            // Find all sidecar containers for this message
+            const containers = messageElement.querySelectorAll('.sidecar-container');
+            let shownCount = 0;
+            containers.forEach(container => {
+                if (container.style.display === 'none') {
+                    container.style.display = '';
+                    shownCount++;
+                    // Mark as restored to protect from cleanup
+                    this.markContainerAsRestored(container);
+                }
+            });
+
+            if (shownCount > 0) {
+                console.log(`[Sidecar AI] Showed ${shownCount} sidecar container(s) for message ${targetMessageId}`);
+            }
+
+            return shownCount;
+        } catch (error) {
+            console.error('[Sidecar AI] Error showing sidecar cards for message:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Handle message swipe event
+     * Hides all sidecar cards, then shows only the cards for the swiped-to message
+     * Also restores blocks for that message if they haven't been restored yet
+     * @param {number} messageIndex - The index of the message that was swiped to
+     * @param {Object} addonManager - Optional addon manager to restore blocks if needed
+     */
+    async handleMessageSwiped(messageIndex, addonManager = null) {
+        try {
+            console.log(`[Sidecar AI] Message swiped to index: ${messageIndex}`);
+
+            // First, hide all sidecar cards
+            this.hideAllSidecarCards();
+
+            // Get the message from chat log
+            const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
+            if (messageIndex < 0 || messageIndex >= chatLog.length) {
+                console.warn(`[Sidecar AI] Invalid message index for swipe: ${messageIndex}`);
+                return;
+            }
+
+            const message = chatLog[messageIndex];
+            const messageId = this.getMessageId(message);
+
+            // Wait a bit for DOM to update after swipe
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // If addonManager is provided, restore blocks for this message if they exist in metadata
+            // but haven't been restored yet
+            const swipeId = message.swipe_id ?? 0;
+            const sidecarResults = message.swipe_info?.[swipeId]?.extra?.sidecarResults || message.extra?.sidecarResults;
+
+            if (addonManager && sidecarResults) {
+                const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(messageIndex);
+                if (messageElement) {
+                    const allAddons = addonManager.getAllAddons();
+                    for (const addon of allAddons) {
+                        if (!addon.enabled) continue;
+
+                        const stored = sidecarResults[addon.id];
+                        if (!stored) continue;
+
+                        // Check if block already exists
+                        const existingBlock = messageElement.querySelector(`.addon_section-${addon.id}`);
+                        if (!existingBlock && addon.responseLocation === 'outsideChatlog') {
+                            // Restore the dropdown block
+                            const formatted = this.formatResult(addon, stored.result, message, true);
+                            const success = this.injectIntoDropdown(addon, formatted, messageId, messageElement);
+                            if (success) {
+                                const container = messageElement.querySelector('.sidecar-container');
+                                if (container) {
+                                    this.markContainerAsRestored(container);
+                                }
+                                console.log(`[Sidecar AI] Restored sidecar for ${addon.name} on swipe to message ${messageIndex}`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Show sidecar cards for the swiped-to message
+            this.showSidecarCardsForMessage(messageIndex);
+        } catch (error) {
+            console.error('[Sidecar AI] Error handling message swipe:', error);
+        }
+    }
+
+    /**
      * Restore all blocks from saved metadata when chat loads
      * Scans chat log and restores UI blocks for all saved results
+     * Only restores blocks for currently visible messages
      */
     async restoreBlocksFromMetadata(addonManager) {
         try {
             console.log('[Sidecar AI] Restoring blocks from metadata...');
+
+            // Don't cleanup before restoration - let restoration complete first
+            // Cleanup will happen after a delay via periodic cleanup
 
             const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
             if (!Array.isArray(chatLog) || chatLog.length === 0) {
@@ -1070,18 +1639,34 @@ export class ResultFormatter {
 
                 const messageId = this.getMessageId(message);
 
+                // Find message element
+                const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(i);
+                if (!messageElement) {
+                    continue; // Skip if message element not found
+                }
+
+                // On first load, restore all messages (cleanup will handle hiding later)
+                // Only skip if message is clearly not in DOM
+                if (!document.contains(messageElement)) {
+                    continue;
+                }
+
                 // Check each add-on for saved results in this message
+                // Check current swipe variant first, then fall back to message.extra
+                const swipeId = message.swipe_id ?? 0;
+                const sidecarResults = message.swipe_info?.[swipeId]?.extra?.sidecarResults || message.extra?.sidecarResults;
+
                 for (const addon of allAddons) {
                     if (!addon.enabled) {
                         continue; // Skip disabled add-ons
                     }
 
-                    // Get result from message.extra.sidecarResults
-                    if (!message.extra?.sidecarResults?.[addon.id]) {
+                    // Get result from current swipe variant or message.extra
+                    if (!sidecarResults?.[addon.id]) {
                         continue;
                     }
 
-                    const stored = message.extra.sidecarResults[addon.id];
+                    const stored = sidecarResults[addon.id];
                     const result = stored.result;
 
                     if (result && result.length > 0 && result.length < 100000) {
@@ -1089,43 +1674,42 @@ export class ResultFormatter {
                             // Restore the block based on response location
                             if (addon.responseLocation === 'chatHistory') {
                                 // For chatHistory, check if result is already in the message content
-                                const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(i);
-                                if (messageElement) {
-                                    const contentArea = messageElement.querySelector('.mes_text') ||
-                                        messageElement.querySelector('.message') ||
-                                        messageElement;
+                                const contentArea = messageElement.querySelector('.mes_text') ||
+                                    messageElement.querySelector('.message') ||
+                                    messageElement;
 
-                                    if (contentArea) {
-                                        // Check if result is already displayed
-                                        const resultTag = `<!-- addon-result:${addon.id} -->`;
-                                        const hasResult = contentArea.innerHTML &&
-                                            (contentArea.innerHTML.includes(resultTag) ||
-                                                contentArea.innerHTML.includes(result.substring(0, 50)));
+                                if (contentArea) {
+                                    // Check if result is already displayed
+                                    const resultTag = `<!-- addon-result:${addon.id} -->`;
+                                    const hasResult = contentArea.innerHTML &&
+                                        (contentArea.innerHTML.includes(resultTag) ||
+                                            contentArea.innerHTML.includes(result.substring(0, 50)));
 
-                                        if (!hasResult) {
-                                            // Restore the formatted result
-                                            const formatted = this.formatResult(addon, result, message, false);
-                                            this.injectIntoChatHistory(messageId, addon, formatted);
-                                            restoredCount++;
-                                            console.log(`[Sidecar AI] Restored chatHistory block for ${addon.name} in message ${messageId}`);
-                                        }
+                                    if (!hasResult) {
+                                        // Restore the formatted result
+                                        const formatted = this.formatResult(addon, result, message, false);
+                                        this.injectIntoChatHistory(messageId, addon, formatted);
+                                        restoredCount++;
+                                        console.log(`[Sidecar AI] Restored chatHistory block for ${addon.name} in message ${messageId}`);
                                     }
                                 }
                             } else {
                                 // For outsideChatlog, restore dropdown UI
-                                const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(i);
-                                if (messageElement) {
-                                    // Check if block already exists
-                                    const existingBlock = messageElement.querySelector(`.addon_section-${addon.id}`);
-                                    if (!existingBlock) {
-                                        // Restore the dropdown block
-                                        const formatted = this.formatResult(addon, result, message, true);
-                                        // Pass the found messageElement to avoid re-lookup failure
-                                        const success = this.injectIntoDropdown(addon, formatted, messageId, messageElement);
-                                        if (success) {
-                                            restoredCount++;
-                                            console.log(`[Sidecar AI] Restored dropdown block for ${addon.name} in message ${messageId}`);
+                                // Check if block already exists
+                                const existingBlock = messageElement.querySelector(`.addon_section-${addon.id}`);
+                                if (!existingBlock) {
+                                    // Restore the dropdown block
+                                    const formatted = this.formatResult(addon, result, message, true);
+                                    // Pass the found messageElement to avoid re-lookup failure
+                                    const success = this.injectIntoDropdown(addon, formatted, messageId, messageElement);
+                                    if (success) {
+                                        // Mark the container as restored to protect from immediate cleanup
+                                        const container = messageElement.querySelector('.sidecar-container');
+                                        if (container) {
+                                            this.markContainerAsRestored(container);
                                         }
+                                        restoredCount++;
+                                        console.log(`[Sidecar AI] Restored dropdown block for ${addon.name} in message ${messageId}`);
                                     }
                                 }
                             }
@@ -1140,6 +1724,39 @@ export class ResultFormatter {
             return restoredCount;
         } catch (error) {
             console.error('[Sidecar AI] Error restoring blocks from metadata:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Show sidecar cards for the currently active message (last message in chat)
+     * Used after initial restoration to ensure cards are visible
+     */
+    showSidecarCardsForActiveMessage() {
+        try {
+            const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
+            if (!Array.isArray(chatLog) || chatLog.length === 0) {
+                return 0;
+            }
+
+            // Find the last AI message (most recent)
+            let lastMessageIndex = -1;
+            for (let i = chatLog.length - 1; i >= 0; i--) {
+                const message = chatLog[i];
+                if (message && message.mes && !message.is_user) {
+                    lastMessageIndex = i;
+                    break;
+                }
+            }
+
+            if (lastMessageIndex >= 0) {
+                console.log(`[Sidecar AI] Showing sidecar cards for active message (index ${lastMessageIndex})`);
+                return this.showSidecarCardsForMessage(lastMessageIndex);
+            }
+
+            return 0;
+        } catch (error) {
+            console.error('[Sidecar AI] Error showing sidecar cards for active message:', error);
             return 0;
         }
     }

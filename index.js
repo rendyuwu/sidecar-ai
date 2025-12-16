@@ -275,7 +275,14 @@ async function loadModules() {
         };
 
         // Restore immediately after initialization
-        restoreBlocks();
+        setTimeout(async () => {
+            await restoreBlocks();
+            // After restoration, show cards for the active message
+            // This ensures cards are visible even if GENERATION_STARTED fired and hid them
+            setTimeout(() => {
+                resultFormatter.showSidecarCardsForActiveMessage();
+            }, 200);
+        }, 500);
 
         // Also listen for chat load events if available
         if (context.eventSource && context.event_types) {
@@ -288,16 +295,48 @@ async function loadModules() {
 
             chatLoadEvents.forEach(eventType => {
                 if (eventType) {
-                    context.eventSource.on(eventType, () => {
+                    context.eventSource.on(eventType, async () => {
                         console.log(`[Sidecar AI] Chat load event detected: ${eventType}`);
-                        // Delay restoration to ensure DOM is updated
-                        setTimeout(() => {
-                            resultFormatter.restoreBlocksFromMetadata(addonManager);
+                        // Restore blocks for loaded chat
+                        // Note: We don't call cleanupHiddenSidecarCards() here anymore
+                        // because swipe navigation is handled by MESSAGE_SWIPED events
+                        setTimeout(async () => {
+                            await resultFormatter.restoreBlocksFromMetadata(addonManager);
+                            // After restoration, show cards for the active message
+                            setTimeout(() => {
+                                resultFormatter.showSidecarCardsForActiveMessage();
+                            }, 200);
                         }, 500);
                     });
                 }
             });
+
+            // Listen for message swipe events
+            // MESSAGE_SWIPED fires when switching between response variants (swipe_id) of the same message
+            // Each message can have multiple response variants, and sidecars are stored per variant
+            const swipeEvent = context.event_types.MESSAGE_SWIPED || 'MESSAGE_SWIPED';
+            if (swipeEvent) {
+                context.eventSource.on(swipeEvent, async (messageIndex) => {
+                    console.log(`[Sidecar AI] Message swipe event detected: ${swipeEvent}`, messageIndex);
+                    if (typeof messageIndex === 'number') {
+                        // Handle swipe: hide current sidecars, then restore for the new variant
+                        await resultFormatter.handleSwipeVariantChange(messageIndex, addonManager);
+                    } else {
+                        console.warn('[Sidecar AI] MESSAGE_SWIPED event did not provide message index');
+                    }
+                });
+                console.log(`[Sidecar AI] Registered listener for ${swipeEvent}`);
+            }
+
+            // Note: We no longer hide cards on GENERATION_STARTED
+            // Cards are only hidden on swipe (MESSAGE_SWIPED) or when message is regenerated
+            // This ensures cards stay visible unless explicitly swiped away
         }
+
+        // Note: Periodic cleanup, scroll cleanup, touch cleanup, and mutation observer cleanup
+        // have been removed since we now use event-based handling:
+        // - MESSAGE_SWIPED event handles swipe navigation
+        // - GENERATION_STARTED event handles new AI response requests
 
         // Fallback: Use MutationObserver to detect when chat messages are rendered
         const chatContainer = document.querySelector('#chat_container') ||
@@ -310,8 +349,15 @@ async function loadModules() {
                 // Only restore once when messages first appear
                 if (!hasRestored && chatContainer.querySelectorAll('.mes, .message').length > 0) {
                     hasRestored = true;
-                    setTimeout(() => {
-                        resultFormatter.restoreBlocksFromMetadata(addonManager);
+                    setTimeout(async () => {
+                        // Restore blocks for initial chat load
+                        // Note: We don't call cleanupHiddenSidecarCards() here anymore
+                        // because swipe navigation is handled by MESSAGE_SWIPED events
+                        await resultFormatter.restoreBlocksFromMetadata(addonManager);
+                        // After restoration, show cards for the active message
+                        setTimeout(() => {
+                            resultFormatter.showSidecarCardsForActiveMessage();
+                        }, 200);
                     }, 1000);
                     // Stop observing after first restoration
                     observer.disconnect();
@@ -325,10 +371,17 @@ async function loadModules() {
 
             // Also check immediately in case messages are already loaded
             if (chatContainer.querySelectorAll('.mes, .message').length > 0) {
-                setTimeout(() => {
+                setTimeout(async () => {
                     if (!hasRestored) {
                         hasRestored = true;
-                        resultFormatter.restoreBlocksFromMetadata(addonManager);
+                        // Restore blocks for already-loaded messages
+                        // Note: We don't call cleanupHiddenSidecarCards() here anymore
+                        // because swipe navigation is handled by MESSAGE_SWIPED events
+                        await resultFormatter.restoreBlocksFromMetadata(addonManager);
+                        // After restoration, show cards for the active message
+                        setTimeout(() => {
+                            resultFormatter.showSidecarCardsForActiveMessage();
+                        }, 200);
                     }
                 }, 1500);
             }
