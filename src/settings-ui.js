@@ -1070,6 +1070,28 @@ export class SettingsUI {
                                 default: false
                             });
                         });
+
+                        // Sort by provider name (company) first, then alphabetically by model name
+                        models.sort((a, b) => {
+                            // Extract provider name (part before /) or use empty string
+                            const getProvider = (id) => {
+                                const parts = id.split('/');
+                                return parts.length > 1 ? parts[0].toLowerCase() : '';
+                            };
+
+                            const providerA = getProvider(a.value);
+                            const providerB = getProvider(b.value);
+
+                            // First sort by provider name
+                            if (providerA !== providerB) {
+                                return providerA.localeCompare(providerB);
+                            }
+
+                            // If same provider, sort by model name/id alphabetically
+                            return a.label.localeCompare(b.label);
+                        });
+
+                        console.log(`[Sidecar AI] Sorted ${models.length} OpenRouter models by provider and name`);
                         return models;
                     }
                 }
