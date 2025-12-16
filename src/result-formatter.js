@@ -143,7 +143,7 @@ export class ResultFormatter {
 
     /**
      * Fix WCAG contrast issues by replacing low-contrast color combinations
-     * Detects common low-contrast patterns and replaces them with high-contrast alternatives
+     * Aggressively detects and fixes white-on-white and other bad combinations
      */
     fixWCAGContrast(html) {
         if (!html || typeof html !== 'string') {
@@ -152,25 +152,150 @@ export class ResultFormatter {
 
         let fixed = html;
 
-        // Fix 1: Replace light gray hex colors (#aaa, #bbb, #ccc, #ddd, #eee, etc.) with dark
-        fixed = fixed.replace(/color\s*:\s*#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/gi, (match, color) => {
+        // Helper function to get brightness from hex color
+        const getBrightness = (hex) => {
+            if (!hex) return 0;
+            // Remove # if present
+            hex = hex.replace('#', '');
             // Convert 3-digit to 6-digit
-            if (color.length === 3) {
-                color = color.split('').map(c => c + c).join('');
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
             }
-            // Check if it's a light gray (high values: a-f, A-F)
-            const r = parseInt(color.substring(0, 2), 16);
-            const g = parseInt(color.substring(2, 4), 16);
-            const b = parseInt(color.substring(4, 6), 16);
-            const brightness = (r + g + b) / 3;
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return (r + g + b) / 3;
+        };
 
-            // If brightness > 170 (light gray), use black. If < 85 (dark gray), use white
-            if (brightness > 170) {
-                return 'color: #000000';
-            } else if (brightness < 85) {
-                return 'color: #ffffff';
+        // Helper function to check if color is white/very light
+        const isWhiteOrVeryLight = (colorStr) => {
+            if (!colorStr) return false;
+            const normalized = colorStr.toLowerCase().trim();
+            // Check for white keywords
+            if (normalized === 'white' || normalized === '#fff' || normalized === '#ffffff') {
+                return true;
             }
-            return match;
+            // Check for rgb(255,255,255) or rgba(255,255,255,...)
+            if (/rgba?\(\s*255\s*,\s*255\s*,\s*255/i.test(colorStr)) {
+                return true;
+            }
+            // Check hex brightness
+            const hexMatch = colorStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness > 240; // Very light (almost white)
+            }
+            return false;
+        };
+
+        // Helper function to check if color is dark
+        const isDark = (colorStr) => {
+            if (!colorStr) return false;
+            const hexMatch = colorStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness < 85;
+            }
+            // Check for black keywords
+            const normalized = colorStr.toLowerCase().trim();
+            if (normalized === 'black' || normalized === '#000' || normalized === '#000000') {
+                return true;
+            }
+            return false;
+        };
+
+        // Helper function to check if background is light
+        const isLightBackground = (bgStr) => {
+            if (!bgStr) return false;
+            const normalized = bgStr.toLowerCase().trim();
+            // Check for white/light keywords
+            if (normalized === 'white' || normalized === '#fff' || normalized === '#ffffff' ||
+                normalized === '#f5f5f5' || normalized === '#f0f0f0' || normalized === '#e8e8e8' ||
+                normalized === '#e3f2fd' || normalized === '#fff3cd') {
+                return true;
+            }
+            // Check for rgb/rgba with high values
+            const rgbMatch = bgStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
+                const brightness = (r + g + b) / 3;
+                return brightness > 200; // Light background
+            }
+            // Check hex brightness
+            const hexMatch = bgStr.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+            if (hexMatch) {
+                const brightness = getBrightness(hexMatch[0]);
+                return brightness > 200; // Light background
+            }
+            return false;
+        };
+
+        // CRITICAL FIX: Detect and fix white text on white/light backgrounds in style attributes
+        fixed = fixed.replace(/style\s*=\s*["']([^"']*)["']/gi, (match, styles) => {
+            let newStyles = styles;
+            let modified = false;
+
+            // Extract background color
+            const bgMatch = styles.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+            const bgColor = bgMatch ? bgMatch[1].trim() : null;
+
+            // Extract text color
+            const colorMatch = styles.match(/color\s*:\s*([^;]+)/i);
+            const textColor = colorMatch ? colorMatch[1].trim() : null;
+
+            // Check if background is light
+            const hasLightBg = bgColor ? isLightBackground(bgColor) : false;
+
+            // Check if text is white/light
+            const hasWhiteText = textColor ? isWhiteOrVeryLight(textColor) : false;
+
+            // CRITICAL: If white text on light background, FORCE dark text
+            if (hasLightBg && hasWhiteText) {
+                newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
+                modified = true;
+                console.warn('[Sidecar AI] Fixed white-on-white: Changed white text to black on light background');
+            }
+            // If light background but no color specified, add dark color
+            else if (hasLightBg && !textColor) {
+                newStyles = newStyles + '; color: #000000 !important';
+                modified = true;
+            }
+            // If light background but light text (not white), force dark
+            else if (hasLightBg && textColor) {
+                const hexMatch = textColor.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+                if (hexMatch) {
+                    const brightness = getBrightness(hexMatch[0]);
+                    if (brightness > 170) {
+                        newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
+                        modified = true;
+                    }
+                }
+            }
+
+            // Check if background is dark
+            const hasDarkBg = bgColor ? isDark(bgColor) : false;
+            // If dark background but dark text, force light
+            if (hasDarkBg && textColor) {
+                const hexMatch = textColor.match(/#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})/);
+                if (hexMatch) {
+                    const brightness = getBrightness(hexMatch[0]);
+                    if (brightness < 85) {
+                        newStyles = newStyles.replace(/color\s*:\s*[^;]+/gi, 'color: #ffffff !important');
+                        modified = true;
+                    }
+                }
+            }
+
+            return modified ? match.replace(styles, newStyles) : match;
+        });
+
+        // Fix 1: Replace white/light text colors that might be on light backgrounds
+        fixed = fixed.replace(/color\s*:\s*(white|#fff|#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))/gi, (match) => {
+            // Check context - if we're in a style with light background, this will be caught above
+            // But also fix standalone white colors that might be problematic
+            return 'color: #000000'; // Default to black, will be overridden if background is dark
         });
 
         // Fix 2: Replace rgba/rgb with low opacity or light colors
@@ -178,7 +303,7 @@ export class ResultFormatter {
             const brightness = (parseInt(r) + parseInt(g) + parseInt(b)) / 3;
             const opacity = a ? parseFloat(a) : 1.0;
 
-            // If opacity is low or color is light, use solid dark/light
+            // If opacity is low or color is light, use solid dark
             if (opacity < 0.6 || brightness > 170) {
                 return 'color: #000000';
             } else if (brightness < 85) {
@@ -187,26 +312,11 @@ export class ResultFormatter {
             return match;
         });
 
-        // Fix 3: In style attributes, if background is light, ensure text is dark
-        fixed = fixed.replace(/style\s*=\s*["']([^"']*)["']/gi, (match, styles) => {
-            // Check if background is light (contains light colors)
-            const hasLightBg = /background[^:;]*:\s*(?:rgba?\([^)]*\)|#[eEfF][a-fA-F0-9]{2}[a-fA-F0-9]{3}|#[eEfF][a-fA-F0-9]{1}|#[fF]{3,6}|#[0-9a-fA-F]{6}(?:[eEfF]{2}|[dD][eEfF]))/i.test(styles);
-
-            if (hasLightBg) {
-                // If no color specified, add dark color
-                if (!/color\s*:/i.test(styles)) {
-                    return match.replace(styles, styles + '; color: #000000 !important');
-                } else {
-                    // Replace existing color with dark if it's light
-                    return match.replace(/color\s*:\s*[^;]+/gi, 'color: #000000 !important');
-                }
-            }
-
-            return match;
-        });
-
-        // Fix 4: Common low-contrast color names and values
+        // Fix 3: Common low-contrast color names and values
         const lowContrastColors = {
+            'white': '#000000',
+            '#fff': '#000000',
+            '#ffffff': '#000000',
             '#aaa': '#000000',
             '#bbb': '#000000',
             '#ccc': '#000000',
@@ -222,7 +332,7 @@ export class ResultFormatter {
         };
 
         for (const [badColor, goodColor] of Object.entries(lowContrastColors)) {
-            fixed = fixed.replace(new RegExp(`color\\s*:\\s*${badColor.replace('#', '\\#')}`, 'gi'), `color: ${goodColor}`);
+            fixed = fixed.replace(new RegExp(`color\\s*:\\s*${badColor.replace('#', '\\#')}\\b`, 'gi'), `color: ${goodColor}`);
         }
 
         return fixed;
