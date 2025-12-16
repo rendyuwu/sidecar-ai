@@ -21,31 +21,35 @@ export class EventHandler {
             const { eventSource, event_types } = this.context;
 
             if (eventSource && event_types) {
-                // Listen for new messages
-                if (event_types.MESSAGE_RECEIVED) {
-                    eventSource.on(event_types.MESSAGE_RECEIVED, (data) => {
-                        try {
-                            this.handleMessageReceived(data);
-                        } catch (error) {
-                            console.error('[Add-Ons Extension] Error in MESSAGE_RECEIVED handler:', error);
-                        }
-                    });
-                }
+                console.log('[Sidecar AI] Available event types:', Object.keys(event_types));
+                
+                // Listen for new messages - try multiple event types
+                const messageEvents = [
+                    event_types.MESSAGE_RECEIVED,
+                    event_types.MESSAGE_SENT,
+                    event_types.CHAT_MESSAGE_RECEIVED,
+                    event_types.CHAT_MESSAGE_SENT,
+                    'MESSAGE_RECEIVED',
+                    'MESSAGE_SENT'
+                ].filter(Boolean); // Remove undefined values
 
-                // Alternative event names
-                if (event_types.MESSAGE_SENT) {
-                    eventSource.on(event_types.MESSAGE_SENT, (data) => {
-                        try {
-                            this.handleMessageReceived(data);
-                        } catch (error) {
-                            console.error('[Add-Ons Extension] Error in MESSAGE_SENT handler:', error);
-                        }
-                    });
-                }
+                messageEvents.forEach(eventType => {
+                    if (eventType) {
+                        console.log(`[Sidecar AI] Registering listener for: ${eventType}`);
+                        eventSource.on(eventType, (data) => {
+                            try {
+                                console.log(`[Sidecar AI] Event fired: ${eventType}`, data);
+                                this.handleMessageReceived(data);
+                            } catch (error) {
+                                console.error(`[Sidecar AI] Error in ${eventType} handler:`, error);
+                            }
+                        });
+                    }
+                });
 
-                console.log('[Add-Ons Extension] Event listeners registered');
+                console.log('[Sidecar AI] Event listeners registered for', messageEvents.length, 'event type(s)');
             } else {
-                console.warn('[Add-Ons Extension] Event system not available, using fallback');
+                console.warn('[Sidecar AI] Event system not available, using fallback');
                 this.setupFallbackListeners();
             }
         } catch (error) {
@@ -59,26 +63,34 @@ export class EventHandler {
      * Setup fallback listeners (polling or DOM observation)
      */
     setupFallbackListeners() {
+        console.log('[Sidecar AI] Setting up fallback listeners using MutationObserver');
+        
         // Use MutationObserver to watch for new messages
         const chatContainer = document.querySelector('#chat_container') ||
             document.querySelector('.chat_container') ||
             document.querySelector('#chat');
 
         if (chatContainer) {
+            let lastMessageCount = 0;
+            
             const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1 &&
-                            (node.classList.contains('mes') ||
-                                node.classList.contains('message') ||
-                                node.querySelector('.mes, .message'))) {
-                            // New message detected
-                            setTimeout(() => {
-                                this.handleMessageReceived({ message: node });
-                            }, 100);
-                        }
-                    });
-                });
+                // Get current message count
+                const messages = chatContainer.querySelectorAll('.mes, .message');
+                const currentCount = messages.length;
+                
+                // Only process if new message was added
+                if (currentCount > lastMessageCount) {
+                    lastMessageCount = currentCount;
+                    
+                    // Get the latest message
+                    const latestMessage = messages[messages.length - 1];
+                    if (latestMessage) {
+                        console.log('[Sidecar AI] New message detected via MutationObserver');
+                        setTimeout(() => {
+                            this.handleMessageReceived({ message: latestMessage });
+                        }, 500); // Delay to ensure message is fully rendered
+                    }
+                }
             });
 
             observer.observe(chatContainer, {
@@ -86,7 +98,13 @@ export class EventHandler {
                 subtree: true
             });
 
-            console.log('[Add-Ons Extension] Fallback listeners (MutationObserver) setup');
+            // Initialize message count
+            const messages = chatContainer.querySelectorAll('.mes, .message');
+            lastMessageCount = messages.length;
+
+            console.log('[Sidecar AI] Fallback listeners (MutationObserver) setup, initial message count:', lastMessageCount);
+        } else {
+            console.warn('[Sidecar AI] Chat container not found for fallback listeners');
         }
     }
 
@@ -95,33 +113,84 @@ export class EventHandler {
      */
     async handleMessageReceived(data) {
         if (this.isProcessing) {
+            console.log('[Sidecar AI] Already processing, skipping...');
             return;
         }
 
         try {
             this.isProcessing = true;
+            console.log('[Sidecar AI] Message received event fired', data);
 
             // Get auto-triggered add-ons
             const autoAddons = this.addonManager.getEnabledAddons()
                 .filter(addon => addon.triggerMode === 'auto');
 
+            console.log(`[Sidecar AI] Found ${autoAddons.length} auto-triggered add-on(s)`);
+            
             if (autoAddons.length === 0) {
+                console.log('[Sidecar AI] No auto-triggered add-ons found');
                 return;
             }
 
             // Get current message
-            const message = data.message || this.getLatestMessage();
+            const message = data?.message || this.getLatestMessage();
             if (!message) {
+                console.log('[Sidecar AI] No message found, skipping');
                 return;
             }
 
+            // Check if message is from AI (not user)
+            // Only trigger on AI responses, not user messages
+            const isUserMessage = this.isUserMessage(message);
+            if (isUserMessage) {
+                console.log('[Sidecar AI] Message is from user, skipping auto-trigger');
+                return;
+            }
+
+            console.log('[Sidecar AI] Processing auto-triggered add-ons for AI message');
             // Process add-ons
             await this.processAddons(autoAddons, message);
         } catch (error) {
-            console.error('[Add-Ons Extension] Error handling message:', error);
+            console.error('[Sidecar AI] Error handling message:', error);
         } finally {
             this.isProcessing = false;
         }
+    }
+
+    /**
+     * Check if message is from user (not AI)
+     */
+    isUserMessage(message) {
+        // Check various ways to identify user messages
+        if (typeof message === 'object') {
+            // Check if it's a DOM element
+            if (message.nodeType === 1) {
+                const $msg = $(message);
+                // SillyTavern uses 'user' class or 'mes_user' for user messages
+                if ($msg.hasClass('user') || $msg.hasClass('mes_user') || $msg.find('.mes_user').length > 0) {
+                    return true;
+                }
+                // Check if it has 'assistant' or 'mes_assistant' for AI messages
+                if ($msg.hasClass('assistant') || $msg.hasClass('mes_assistant') || $msg.find('.mes_assistant').length > 0) {
+                    return false;
+                }
+            }
+            
+            // Check message object properties
+            if (message.is_user !== undefined) {
+                return message.is_user === true;
+            }
+            if (message.role === 'user') {
+                return true;
+            }
+            if (message.role === 'assistant' || message.name === 'assistant') {
+                return false;
+            }
+        }
+        
+        // Default: assume it's an AI message if we can't determine
+        // (better to trigger than miss)
+        return false;
     }
 
     /**
