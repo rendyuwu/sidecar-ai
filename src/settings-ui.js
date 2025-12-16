@@ -618,8 +618,10 @@ export class SettingsUI {
 
         // For OpenRouter, use the exact selector SillyTavern uses
         const domSelectors = provider === 'openrouter' ? [
-            `#model_openrouter_select`, // Exact selector from SillyTavern
+            `#model_openrouter_select`, // Exact selector from SillyTavern (main API Connections tab)
+            `#model_openrouter_select_chat`, // Chat-specific selector
             `#openrouter_model`, // Alternative selector
+            `#openrouter_model_chat`, // Chat-specific alternative
             `#model_${provider}_select`, // Fallback
             `select[name="${provider}_model"]`, // By name attribute
             `select[id*="${provider}"][id*="model"]:not([id*="sort"]):not([id*="group"])`, // Partial match, exclude sort/group
@@ -678,12 +680,13 @@ export class SettingsUI {
                         }
                     });
 
-                    // For OpenRouter, if we got very few models (2 or less), don't return yet
-                    // Continue to next strategies to get the full list
+                    // For OpenRouter, if we got very few models (5 or less), don't return yet
+                    // Continue to check other selectors to get the full list
                     if (models.length > 0) {
-                        if (provider === 'openrouter' && models.length <= 2) {
-                            console.log(`[Sidecar AI] OpenRouter dropdown only has ${models.length} models, continuing to other strategies...`);
-                            // Don't return yet, continue to other strategies
+                        if (provider === 'openrouter' && models.length <= 5) {
+                            console.log(`[Sidecar AI] OpenRouter dropdown only has ${models.length} models, continuing to check other selectors...`);
+                            // Don't return yet, continue to check other selectors
+                            // Keep models found so far, we'll use the best source later
                         } else {
                             console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
                             return models;
@@ -715,17 +718,34 @@ export class SettingsUI {
             }
 
             if (openRouterModelsList && openRouterModelsList.length > 0) {
+                // Use openRouterModels if it has more models than what we found in DOM
+                // This is the most reliable source
+                const newModels = [];
                 openRouterModelsList.forEach(m => {
                     const id = m.id || m.name || m;
                     const name = m.name || m.id || m;
-                    models.push({
+                    newModels.push({
                         value: id,
                         label: name,
                         default: false
                     });
                 });
-                console.log('[Sidecar AI] Loaded', models.length, 'models from openRouterModels');
+
+                // If we got more models from openRouterModels, use that instead
+                if (newModels.length > models.length) {
+                    console.log(`[Sidecar AI] openRouterModels has ${newModels.length} models (more than DOM's ${models.length}), using openRouterModels`);
+                    models = newModels;
+                } else if (models.length === 0) {
+                    // If we didn't find any in DOM, use openRouterModels
+                    console.log('[Sidecar AI] No models found in DOM, using openRouterModels');
+                    models = newModels;
+                } else {
+                    console.log(`[Sidecar AI] DOM has ${models.length} models, openRouterModels has ${newModels.length}, keeping DOM models`);
+                }
+
+                // If we got models from openRouterModels (most reliable source), return them
                 if (models.length > 0) {
+                    console.log('[Sidecar AI] Loaded', models.length, 'models from openRouterModels (most reliable source)');
                     return models;
                 }
             }
