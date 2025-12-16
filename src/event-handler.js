@@ -128,7 +128,23 @@ export class EventHandler {
             console.log('[Sidecar AI] Message received event fired', data);
 
             // Get current message
-            const message = data?.message || this.getLatestMessage();
+            let message = data?.message;
+
+            // If data is just an ID (number), try to find it
+            if (!message && typeof data === 'number') {
+                message = this.resultFormatter.findMessageObject(data);
+            }
+
+            // If message still not found, get the absolute latest message from log
+            if (!message) {
+                message = this.getLastMessageFromLog();
+            }
+
+            // Fallback to AI-specific search if still nothing (unlikely but safe)
+            if (!message) {
+                message = this.getLatestMessage();
+            }
+
             if (!message) {
                 console.log('[Sidecar AI] No message found, skipping');
                 return;
@@ -578,6 +594,17 @@ export class EventHandler {
 
         // Trigger debounced save to ensure metadata persists
         this.debouncedSaveChat();
+    }
+
+    /**
+     * Get the absolute latest message from chat log (User or AI)
+     */
+    getLastMessageFromLog() {
+        const chatLog = this.contextBuilder.getChatLog();
+        if (chatLog && chatLog.length > 0) {
+            return chatLog[chatLog.length - 1];
+        }
+        return null;
     }
 
     /**
