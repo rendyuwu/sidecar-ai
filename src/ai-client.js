@@ -390,7 +390,7 @@ export class AIClient {
                     console.warn('[Sidecar AI] Error type:', typeof chatServiceError);
                     console.warn('[Sidecar AI] Error keys:', chatServiceError ? Object.keys(chatServiceError) : 'null');
                     console.warn('[Sidecar AI] Full error object:', chatServiceError);
-                    
+
                     // Log all properties to help debug
                     if (chatServiceError && typeof chatServiceError === 'object') {
                         console.warn('[Sidecar AI] Error object properties:', Object.getOwnPropertyNames(chatServiceError));
@@ -863,11 +863,11 @@ export class AIClient {
         const secretState = await this.getSecretState();
         const secretKey = this.getSecretKeyForProvider(provider);
         console.log(`[Sidecar AI] Checking secret_state for key: ${secretKey}`);
-        
+
         if (secretState && secretKey) {
             const secrets = secretState[secretKey];
             console.log(`[Sidecar AI] secret_state[${secretKey}]:`, secrets);
-            
+
             // SillyTavern checks: if (!secret_state[SECRET_KEYS.DEEPSEEK]) - so if it's truthy, key exists
             if (secrets) {
                 // secret_state can be an array of secrets or a truthy value

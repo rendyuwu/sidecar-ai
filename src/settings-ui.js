@@ -333,7 +333,43 @@ export class SettingsUI {
             }
         }
 
-        // STRATEGY 2: Check OpenRouter specific cache (openrouter_providers)
+        // STRATEGY 2: Check for openRouterModels global (from textgen-models.js)
+        // This is the most reliable source for OpenRouter models
+        if (provider === 'openrouter') {
+            // Try to access openRouterModels from window or module exports
+            let openRouterModelsList = null;
+            
+            if (typeof window !== 'undefined') {
+                // Check if it's on window
+                if (window.openRouterModels && Array.isArray(window.openRouterModels)) {
+                    openRouterModelsList = window.openRouterModels;
+                    console.log('[Sidecar AI] Found openRouterModels on window:', openRouterModelsList.length);
+                }
+                // Check if it's in SillyTavern global
+                else if (window.SillyTavern && window.SillyTavern.openRouterModels && Array.isArray(window.SillyTavern.openRouterModels)) {
+                    openRouterModelsList = window.SillyTavern.openRouterModels;
+                    console.log('[Sidecar AI] Found openRouterModels in SillyTavern:', openRouterModelsList.length);
+                }
+            }
+            
+            if (openRouterModelsList && openRouterModelsList.length > 0) {
+                openRouterModelsList.forEach(m => {
+                    const id = m.id || m.name || m;
+                    const name = m.name || m.id || m;
+                    models.push({
+                        value: id,
+                        label: name,
+                        default: false
+                    });
+                });
+                console.log('[Sidecar AI] Loaded', models.length, 'models from openRouterModels');
+                if (models.length > 0) {
+                    return models;
+                }
+            }
+        }
+
+        // STRATEGY 3: Check OpenRouter specific cache (openrouter_providers)
         if (provider === 'openrouter' && this.context && this.context.chatCompletionSettings) {
             const ccSettings = this.context.chatCompletionSettings;
             if (ccSettings.openrouter_providers) {
@@ -399,7 +435,7 @@ export class SettingsUI {
             return models;
         }
 
-        // STRATEGY 3: Iterate mainApi array (Connection Profiles)
+        // STRATEGY 4: Iterate mainApi array (Connection Profiles)
         if (this.context && this.context.mainApi && Array.isArray(this.context.mainApi)) {
             const mainApi = this.context.mainApi;
             for (const profile of mainApi) {
