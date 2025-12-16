@@ -1435,10 +1435,22 @@ export class ResultFormatter {
 
             console.log(`[Sidecar AI] Message ${messageIndex} is now on swipe variant ${swipeId}`);
 
-            // Step 1: Hide all current sidecars for this message
+            // Step 1: Check if this message currently has loading indicators
+            // If it does, new content is being generated - DON'T hide the cards
+            const messageElement = this.findMessageElement(messageId) || this.findMessageElementByIndex(messageIndex);
+            if (messageElement) {
+                const hasLoadingIndicators = messageElement.querySelectorAll('.sidecar-loading').length > 0;
+                if (hasLoadingIndicators) {
+                    console.log(`[Sidecar AI] Message ${messageIndex} has loading indicators - skipping hide (new content generating)`);
+                    // Don't hide anything, new content is being generated for this variant
+                    return;
+                }
+            }
+
+            // Step 2: Hide current sidecars for this message (only if not generating)
             this.hideSidecarCardsForMessage(messageIndex);
 
-            // Step 2: Wait a bit for DOM to update
+            // Step 3: Wait a bit for DOM to update
             await new Promise(resolve => setTimeout(resolve, 100));
 
             // Step 3: Check if this swipe variant has saved sidecars
