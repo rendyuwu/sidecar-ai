@@ -258,7 +258,7 @@ export class ResultFormatter {
                 const content = document.createElement('div');
                 content.className = 'addon-result-content';
                 content.id = `addon-content-${addon.id}`;
-                content.style.cssText = 'padding: 10px; margin-top: 8px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+                content.style.cssText = 'padding: 10px; margin-top: 8px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important; max-height: 500px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;';
 
                 addonSection.appendChild(summary);
                 addonSection.appendChild(content);
@@ -352,14 +352,14 @@ export class ResultFormatter {
         if (!element) return false;
 
         // Check for AI message classes (vanilla JS)
-        if (element.classList.contains('assistant') || 
+        if (element.classList.contains('assistant') ||
             element.classList.contains('mes_assistant') ||
             element.querySelector('.mes_assistant')) {
             return true;
         }
 
         // Check if it's NOT a user message
-        if (element.classList.contains('user') || 
+        if (element.classList.contains('user') ||
             element.classList.contains('mes_user') ||
             element.querySelector('.mes_user')) {
             return false;

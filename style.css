@@ -266,9 +266,33 @@
 .add_ons_modal_body {
     padding: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(90vh - 120px);
     background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
     background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
     color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Custom scrollbar for modal body */
+.add_ons_modal_body::-webkit-scrollbar {
+    width: 10px;
+}
+
+.add_ons_modal_body::-webkit-scrollbar-track {
+    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.1));
+    border-radius: 5px;
+}
+
+.add_ons_modal_body::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+    border-radius: 5px;
+}
+
+.add_ons_modal_body::-webkit-scrollbar-thumb:hover {
+    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.6));
 }
 
 .add_ons_modal_footer {
@@ -524,10 +548,6 @@
     transform: translateX(20px);
 }
 
-#sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider:before {
-    transform: translateX(20px);
-}
-
 /* Sidecar Container - Inside chat, after each message */
 /* NUCLEAR OPTION: Force dark theme on sidecar container - same approach as modal */
 .sidecar-container {
@@ -539,6 +559,10 @@
     background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
     color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
 }
 
 /* Override ANY inline styles */
@@ -569,6 +593,15 @@
 .sidecar-container details,
 .sidecar-container summary {
     color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Ensure proper layout and spacing */
+.sidecar-container > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Loading indicator - NUCLEAR OPTION */
@@ -642,6 +675,9 @@
     overflow: hidden !important;
     background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
     background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Override ANY inline styles */
@@ -683,6 +719,31 @@
     background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
     color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2)) !important;
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Custom scrollbar styling for result content */
+.addon_result_content::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.addon_result_content::-webkit-scrollbar-track {
+    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.1)) !important;
+    border-radius: 4px !important;
+}
+
+.addon_result_content::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4)) !important;
+    border-radius: 4px !important;
+}
+
+.addon_result_content::-webkit-scrollbar-thumb:hover {
+    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.6)) !important;
 }
 
 .addon_result_item {
@@ -722,8 +783,29 @@
     color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
 }
 
+/* Responsive design */
 @media (max-width: 600px) {
     .add_ons_form_row {
         grid-template-columns: 1fr;
+    }
+
+    .sidecar-container {
+        padding: 8px !important;
+        margin-top: 8px !important;
+    }
+
+    .addon_result_content {
+        padding: 10px !important;
+        max-height: 300px !important;
+    }
+
+    .add_ons_modal_content {
+        width: 95% !important;
+        max-height: 95vh !important;
+    }
+
+    .add_ons_modal_body {
+        padding: 15px !important;
+        max-height: calc(95vh - 100px) !important;
     }
 }
