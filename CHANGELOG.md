@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-12-16
+
+### Added
+- **Trigger Mode**: New trigger mode for sidecars that run based on keywords or regex patterns in user messages
+  - Configure triggers as keywords (case-insensitive substring) or regex patterns
+  - Sidecars queue when user message matches trigger, run on next AI response
+  - Inline regex tester in addon modal for testing patterns before saving
+  - Fallback detection ensures triggers work even if MESSAGE_SENT event isn't caught
+
+### Fixed
+- Fixed auto sidecars incorrectly triggering on user messages
+- Fixed trigger mode sidecars not being detected due to event timing issues
+- Fixed regex patterns with invalid inline flags (e.g., `(?i)`) by auto-stripping them
+- Improved message detection to correctly identify user vs AI messages
+
 ## [0.4.0] - 2025-12-16
 
 ### Fixed
