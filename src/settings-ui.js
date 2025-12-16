@@ -305,7 +305,11 @@ export class SettingsUI {
                         continue;
                     }
 
-                    console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${$el.find('option').length} options`);
+                    const optionCount = $el.find('option').length;
+                    console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${optionCount} options`);
+                    
+                    // For OpenRouter, if we only find 2 options, it might not be fully loaded yet
+                    // But let's still try to extract what we can
                     $el.find('option').each(function () {
                         const val = $(this).val();
                         const txt = $(this).text();
@@ -323,9 +327,17 @@ export class SettingsUI {
                             });
                         }
                     });
+                    
+                    // For OpenRouter, if we got very few models (2 or less), don't return yet
+                    // Continue to next strategies to get the full list
                     if (models.length > 0) {
-                        console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
-                        return models;
+                        if (provider === 'openrouter' && models.length <= 2) {
+                            console.log(`[Sidecar AI] OpenRouter dropdown only has ${models.length} models, continuing to other strategies...`);
+                            // Don't return yet, continue to other strategies
+                        } else {
+                            console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
+                            return models;
+                        }
                     }
                 }
             } catch (e) {
