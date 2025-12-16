@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-12-16
+
+### Added
+- API connection testing with "Test Connection" button
+- Automatic connection test before saving Sidecar
+- API key prefilling with "Using saved key from SillyTavern" placeholder
+- Visual error/success highlighting for form fields
+
+### Fixed
+- Fixed duplicate `apiKey` variable declarations causing syntax errors
+- Fixed CORS issues for Deepseek and other providers that block browser requests
+- Fixed connection test to use ChatCompletionService first (server-side, avoids CORS)
+- Fixed character card formatting to match SillyTavern's actual field structure
+- Fixed prompt system to automatically include context (no variables needed)
+
+### Changed
+- Simplified prompt field - now just instruction, context automatically included
+- Removed variable insertion buttons (no longer needed)
+- Improved error messages for connection failures
+- Better handling of CORS-blocking providers (requires ST API Connection config)
+
 ## [0.1.1] - 2025-12-16
 
 ### Fixed
