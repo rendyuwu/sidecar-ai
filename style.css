@@ -14,7 +14,7 @@
 
 #sidecar_ai_settings,
 #sidecar_ai_settings > *,
-#sidecar_ai_settings *:not(input):not(textarea):not(select):not(option):not(button) {
+#sidecar_ai_settings *:not(input):not(textarea):not(select):not(option) {
     background-color: #1e1e1e !important;
     background: #1e1e1e !important;
 }
@@ -213,7 +213,7 @@
 /* Force dark background on ALL modal content */
 .add_ons_modal_content,
 .add_ons_modal_content > *,
-.add_ons_modal_content *:not(input):not(textarea):not(select):not(option) {
+.add_ons_modal_content *:not(input):not(textarea):not(select):not(option):not(button) {
     background-color: #1e1e1e !important;
     background: #1e1e1e !important;
 }
@@ -725,6 +725,105 @@
     word-wrap: break-word !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
+    line-height: 1.5 !important;
+}
+
+/* Markdown Content Styling within Results */
+.addon_result_content h1 {
+    font-size: 1.25em !important;
+    font-weight: 700 !important;
+    margin: 0.5em 0 0.3em 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-bottom: 0.2em !important;
+}
+
+.addon_result_content h2 {
+    font-size: 1.15em !important;
+    font-weight: 600 !important;
+    margin: 0.5em 0 0.3em 0 !important;
+}
+
+.addon_result_content h3 {
+    font-size: 1.1em !important;
+    font-weight: 600 !important;
+    margin: 0.4em 0 0.2em 0 !important;
+}
+
+.addon_result_content h4, 
+.addon_result_content h5, 
+.addon_result_content h6 {
+    font-size: 1em !important;
+    font-weight: 600 !important;
+    margin: 0.3em 0 0.2em 0 !important;
+}
+
+.addon_result_content p {
+    margin: 0 0 0.8em 0 !important;
+    line-height: 1.5 !important;
+}
+
+.addon_result_content p:last-child {
+    margin-bottom: 0 !important;
+}
+
+.addon_result_content ul, 
+.addon_result_content ol {
+    margin: 0 0 0.8em 0 !important;
+    padding-left: 1.2em !important;
+}
+
+.addon_result_content li {
+    margin-bottom: 0.3em !important;
+}
+
+.addon_result_content blockquote {
+    margin: 0 0 0.8em 0 !important;
+    padding-left: 0.8em !important;
+    border-left: 3px solid var(--SmartThemeEmColor, #9fc) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-style: italic !important;
+}
+
+.addon_result_content code {
+    background: rgba(255, 255, 255, 0.1) !important;
+    padding: 0.1em 0.3em !important;
+    border-radius: 3px !important;
+    font-family: monospace !important;
+    font-size: 0.9em !important;
+}
+
+.addon_result_content pre {
+    background: rgba(0, 0, 0, 0.3) !important;
+    padding: 0.8em !important;
+    border-radius: 5px !important;
+    overflow-x: auto !important;
+    margin: 0 0 0.8em 0 !important;
+}
+
+.addon_result_content pre code {
+    background: transparent !important;
+    padding: 0 !important;
+    color: inherit !important;
+}
+
+.addon_result_content strong {
+    font-weight: 700 !important;
+    color: #fff !important;
+}
+
+.addon_result_content a {
+    color: var(--SmartThemeEmColor, #9fc) !important;
+    text-decoration: none !important;
+}
+
+.addon_result_content a:hover {
+    text-decoration: underline !important;
+}
+
+.addon_result_content hr {
+    border: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    margin: 1em 0 !important;
 }
 
 /* Custom scrollbar styling for result content */
