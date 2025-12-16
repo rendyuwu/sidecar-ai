@@ -243,20 +243,37 @@ export class SettingsUI {
         // SillyTavern stores models in connection profiles or API settings
         let models = [];
 
+        console.log('[Sidecar AI] Loading models for provider:', provider);
+        console.log('[Sidecar AI] Context keys:', this.context ? Object.keys(this.context) : 'no context');
+
         // Method 1: Try connection profiles (most common in ST)
         if (this.context && this.context.connection_profiles) {
-            // Look for profiles matching the provider
+            console.log('[Sidecar AI] Found connection_profiles:', Object.keys(this.context.connection_profiles));
             const profiles = Object.values(this.context.connection_profiles || {});
             for (const profile of profiles) {
-                if (profile && profile.api_provider === provider) {
-                    // Check if profile has model list
-                    if (profile.models && Array.isArray(profile.models)) {
-                        models = profile.models.map(m => ({
-                            value: m.id || m.name || m,
-                            label: m.name || m.label || m.id || m,
-                            default: m.default || false
-                        }));
-                        if (models.length > 0) break;
+                if (profile) {
+                    console.log('[Sidecar AI] Checking profile:', profile.name || 'unnamed', 'provider:', profile.api_provider);
+                    if (profile.api_provider === provider || profile.provider === provider) {
+                        // Check if profile has model list
+                        if (profile.models && Array.isArray(profile.models)) {
+                            console.log('[Sidecar AI] Found models in profile:', profile.models.length);
+                            models = profile.models.map(m => ({
+                                value: m.id || m.name || m,
+                                label: m.name || m.label || m.id || m,
+                                default: m.default || false
+                            }));
+                            if (models.length > 0) break;
+                        }
+                        // Also check model_list
+                        if (models.length === 0 && profile.model_list && Array.isArray(profile.model_list)) {
+                            console.log('[Sidecar AI] Found model_list in profile:', profile.model_list.length);
+                            models = profile.model_list.map(m => ({
+                                value: m.id || m.name || m,
+                                label: m.name || m.label || m.id || m,
+                                default: m.default || false
+                            }));
+                            if (models.length > 0) break;
+                        }
                     }
                 }
             }
@@ -264,8 +281,10 @@ export class SettingsUI {
 
         // Method 2: Try API settings directly
         if (models.length === 0 && this.context && this.context.api_settings) {
+            console.log('[Sidecar AI] Found api_settings:', Object.keys(this.context.api_settings));
             const providerSettings = this.context.api_settings[provider];
             if (providerSettings) {
+                console.log('[Sidecar AI] Provider settings keys:', Object.keys(providerSettings));
                 // Check various possible locations for models
                 if (providerSettings.models && Array.isArray(providerSettings.models)) {
                     models = providerSettings.models.map(m => ({
@@ -285,20 +304,41 @@ export class SettingsUI {
 
         // Method 3: Try to access ST's global model registry
         if (models.length === 0 && typeof window !== 'undefined') {
+            console.log('[Sidecar AI] Checking window.SillyTavern:', !!window.SillyTavern);
             // SillyTavern might expose models globally
-            if (window.SillyTavern && window.SillyTavern.models) {
-                const stModels = window.SillyTavern.models[provider];
-                if (stModels && Array.isArray(stModels)) {
-                    models = stModels.map(m => ({
-                        value: m.id || m.name || m,
-                        label: m.name || m.label || m.id || m,
-                        default: m.default || false
-                    }));
+            if (window.SillyTavern) {
+                console.log('[Sidecar AI] SillyTavern keys:', Object.keys(window.SillyTavern));
+                if (window.SillyTavern.models) {
+                    console.log('[Sidecar AI] Found SillyTavern.models:', Object.keys(window.SillyTavern.models));
+                    const stModels = window.SillyTavern.models[provider];
+                    if (stModels && Array.isArray(stModels)) {
+                        models = stModels.map(m => ({
+                            value: m.id || m.name || m,
+                            label: m.name || m.label || m.id || m,
+                            default: m.default || false
+                        }));
+                    }
+                }
+                // Try getModels function if it exists
+                if (models.length === 0 && typeof window.SillyTavern.getModels === 'function') {
+                    try {
+                        const stModels = window.SillyTavern.getModels(provider);
+                        if (stModels && Array.isArray(stModels)) {
+                            models = stModels.map(m => ({
+                                value: m.id || m.name || m,
+                                label: m.name || m.label || m.id || m,
+                                default: m.default || false
+                            }));
+                        }
+                    } catch (e) {
+                        console.log('[Sidecar AI] getModels error:', e);
+                    }
                 }
             }
 
             // Try alternative global paths
             if (models.length === 0 && window.api_providers) {
+                console.log('[Sidecar AI] Found window.api_providers:', Object.keys(window.api_providers));
                 const providerData = window.api_providers[provider];
                 if (providerData && providerData.models) {
                     models = providerData.models.map(m => ({
@@ -308,10 +348,33 @@ export class SettingsUI {
                     }));
                 }
             }
+
+            // Try connectionProfilesManager if it exists
+            if (models.length === 0 && window.connectionProfilesManager) {
+                console.log('[Sidecar AI] Found connectionProfilesManager');
+                try {
+                    const profiles = window.connectionProfilesManager.getProfiles();
+                    for (const profile of profiles || []) {
+                        if (profile && (profile.api_provider === provider || profile.provider === provider)) {
+                            if (profile.models) {
+                                models = profile.models.map(m => ({
+                                    value: m.id || m.name || m,
+                                    label: m.name || m.label || m.id || m,
+                                    default: m.default || false
+                                }));
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('[Sidecar AI] connectionProfilesManager error:', e);
+                }
+            }
         }
 
         // Method 4: Fallback to default models if nothing found
         if (models.length === 0) {
+            console.log('[Sidecar AI] Using fallback models for provider:', provider);
             const defaultModels = {
                 'openai': [
                     { value: 'gpt-4o', label: 'GPT-4o', default: false },
@@ -348,6 +411,7 @@ export class SettingsUI {
             models = defaultModels[provider] || [];
         }
 
+        console.log('[Sidecar AI] Returning', models.length, 'models for provider:', provider);
         return models;
     }
 
