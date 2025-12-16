@@ -201,6 +201,33 @@ export class EventHandler {
             // AI MESSAGE: Process auto add-ons AND queued triggers
             console.log('[Sidecar AI] Processing add-ons for AI message');
 
+            // FALLBACK: Check if previous message was a user message and process triggers
+            // This handles cases where MESSAGE_SENT event wasn't caught
+            const chatLog = this.contextBuilder.getChatLog();
+            if (chatLog && chatLog.length >= 2) {
+                const previousMessage = chatLog[chatLog.length - 2]; // Second-to-last message
+                if (previousMessage && this.isUserMessage(previousMessage)) {
+                    console.log('[Sidecar AI] Fallback: Detected user message before AI response, checking triggers');
+                    const triggerAddons = this.addonManager.getEnabledAddons()
+                        .filter(addon => addon.triggerMode === 'trigger');
+                    
+                    if (triggerAddons.length > 0) {
+                        const messageText = this.getUserMessageText(previousMessage);
+                        console.log('[Sidecar AI] Fallback: Checking triggers for user message:', messageText.substring(0, 50) + '...');
+                        
+                        triggerAddons.forEach(addon => {
+                            console.log(`[Sidecar AI] Fallback: Checking addon ${addon.name} triggers:`, addon.triggerConfig);
+                            if (this.checkTriggerMatch(messageText, addon.triggerConfig)) {
+                                console.log(`[Sidecar AI] Fallback: Trigger matched for addon: ${addon.name}`);
+                                this.queuedTriggers.add(addon.id);
+                            } else {
+                                console.log(`[Sidecar AI] Fallback: No match for addon: ${addon.name}`);
+                            }
+                        });
+                    }
+                }
+            }
+
             // 1. Get auto-triggered add-ons
             const autoAddons = this.addonManager.getEnabledAddons()
                 .filter(addon => addon.triggerMode === 'auto');
