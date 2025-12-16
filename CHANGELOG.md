@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-12-16
+
+### Fixed
+- **OpenRouter Selection Persistence**: Fixed issue where previously selected model and service provider weren't restored when editing addons
+  - Model selection now properly restored after async model loading completes
+  - Service provider selection now restored after dropdown is populated
+  - Added retry logic to handle timing edge cases
+  - Improved handling of different model ID formats
+
 ## [0.3.4] - 2025-12-16
 
 ### Fixed
@@ -190,6 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatically handles API keys, URLs, proxies, and headers via SillyTavern backend
 - Proper event namespacing to prevent conflicts with SillyTavern's native handlers
 
+[0.3.5]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.5
 [0.3.4]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.4
 [0.3.0]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.0
 [0.1.3]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.3

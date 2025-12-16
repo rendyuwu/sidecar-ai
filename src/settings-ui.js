@@ -549,7 +549,7 @@ export class SettingsUI {
         modal.show();
     }
 
-    async loadModelsForProvider(provider, retryCount = 0) {
+    async loadModelsForProvider(provider, retryCount = 0, selectedModel = null) {
         const modelSelect = $('#add_ons_form_ai_model');
         const maxRetries = 3;
         const minModelsExpected = provider === 'openrouter' ? 10 : 1;
@@ -569,7 +569,7 @@ export class SettingsUI {
             const delay = provider === 'openrouter' ? 1000 + (retryCount * 500) : 500;
             console.log(`[Sidecar AI] ${provider} only found ${models.length} models (expected at least ${minModelsExpected}), retrying (${retryCount + 1}/${maxRetries}) after ${delay}ms...`);
             setTimeout(() => {
-                this.loadModelsForProvider(provider, retryCount + 1);
+                this.loadModelsForProvider(provider, retryCount + 1, selectedModel);
             }, delay);
             return;
         }
@@ -582,10 +582,10 @@ export class SettingsUI {
 3. Network issues preventing model list fetch`);
         }
 
-        this.populateModelDropdown(modelSelect, models);
+        this.populateModelDropdown(modelSelect, models, selectedModel);
     }
 
-    populateModelDropdown(modelSelect, models) {
+    populateModelDropdown(modelSelect, models, selectedModel = null) {
         setTimeout(() => {
             modelSelect.empty();
             if (models.length === 0) {
@@ -595,13 +595,24 @@ export class SettingsUI {
             }
 
             modelSelect.append('<option value="">Select a model...</option>');
+            let foundSelected = false;
             models.forEach(model => {
                 const option = $('<option></option>').val(model.value).text(model.label);
-                if (model.default) {
+                // If a selectedModel was provided, check if this is it
+                if (selectedModel && (model.value === selectedModel || model.id === selectedModel)) {
+                    option.prop('selected', true);
+                    foundSelected = true;
+                } else if (model.default) {
                     option.prop('selected', true);
                 }
                 modelSelect.append(option);
             });
+
+            // If we have a selectedModel but didn't find it, try to set it anyway (might be a different format)
+            if (selectedModel && !foundSelected) {
+                modelSelect.val(selectedModel);
+            }
+
             $('#add_ons_model_hint').text(`Loaded ${models.length} model(s)`);
         }, 100);
     }
@@ -1234,20 +1245,41 @@ export class SettingsUI {
         $('#add_ons_form_api_url').val(addon.apiUrl || '');
 
         // Handle service provider (OpenRouter only)
-        if (addon.serviceProvider && Array.isArray(addon.serviceProvider)) {
-            $('#add_ons_form_service_provider').val(addon.serviceProvider);
+        // Must set AFTER loadServiceProviders() completes, as it clears the dropdown
+        this.toggleServiceProviderField(addon.aiProvider);
+        if (addon.aiProvider === 'openrouter') {
+            // Wait for loadServiceProviders to finish populating options, then set the value
+            // Use a small delay to ensure dropdown is populated
+            setTimeout(() => {
+                const $serviceProviderSelect = $('#add_ons_form_service_provider');
+                if (addon.serviceProvider && Array.isArray(addon.serviceProvider) && addon.serviceProvider.length > 0) {
+                    // Check if the options exist before setting value
+                    const hasOptions = $serviceProviderSelect.find('option').length > 0;
+                    if (hasOptions) {
+                        $serviceProviderSelect.val(addon.serviceProvider);
+                        console.log('[Sidecar AI] Restored service provider selection:', addon.serviceProvider);
+                    } else {
+                        // If options aren't loaded yet, try again after a longer delay
+                        setTimeout(() => {
+                            $serviceProviderSelect.val(addon.serviceProvider);
+                            console.log('[Sidecar AI] Restored service provider selection (delayed):', addon.serviceProvider);
+                        }, 200);
+                    }
+                } else {
+                    $serviceProviderSelect.val([]);
+                }
+            }, 150);
         } else {
             $('#add_ons_form_service_provider').val([]);
         }
-        this.toggleServiceProviderField(addon.aiProvider);
 
         $('#add_ons_form_result_format').val(addon.resultFormat);
         $('#add_ons_form_response_location').val(addon.responseLocation);
         $('#add_ons_form_format_style').val(addon.formatStyle || 'html-css');
 
         // Load models for provider, then set selected model
-        await this.loadModelsForProvider(addon.aiProvider);
-        $('#add_ons_form_ai_model').val(addon.aiModel);
+        // Pass the model to set so it can be applied after dropdown is populated
+        await this.loadModelsForProvider(addon.aiProvider, 0, addon.aiModel);
 
         const ctx = addon.contextSettings || {};
         $('#add_ons_form_messages_count').val(ctx.messagesCount || 10);
