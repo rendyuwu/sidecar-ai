@@ -136,20 +136,28 @@ export class ResultFormatter {
             // Update content
             const content = document.getElementById(`addon-content-${addon.id}`);
             if (content) {
+                // Clear existing content and add new result
+                content.innerHTML = '';
+                
                 // Append new result with timestamp
                 const resultDiv = document.createElement('div');
                 resultDiv.className = 'addon-result-item';
+                resultDiv.style.cssText = 'background: var(--SmartThemeBodyColor, #1e1e1e) !important; color: var(--SmartThemeBodyColor, #eee) !important;';
                 resultDiv.innerHTML = formattedResult;
 
                 const timestamp = document.createElement('div');
                 timestamp.className = 'addon-result-timestamp';
-                timestamp.textContent = new Date().toLocaleTimeString();
+                timestamp.textContent = `Generated at ${new Date().toLocaleTimeString()}`;
+                timestamp.style.cssText = 'color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.5)) !important;';
 
                 resultDiv.appendChild(timestamp);
                 content.appendChild(resultDiv);
 
                 // Auto-expand if collapsed
                 addonSection.open = true;
+                
+                // Scroll into view
+                addonSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             console.log(`[Add-Ons Extension] Injected result into dropdown for: ${addon.name}`);

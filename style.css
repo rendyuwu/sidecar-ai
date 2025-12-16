@@ -514,42 +514,91 @@
     transform: translateX(20px);
 }
 
-/* Dropdown UI */
+/* Dropdown UI - Must use !important to override any white backgrounds */
+#add-ons-dropdown-container,
 .add-ons-dropdown-container {
-    margin: 10px;
-    padding: 10px;
-    border: 1px solid var(--SmartThemeBorderColor, #ccc);
-    border-radius: 5px;
-    background: var(--SmartThemeBodyColor, #1e1e1e);
+    margin: 10px !important;
+    padding: 15px !important;
+    border: 1px solid var(--SmartThemeBorderColor, #555) !important;
+    border-radius: 5px !important;
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+#add-ons-dropdown-container *,
+.add-ons-dropdown-container * {
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
 }
 
 .addon_result_section {
-    margin-bottom: 10px;
-    border: 1px solid var(--SmartThemeBorderColor, #ccc);
-    border-radius: 5px;
-    overflow: hidden;
+    margin-bottom: 10px !important;
+    border: 1px solid var(--SmartThemeBorderColor, #555) !important;
+    border-radius: 5px !important;
+    overflow: hidden !important;
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
 }
 
 .addon_result_summary {
-    padding: 10px;
-    background: rgba(128, 128, 128, 0.1);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 12px !important;
+    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important;
+    background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
+    font-weight: 500 !important;
+    border: none !important;
 }
 
 .addon_result_summary:hover {
-    background: rgba(128, 128, 128, 0.2);
+    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
+    background-color: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
 }
 
 .addon_result_content {
-    padding: 10px;
-    display: none;
+    padding: 15px !important;
+    display: block !important;
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2)) !important;
 }
 
-.addon_result_content[aria-hidden="false"] {
-    display: block;
+.addon_result_item {
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.1)) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
+}
+
+.addon_result_item:last-child {
+    border-bottom: none !important;
+}
+
+.addon_result_timestamp {
+    font-size: 0.8em !important;
+    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.5)) !important;
+    margin-top: 8px !important;
+    font-style: italic !important;
+}
+
+/* Force dark theme on all dropdown content */
+#add-ons-dropdown-container details,
+#add-ons-dropdown-container summary,
+#add-ons-dropdown-container div,
+#add-ons-dropdown-container p,
+#add-ons-dropdown-container span {
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
 }
 
 @media (max-width: 600px) {

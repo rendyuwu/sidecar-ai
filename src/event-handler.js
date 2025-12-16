@@ -338,13 +338,19 @@ export class EventHandler {
      * Inject result based on response location setting
      */
     async injectResult(addon, response, message) {
+        console.log(`[Sidecar AI] Injecting result for ${addon.name}, location: ${addon.responseLocation}`);
         const formatted = this.resultFormatter.formatResult(addon, response, message);
         const messageId = this.resultFormatter.getMessageId(message);
 
         if (addon.responseLocation === 'chatHistory') {
+            console.log(`[Sidecar AI] Injecting into chat history for message: ${messageId}`);
             this.resultFormatter.injectIntoChatHistory(messageId, addon, formatted);
         } else {
-            this.resultFormatter.injectIntoDropdown(addon, formatted);
+            console.log(`[Sidecar AI] Injecting into dropdown for: ${addon.name}`);
+            const success = this.resultFormatter.injectIntoDropdown(addon, formatted);
+            if (!success) {
+                console.error(`[Sidecar AI] Failed to inject result into dropdown for: ${addon.name}`);
+            }
         }
     }
 
