@@ -2338,6 +2338,107 @@ Return ONLY the JSON object, properly formatted.`;
                 throw new Error('ChatCompletionService not available');
             }
 
+            // Get connection profile details
+            const profiles = this.context?.extensionSettings?.connectionManager?.profiles || [];
+            const profile = profiles.find(p => (p.id || p.name) === connectionId);
+
+            if (!profile) {
+                throw new Error('Connection profile not found');
+            }
+
+            const provider = profile.api || 'openai';
+            // Try to get model from profile, or use provider-specific defaults
+            let model = profile.model || profile.defaultModel;
+            if (!model && profile.models && Array.isArray(profile.models) && profile.models.length > 0) {
+                // Use first available model from profile
+                model = profile.models[0].id || profile.models[0].name || profile.models[0];
+            }
+
+            // For OpenRouter, validate model against real models list to avoid placeholders
+            if (provider?.toLowerCase() === 'openrouter') {
+                const realModels = this.getProviderModels('openrouter');
+                if (realModels && realModels.length > 0) {
+                    // Check if current model exists in real models list
+                    const modelExists = realModels.some(m => {
+                        const modelValue = m.value || m.id || m;
+                        return modelValue === model || modelValue === String(model);
+                    });
+
+                    // If model doesn't exist or looks like a placeholder, use a real one
+                    if (!modelExists || !model || model.includes('placeholder') || model.includes('Select')) {
+                        // Prefer common cheap models, fallback to first available
+                        const preferredModels = ['openai/gpt-4o-mini', 'openai/gpt-3.5-turbo', 'google/gemini-1.5-flash'];
+                        let foundModel = null;
+
+                        // Try to find a preferred model
+                        for (const preferred of preferredModels) {
+                            const found = realModels.find(m => {
+                                const val = m.value || m.id || m;
+                                return val === preferred || val.includes(preferred.split('/')[1]);
+                            });
+                            if (found) {
+                                foundModel = found.value || found.id || found;
+                                break;
+                            }
+                        }
+
+                        // If no preferred model found, use first real model
+                        if (!foundModel && realModels.length > 0) {
+                            foundModel = realModels[0].value || realModels[0].id || realModels[0];
+                        }
+
+                        if (foundModel) {
+                            console.log(`[Sidecar AI] OpenRouter: Replaced placeholder model "${model}" with real model "${foundModel}"`);
+                            model = foundModel;
+                        }
+                    }
+                } else {
+                    // If we can't get real models, use safe default
+                    console.warn('[Sidecar AI] Could not load OpenRouter models, using default');
+                    model = 'openai/gpt-4o-mini';
+                }
+            }
+
+            // Provider-specific defaults (only if model still not set)
+            if (!model) {
+                const defaultModels = {
+                    'openai': 'gpt-4o-mini',
+                    'openrouter': 'openai/gpt-4o-mini',
+                    'anthropic': 'claude-3-haiku-20240307',
+                    'google': 'gemini-1.5-flash',
+                    'deepseek': 'deepseek-chat',
+                    'cohere': 'command',
+                };
+                model = defaultModels[provider?.toLowerCase()] || 'gpt-4o-mini';
+            }
+
+            // Map provider to chat_completion_source (same logic as ai-client.js)
+            const getChatCompletionSource = (provider) => {
+                const sourceMap = {
+                    'openai': 'openai',
+                    'openrouter': 'openrouter',
+                    'anthropic': 'anthropic',
+                    'google': 'makersuite',
+                    'deepseek': 'deepseek',
+                    'cohere': 'cohere',
+                    'custom': 'custom',
+                };
+                return sourceMap[provider?.toLowerCase()] || 'openai';
+            };
+
+            const chatCompletionSource = getChatCompletionSource(provider);
+            const presetName = $('#ai_maker_preset').val() || undefined;
+
+            console.log('[Sidecar AI] Generating template with:', {
+                provider,
+                model,
+                chatCompletionSource,
+                presetName,
+                connectionId
+            });
+
+            // Note: If presetName is provided, SillyTavern may override model/chat_completion_source
+            // with values from the preset, which is expected behavior
             const response = await this.context.ChatCompletionService.processRequest({
                 stream: false,
                 messages: [
@@ -2346,10 +2447,12 @@ Return ONLY the JSON object, properly formatted.`;
                         content: prompt
                     }
                 ],
+                model: model,
+                chat_completion_source: chatCompletionSource,
                 max_tokens: 2048,
                 temperature: 0.7
             }, {
-                presetName: $('#ai_maker_preset').val() || undefined
+                presetName: presetName
             }, true);
 
             // Extract content

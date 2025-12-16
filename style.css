@@ -18,17 +18,16 @@
 
 /* Controls */
 .add_ons_controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, auto));
     gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
 }
 
 .add_ons_controls_left,
 .add_ons_controls_right {
-    display: flex;
-    gap: 5px;
+    display: contents;
 }
 
 /* Add-on List */

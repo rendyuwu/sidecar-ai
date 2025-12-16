@@ -508,6 +508,14 @@ Quick method: Use the built-in **🪄 AI Maker** button - just describe your ide
 
 Built with ❤️ for the SillyTavern community.
 
+## ☕ Support
+
+If you find Sidecar AI useful and want to support its development, consider buying me a coffee:
+
+**[☕ Support on Ko-fi](https://ko-fi.com/sidecarai)**
+
+Your support helps keep this project maintained and enables new features!
+
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
@@ -518,9 +526,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Issues & Bug Reports:** https://github.com/skirianov/sidecar-ai/issues
 - **SillyTavern:** https://github.com/SillyTavern/SillyTavern
 - **Community Templates:** https://github.com/skirianov/sidecar-ai/tree/main/templates/community
+- **Support on Ko-fi:** https://ko-fi.com/sidecarai
 
 ---
 
 **Need help?** Open an issue or check existing discussions!  
 **Have a cool template?** Submit a PR to `templates/community/`!  
-**Love the extension?** ⭐ Star the repo and share with friends!
+**Love the extension?** ⭐ Star the repo and share with friends!  
+**Want to support development?** [☕ Buy me a coffee on Ko-fi](https://ko-fi.com/sidecarai)

@@ -144,6 +144,9 @@ Common issues and solutions:
 - Check [Changelog](../CHANGELOG.md) for new features
 - Star ⭐ the repo if you find it useful!
 
+### Support Development
+- [☕ Support on Ko-fi](https://ko-fi.com/sidecarai) - Help keep this project maintained and enable new features!
+
 ## Need More Help?
 
 Can't find what you're looking for?
