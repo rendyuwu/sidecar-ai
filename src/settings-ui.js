@@ -285,7 +285,15 @@ export class SettingsUI {
             '#openrouter_sort_models_chat'
         ];
 
-        const domSelectors = [
+        // For OpenRouter, use the exact selector SillyTavern uses
+        const domSelectors = provider === 'openrouter' ? [
+            `#model_openrouter_select`, // Exact selector from SillyTavern
+            `#openrouter_model`, // Alternative selector
+            `#model_${provider}_select`, // Fallback
+            `select[name="${provider}_model"]`, // By name attribute
+            `select[id*="${provider}"][id*="model"]:not([id*="sort"]):not([id*="group"])`, // Partial match, exclude sort/group
+            `select[id*="model"][id*="${provider}"]:not([id*="sort"]):not([id*="group"])` // Reverse partial match, exclude sort/group
+        ] : [
             `#model_${provider}_select`, // Most common format (e.g., #model_openrouter_select)
             `#model_${provider}`, // Alternative format
             `#${provider}_model`, // Another alternative
@@ -970,23 +978,33 @@ export class SettingsUI {
         const isUsingSTKey = apiKeyField.attr('data-using-st-key') === 'true' ||
             apiKey === 'Using saved key from SillyTavern';
 
-        // If using ST's saved key, get it from ST settings
-        if (isUsingSTKey) {
-            if (this.aiClient) {
-                apiKey = await this.aiClient.getProviderApiKey(provider);
-            } else {
-                apiKey = null;
+        // Get service provider for OpenRouter
+        const serviceProvider = provider === 'openrouter'
+            ? ($('#add_ons_form_service_provider').val() || [])
+            : [];
+
+        // If using ST's saved key, we don't need to fetch it - testConnection will use ChatCompletionService
+        // Only validate that a key exists (for UI prefilling check)
+        if (!isUsingSTKey) {
+            apiKey = apiKey.trim();
+            // Validate API key is available
+            if (!apiKey || apiKey.trim() === '') {
+                alert('API Key is required. Please enter your API key or configure it in SillyTavern\'s API Connection settings.');
+                $('#add_ons_form_api_key').focus();
+                this.highlightError('#add_ons_form_api_key');
+                return;
             }
         } else {
-            apiKey = apiKey.trim();
-        }
-
-        // Validate API key is available
-        if (!apiKey || apiKey.trim() === '') {
-            alert('API Key is required. Please enter your API key or configure it in SillyTavern\'s API Connection settings.');
-            $('#add_ons_form_api_key').focus();
-            this.highlightError('#add_ons_form_api_key');
-            return;
+            // Check if key exists in ST (without fetching to avoid 403)
+            const hasKey = await this.aiClient.hasProviderApiKey(provider);
+            if (!hasKey) {
+                alert('API Key is required. Please configure it in SillyTavern\'s API Connection settings.');
+                $('#add_ons_form_api_key').focus();
+                this.highlightError('#add_ons_form_api_key');
+                return;
+            }
+            // Set to empty string - testConnection will use ChatCompletionService when isUsingSTKey=true
+            apiKey = '';
         }
 
         // Test connection before saving
@@ -999,7 +1017,16 @@ export class SettingsUI {
             this.clearErrors();
 
             if (this.aiClient) {
-                const testResult = await this.aiClient.testConnection(provider, model, apiKey.trim(), apiUrl);
+                // Pass isUsingSTKey and serviceProvider to testConnection
+                // When isUsingSTKey=true, testConnection will use ChatCompletionService without fetching the key
+                const testResult = await this.aiClient.testConnection(
+                    provider,
+                    model,
+                    apiKey,
+                    apiUrl,
+                    serviceProvider,
+                    isUsingSTKey
+                );
 
                 if (!testResult.success) {
                     alert(`✗ Cannot save: Connection test failed.\n\n${testResult.message}\n\nPlease check your API key, model, and endpoint settings.`);
