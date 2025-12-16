@@ -387,18 +387,58 @@ export class AIClient {
                     return { success: true, message: 'Connection successful' };
                 } catch (chatServiceError) {
                     console.warn('[Sidecar AI] ChatCompletionService test failed:', chatServiceError);
+                    console.warn('[Sidecar AI] Error type:', typeof chatServiceError);
+                    console.warn('[Sidecar AI] Error keys:', chatServiceError ? Object.keys(chatServiceError) : 'null');
 
                     // Extract error message properly
                     let errorMsg = '';
                     if (chatServiceError && typeof chatServiceError === 'object') {
-                        // Try to extract meaningful error message
-                        errorMsg = chatServiceError.message || 
-                                  chatServiceError.error?.message || 
-                                  chatServiceError.error?.error?.message ||
-                                  (chatServiceError.error ? JSON.stringify(chatServiceError.error) : '') ||
-                                  String(chatServiceError);
+                        // Try multiple ways to extract error message
+                        if (chatServiceError.message) {
+                            errorMsg = chatServiceError.message;
+                        } else if (chatServiceError.error) {
+                            if (typeof chatServiceError.error === 'string') {
+                                errorMsg = chatServiceError.error;
+                            } else if (chatServiceError.error.message) {
+                                errorMsg = chatServiceError.error.message;
+                            } else if (chatServiceError.error.error) {
+                                errorMsg = chatServiceError.error.error;
+                            } else {
+                                // Try to stringify the error object
+                                try {
+                                    errorMsg = JSON.stringify(chatServiceError.error);
+                                } catch (e) {
+                                    errorMsg = String(chatServiceError.error);
+                                }
+                            }
+                        } else if (chatServiceError.response) {
+                            // Check if there's a response object
+                            const response = chatServiceError.response;
+                            if (response.error) {
+                                errorMsg = typeof response.error === 'string' ? response.error : JSON.stringify(response.error);
+                            } else if (response.message) {
+                                errorMsg = response.message;
+                            }
+                        } else {
+                            // Last resort: try to stringify the whole object
+                            try {
+                                const errorStr = JSON.stringify(chatServiceError);
+                                if (errorStr !== '{}' && errorStr !== '{"error":true}') {
+                                    errorMsg = errorStr;
+                                } else {
+                                    errorMsg = 'Unknown error (check console for details)';
+                                }
+                            } catch (e) {
+                                errorMsg = String(chatServiceError);
+                            }
+                        }
                     } else {
                         errorMsg = String(chatServiceError);
+                    }
+
+                    // If error message is still empty or just "true", provide a default
+                    if (!errorMsg || errorMsg === 'true' || errorMsg === '{}') {
+                        errorMsg = 'Bad Request (400) - Check model name and API configuration';
                     }
 
                     // If using ST key and ChatCompletionService fails, it's likely a configuration issue

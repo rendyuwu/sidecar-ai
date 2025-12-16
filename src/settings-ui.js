@@ -223,15 +223,32 @@ export class SettingsUI {
         modelSelect.empty();
         modelSelect.append('<option value="">Loading models...</option>');
 
-        const models = this.getProviderModels(provider);
+        // Try to get models - if we don't find any, retry after a delay (dropdown might not be populated yet)
+        let models = this.getProviderModels(provider);
 
+        // If no models found, wait a bit and retry (dropdown might be loading)
+        if (models.length === 0) {
+            console.log(`[Sidecar AI] No models found for ${provider}, retrying after delay...`);
+            setTimeout(() => {
+                models = this.getProviderModels(provider);
+                this.populateModelDropdown(modelSelect, models);
+            }, 500);
+            return;
+        }
+
+        this.populateModelDropdown(modelSelect, models);
+    }
+
+    populateModelDropdown(modelSelect, models) {
         setTimeout(() => {
             modelSelect.empty();
             if (models.length === 0) {
                 modelSelect.append('<option value="">No models available</option>');
+                $('#add_ons_model_hint').text('No models found. Check provider configuration.');
                 return;
             }
 
+            modelSelect.append('<option value="">Select a model...</option>');
             models.forEach(model => {
                 const option = $('<option></option>').val(model.value).text(model.label);
                 if (model.default) {
@@ -239,6 +256,7 @@ export class SettingsUI {
                 }
                 modelSelect.append(option);
             });
+            $('#add_ons_model_hint').text(`Loaded ${models.length} model(s)`);
         }, 100);
     }
 
@@ -249,32 +267,38 @@ export class SettingsUI {
         // STRATEGY 1: "Steal" from SillyTavern's existing UI (The "Lazy" but effective method)
         // If the user has the API Connections tab loaded, the dropdowns might already be populated
         const domSelectors = [
-            `#model_${provider}`,
-            `#${provider}_model`,
-            `select[name="${provider}_model"]`,
-            `#model_${provider}_select`,
-            `#api_button_${provider}` // Sometimes attached to buttons
+            `#model_${provider}_select`, // Most common format
+            `#model_${provider}`, // Alternative format
+            `#${provider}_model`, // Another alternative
+            `select[name="${provider}_model"]`, // By name attribute
+            `select[id*="${provider}"][id*="model"]`, // Partial match
+            `#api_button_${provider}`, // Sometimes attached to buttons
+            `select[id*="model"][id*="${provider}"]` // Reverse partial match
         ];
 
         for (const selector of domSelectors) {
-            const $el = $(selector);
-            if ($el.length && $el.is('select') && $el.find('option').length > 1) { // >1 because of default "Select..." option
-                console.log(`[Sidecar AI] Found populated dropdown at ${selector}`);
-                $el.find('option').each(function () {
-                    const val = $(this).val();
-                    const txt = $(this).text();
-                    if (val && val !== '') {
-                        models.push({
-                            value: val,
-                            label: txt,
-                            default: false
-                        });
+            try {
+                const $el = $(selector);
+                if ($el.length && $el.is('select') && $el.find('option').length > 1) { // >1 because of default "Select..." option
+                    console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${$el.find('option').length} options`);
+                    $el.find('option').each(function () {
+                        const val = $(this).val();
+                        const txt = $(this).text();
+                        if (val && val !== '' && val !== 'Select a model...' && val !== 'Select...') {
+                            models.push({
+                                value: val,
+                                label: txt,
+                                default: false
+                            });
+                        }
+                    });
+                    if (models.length > 0) {
+                        console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
+                        return models;
                     }
-                });
-                if (models.length > 0) {
-                    console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
-                    return models;
                 }
+            } catch (e) {
+                console.warn(`[Sidecar AI] Error checking selector ${selector}:`, e);
             }
         }
 
