@@ -272,7 +272,7 @@ export class ResultFormatter {
         if (!sidecarContainer) {
             sidecarContainer = document.createElement('div');
             sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
-            sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+            sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
             // Insert after message content (inside the AI message container)
             const messageContent = messageElement.querySelector('.mes_text') ||
@@ -290,7 +290,7 @@ export class ResultFormatter {
         if (!loadingDiv) {
             loadingDiv = document.createElement('div');
             loadingDiv.className = `sidecar-loading sidecar-loading-${addon.id}`;
-            loadingDiv.style.cssText = 'padding: 8px; display: flex; align-items: center; gap: 8px; color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important; background: transparent !important; background-color: transparent !important;';
+            loadingDiv.style.cssText = 'padding: 8px; display: flex; align-items: center; gap: 8px; color: rgba(255, 255, 255, 0.7) !important; background: transparent !important; background-color: transparent !important;';
             loadingDiv.innerHTML = `
                 <i class="fa-solid fa-spinner fa-spin"></i>
                 <span>Processing ${addon.name}...</span>
@@ -373,7 +373,7 @@ export class ResultFormatter {
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
-                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
                 const messageContent = messageElement.querySelector('.mes_text') || messageElement;
                 if (messageContent.nextSibling) {
@@ -414,7 +414,7 @@ export class ResultFormatter {
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${messageId}`;
-                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: #1e1e1e !important; background-color: #1e1e1e !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: #eee !important;';
 
                 // Insert after message content
                 const messageContent = messageElement.querySelector('.mes_text') ||
@@ -438,12 +438,12 @@ export class ResultFormatter {
                 const summary = document.createElement('summary');
                 summary.className = 'addon-result-summary';
                 summary.textContent = `${addon.name}`;
-                summary.style.cssText = 'cursor: pointer; padding: 8px; background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; border-radius: 3px; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+                summary.style.cssText = 'cursor: pointer; padding: 8px; background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important; border-radius: 3px; color: #eee !important;';
 
                 const content = document.createElement('div');
                 content.className = 'addon-result-content';
                 content.id = `addon-content-${addon.id}`;
-                content.style.cssText = 'padding: 10px; margin-top: 8px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important; max-height: 500px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;';
+                content.style.cssText = 'padding: 10px; margin-top: 8px; background: #1e1e1e !important; background-color: #1e1e1e !important; color: #eee !important; max-height: 500px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;';
 
                 addonSection.appendChild(summary);
                 addonSection.appendChild(content);
@@ -459,13 +459,13 @@ export class ResultFormatter {
                 // Append new result
                 const resultDiv = document.createElement('div');
                 resultDiv.className = 'addon-result-item';
-                resultDiv.style.cssText = 'background: transparent !important; background-color: transparent !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+                resultDiv.style.cssText = 'background: transparent !important; background-color: transparent !important; color: #eee !important;';
                 resultDiv.innerHTML = formattedResult;
 
                 const timestamp = document.createElement('div');
                 timestamp.className = 'addon-result-timestamp';
                 timestamp.textContent = `Generated at ${new Date().toLocaleTimeString()}`;
-                timestamp.style.cssText = 'font-size: 0.8em; color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.5)) !important; background: transparent !important; background-color: transparent !important; margin-top: 8px; font-style: italic;';
+                timestamp.style.cssText = 'font-size: 0.8em; color: rgba(255, 255, 255, 0.5) !important; background: transparent !important; background-color: transparent !important; margin-top: 8px; font-style: italic;';
 
                 resultDiv.appendChild(timestamp);
                 content.appendChild(resultDiv);

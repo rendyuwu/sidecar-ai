@@ -7,23 +7,23 @@
 /* NUCLEAR OPTION: Force dark theme on settings container */
 #sidecar_ai_settings {
     width: 100%;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
 }
 
 #sidecar_ai_settings,
 #sidecar_ai_settings > *,
 #sidecar_ai_settings *:not(input):not(textarea):not(select):not(option) {
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
 }
 
 #sidecar_ai_settings .sidecar_settings_content {
     padding: 5px;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
 }
 
 /* Define local variables mapped to ST variables */
@@ -90,8 +90,8 @@
     border: 1px solid var(--SmartThemeBorderColor, #555);
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    background: var(--SmartThemeBodyColor, #1e1e1e);
-    color: var(--SmartThemeBodyColor, #eee);
+    background: #1e1e1e;
+    color: #eee;
     transition: all 0.2s ease;
 }
 
@@ -112,7 +112,7 @@
     margin: 0 0 8px 0;
     font-size: 1.1em;
     font-weight: 600;
-    color: var(--SmartThemeBodyColor, #eee);
+    color: #eee;
 }
 
 #sidecar_ai_settings .add_ons_item_meta {
@@ -130,7 +130,7 @@
     font-weight: 500;
     background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2));
     border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
-    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7));
+    color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
 }
 
@@ -151,7 +151,7 @@
 #sidecar_ai_settings .add_ons_item_description {
     margin: 0;
     font-size: 0.9em;
-    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7));
+    color: rgba(255, 255, 255, 0.7);
     line-height: 1.4;
     padding-top: 8px;
     margin-top: 8px;
@@ -191,9 +191,9 @@
 /* NUCLEAR OPTION: Force dark theme on modal - use computed styles from body */
 .add_ons_modal_content {
     /* Read actual background from body element */
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 10px;
     width: 90%;
@@ -206,16 +206,16 @@
 
 /* Override ANY inline styles */
 .add_ons_modal_content[style] {
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 /* Force dark background on ALL modal content */
 .add_ons_modal_content,
 .add_ons_modal_content > *,
 .add_ons_modal_content *:not(input):not(textarea):not(select):not(option) {
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
 }
 
 /* Force text color - use body's text color */
@@ -226,7 +226,7 @@
 .add_ons_modal_content label,
 .add_ons_modal_content small,
 .add_ons_modal_content span {
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
 }
 
 .add_ons_modal_header h3 {
@@ -239,13 +239,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 .add_ons_modal_header h3 {
     margin: 0;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
 }
 
 .add_ons_modal_close {
@@ -254,13 +254,13 @@
     border: none !important;
     font-size: 1.5em;
     cursor: pointer;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
     opacity: 0.7;
 }
 
 .add_ons_modal_close:hover {
     opacity: 1;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
 }
 
 .add_ons_modal_body {
@@ -268,9 +268,9 @@
     overflow-y: auto;
     overflow-x: hidden;
     max-height: calc(90vh - 120px);
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
     word-wrap: break-word;
     word-break: break-word;
     overflow-wrap: break-word;
@@ -301,8 +301,8 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 /* Form Styles */
@@ -315,11 +315,11 @@
     margin-bottom: 5px;
     font-weight: bold;
     font-size: 0.9em;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
 }
 
 .add_ons_form_hint {
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
     opacity: 0.7;
 }
 
@@ -332,7 +332,7 @@
     background-color: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.4)) !important;
     background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.4)) !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: #eee !important;
     border-radius: 4px;
 }
 
@@ -342,7 +342,7 @@
 .add_ons_modal select.text_pole {
     background-color: rgba(0, 0, 0, 0.4) !important;
     background: rgba(0, 0, 0, 0.4) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: #eee !important;
 }
 
 .add_ons_modal input.text_pole::placeholder,
@@ -461,7 +461,7 @@
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
     background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: #eee !important;
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s;
@@ -477,7 +477,7 @@
     background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
     background-color: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
     border-color: var(--SmartThemeEmColor, #9fc) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: #eee !important;
 }
 
 #sidecar_ai_settings .add_ons_button_danger,
@@ -533,7 +533,7 @@
     width: 14px;
     left: 2px;
     bottom: 2px;
-    background-color: var(--SmartThemeBodyColor, #fff);
+    background-color: #fff;
     transition: .4s;
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -555,9 +555,9 @@
     padding: 10px !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
     max-width: 100% !important;
     width: 100% !important;
@@ -567,16 +567,16 @@
 
 /* Override ANY inline styles */
 .sidecar-container[style] {
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 /* Force dark background on ALL sidecar container content */
 .sidecar-container,
 .sidecar-container > *,
 .sidecar-container *:not(input):not(textarea):not(select):not(option) {
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
 }
 
 /* Force text color */
@@ -592,7 +592,7 @@
 .sidecar-container div,
 .sidecar-container details,
 .sidecar-container summary {
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
     word-wrap: break-word !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
@@ -610,7 +610,7 @@
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
     background: transparent !important;
     background-color: transparent !important;
     font-size: 0.9em !important;
@@ -621,7 +621,7 @@
 .sidecar-loading *:not(input):not(textarea):not(select):not(option) {
     background-color: transparent !important;
     background: transparent !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .sidecar-loading .fa-spinner {
@@ -654,17 +654,17 @@
     padding: 15px !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Override ANY inline styles */
 #add-ons-dropdown-container[style],
 .add-ons-dropdown-container[style] {
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 /* NUCLEAR OPTION: Force dark theme on result sections - same approach as modal */
@@ -673,8 +673,8 @@
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
     overflow: hidden !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
     max-width: 100% !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -682,16 +682,16 @@
 
 /* Override ANY inline styles */
 .addon_result_section[style] {
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
 }
 
 /* Force dark background on ALL result section content */
 .addon_result_section,
 .addon_result_section > *,
 .addon_result_section *:not(input):not(textarea):not(select):not(option) {
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
 }
 
 .addon_result_summary {
@@ -702,7 +702,7 @@
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
     font-weight: 500 !important;
     border: none !important;
 }
@@ -715,9 +715,9 @@
 .addon_result_content {
     padding: 15px !important;
     display: block !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background: #1e1e1e !important;
+    background-color: #1e1e1e !important;
+    color: #eee !important;
     border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2)) !important;
     max-height: 500px !important;
     overflow-y: auto !important;
@@ -752,7 +752,7 @@
     border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.1)) !important;
     background: transparent !important;
     background-color: transparent !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    color: #eee !important;
 }
 
 .addon_result_item:last-child {
@@ -761,7 +761,7 @@
 
 .addon_result_timestamp {
     font-size: 0.8em !important;
-    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.5)) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
     margin-top: 8px !important;
     font-style: italic !important;
 }
@@ -778,9 +778,9 @@
 #add-ons-dropdown-container div,
 #add-ons-dropdown-container p,
 #add-ons-dropdown-container span {
-    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
-    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
+    color: #eee !important;
 }
 
 /* Responsive design */
