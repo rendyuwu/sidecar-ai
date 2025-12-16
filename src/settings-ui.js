@@ -176,7 +176,38 @@ export class SettingsUI {
             $('#add_ons_form_save').text('Create Sidecar');
         }
 
+        // FORCE dark theme colors from actual computed styles
+        this.applyThemeColors();
         modal.show();
+    }
+
+    applyThemeColors() {
+        // Get actual computed colors from SillyTavern's body
+        const body = document.body;
+        const computedStyle = window.getComputedStyle(body);
+        const bgColor = computedStyle.backgroundColor || computedStyle.getPropertyValue('--SmartThemeBodyColor') || '#1e1e1e';
+        const textColor = computedStyle.color || computedStyle.getPropertyValue('--SmartThemeBodyColor') || '#eee';
+        const borderColor = computedStyle.getPropertyValue('--SmartThemeBorderColor') || '#555';
+
+        // Force apply to modal
+        const modalContent = document.querySelector('.add_ons_modal_content');
+        if (modalContent) {
+            modalContent.style.setProperty('background-color', bgColor, 'important');
+            modalContent.style.setProperty('background', bgColor, 'important');
+            modalContent.style.setProperty('color', textColor, 'important');
+        }
+
+        // Apply to all child elements
+        const allElements = document.querySelectorAll('.add_ons_modal_content, .add_ons_modal_content *');
+        allElements.forEach(el => {
+            if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && el.tagName !== 'SELECT') {
+                el.style.setProperty('background-color', bgColor, 'important');
+                el.style.setProperty('background', bgColor, 'important');
+            }
+            if (el.tagName === 'LABEL' || el.tagName === 'H3' || el.tagName === 'H4' || el.tagName === 'P' || el.tagName === 'SMALL' || el.tagName === 'SPAN') {
+                el.style.setProperty('color', textColor, 'important');
+            }
+        });
     }
 
     closeModal() {
