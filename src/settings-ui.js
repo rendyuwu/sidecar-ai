@@ -279,16 +279,16 @@ export class SettingsUI {
             const ccSettings = this.context.chatCompletionSettings;
             if (ccSettings.openrouter_providers) {
                 console.log('[Sidecar AI] Found openrouter_providers data type:', typeof ccSettings.openrouter_providers);
-                
+
                 // Debug log to see structure
                 try {
                     // Safe stringify to avoid circular refs
                     const structure = JSON.stringify(ccSettings.openrouter_providers).substring(0, 200);
                     console.log('[Sidecar AI] openrouter_providers preview:', structure);
-                } catch(e) {}
+                } catch (e) { }
 
                 const providers = ccSettings.openrouter_providers;
-                
+
                 // Case A: Object of providers { "openai": { models: [...] } }
                 if (typeof providers === 'object' && !Array.isArray(providers)) {
                     for (const [providerName, providerData] of Object.entries(providers)) {
@@ -305,36 +305,36 @@ export class SettingsUI {
                                 });
                             });
                         } else if (Array.isArray(providerData)) {
-                             // Case B: Object where values are arrays directly
-                             providerData.forEach(m => {
+                            // Case B: Object where values are arrays directly
+                            providerData.forEach(m => {
                                 const id = m.id || m;
                                 models.push({
                                     value: id,
                                     label: `${providerName}: ${id}`,
                                     default: false
                                 });
-                             });
+                            });
                         }
                     }
                 }
                 // Case C: Array of providers
                 else if (Array.isArray(providers)) {
                     providers.forEach(p => {
-                         if (p.models) {
-                             p.models.forEach(m => {
-                                 const id = m.id || m;
-                                 models.push({
-                                     value: id,
-                                     label: `${p.name || 'Unknown'}: ${m.name || id}`,
-                                     default: false
-                                 });
-                             });
-                         }
+                        if (p.models) {
+                            p.models.forEach(m => {
+                                const id = m.id || m;
+                                models.push({
+                                    value: id,
+                                    label: `${p.name || 'Unknown'}: ${m.name || id}`,
+                                    default: false
+                                });
+                            });
+                        }
                     });
                 }
             }
         }
-        
+
         if (models.length > 0) {
             console.log('[Sidecar AI] Parsed', models.length, 'models from settings cache');
             return models;
@@ -342,30 +342,30 @@ export class SettingsUI {
 
         // STRATEGY 3: Iterate mainApi array (Connection Profiles)
         if (this.context && this.context.mainApi && Array.isArray(this.context.mainApi)) {
-             const mainApi = this.context.mainApi;
-             for (const profile of mainApi) {
-                 if (!profile) continue;
-                 
-                 // Normalize provider check (case insensitive)
-                 const pName = (profile.api_provider || profile.provider || profile.name || '').toLowerCase();
-                 if (pName === provider.toLowerCase()) {
-                     console.log(`[Sidecar AI] Found matching profile for ${provider}`);
-                     
-                     // Check common model list properties
-                     const list = profile.models || profile.modelList || profile.availableModels;
-                     if (list && Array.isArray(list)) {
-                         models = list.map(m => {
-                             if (typeof m === 'string') return { value: m, label: m };
-                             return {
-                                 value: m.id || m.value || m.name,
-                                 label: m.label || m.name || m.id,
-                                 default: m.default
-                             };
-                         });
-                         if (models.length > 0) return models;
-                     }
-                 }
-             }
+            const mainApi = this.context.mainApi;
+            for (const profile of mainApi) {
+                if (!profile) continue;
+
+                // Normalize provider check (case insensitive)
+                const pName = (profile.api_provider || profile.provider || profile.name || '').toLowerCase();
+                if (pName === provider.toLowerCase()) {
+                    console.log(`[Sidecar AI] Found matching profile for ${provider}`);
+
+                    // Check common model list properties
+                    const list = profile.models || profile.modelList || profile.availableModels;
+                    if (list && Array.isArray(list)) {
+                        models = list.map(m => {
+                            if (typeof m === 'string') return { value: m, label: m };
+                            return {
+                                value: m.id || m.value || m.name,
+                                label: m.label || m.name || m.id,
+                                default: m.default
+                            };
+                        });
+                        if (models.length > 0) return models;
+                    }
+                }
+            }
         }
 
         // FALLBACK: Use default static lists if nothing found
