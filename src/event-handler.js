@@ -15,6 +15,7 @@ export class EventHandler {
         this.saveChatTimeout = null;
         // Prevent double-processing the same message id
         this.lastProcessedMessageId = null;
+        this.lastProcessedSwipeId = null;
     }
 
     /**
