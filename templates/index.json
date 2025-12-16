@@ -1,0 +1,173 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-12-16",
+  "templates": [
+    {
+      "id": "starter-pack",
+      "file": "starter-pack.json",
+      "name": "Starter Pack",
+      "description": "Import 4 essential templates at once (Perspective Flip, Director's Commentary, Soundtrack, Art Prompt)",
+      "category": "bundle",
+      "addonsCount": 4,
+      "featured": true,
+      "tags": [
+        "essential",
+        "bundle",
+        "beginner"
+      ]
+    },
+    {
+      "id": "perspective-flip",
+      "file": "perspective-flip.json",
+      "name": "Perspective Flip",
+      "description": "Shows scenes from another character's viewpoint",
+      "category": "analysis",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "perspective",
+        "character",
+        "analysis"
+      ]
+    },
+    {
+      "id": "directors-commentary",
+      "file": "directors-commentary.json",
+      "name": "Director's Commentary",
+      "description": "Meta-analysis like DVD commentary - narrative techniques and craft",
+      "category": "analysis",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "meta",
+        "writing",
+        "craft"
+      ]
+    },
+    {
+      "id": "soundtrack-suggester",
+      "file": "soundtrack-suggester.json",
+      "name": "Soundtrack Suggester",
+      "description": "Suggests real music tracks that fit the scene mood",
+      "category": "creative",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "music",
+        "atmosphere",
+        "immersion"
+      ]
+    },
+    {
+      "id": "art-prompt-generator",
+      "file": "art-prompt-generator.json",
+      "name": "Art Prompt Generator",
+      "description": "Creates detailed prompts for Stable Diffusion/Midjourney",
+      "category": "creative",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "art",
+        "image",
+        "visualization"
+      ]
+    },
+    {
+      "id": "commentary-section",
+      "file": "commentary-section.json",
+      "name": "Reader Comments",
+      "description": "Simulated community commentary with reader reactions and interactions",
+      "category": "fun",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "community",
+        "comments",
+        "interactive",
+        "social"
+      ]
+    },
+    {
+      "id": "actor-interview",
+      "file": "actor-interview.json",
+      "name": "Actor Interview",
+      "description": "Behind-the-scenes where actors break character and share real thoughts",
+      "category": "fun",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "meta",
+        "bts",
+        "interview",
+        "fourth-wall"
+      ]
+    },
+    {
+      "id": "relationship-matrix",
+      "file": "relationship-matrix.json",
+      "name": "Relationship Matrix & Scene Memo",
+      "description": "Comprehensive tracking: relationships, character states, location, time, inner thoughts",
+      "category": "tracking",
+      "addonsCount": 1,
+      "featured": true,
+      "tags": [
+        "relationships",
+        "tracking",
+        "stats",
+        "comprehensive"
+      ]
+    },
+    {
+      "id": "template-maker",
+      "file": "_template-maker.json",
+      "name": "Template Maker",
+      "description": "AI assistant that creates new templates from your descriptions",
+      "category": "utility",
+      "addonsCount": 1,
+      "featured": false,
+      "tags": [
+        "meta",
+        "utility",
+        "creation"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "bundle",
+      "name": "Bundles",
+      "description": "Multiple templates packaged together",
+      "icon": "📦"
+    },
+    {
+      "id": "analysis",
+      "name": "Analysis & Feedback",
+      "description": "Analyze writing, characters, and narrative",
+      "icon": "🔍"
+    },
+    {
+      "id": "creative",
+      "name": "Creative Enhancement",
+      "description": "Add atmosphere and visual elements",
+      "icon": "🎨"
+    },
+    {
+      "id": "fun",
+      "name": "Fun & Meta",
+      "description": "Entertaining additions and fourth-wall breaks",
+      "icon": "🎪"
+    },
+    {
+      "id": "tracking",
+      "name": "Tracking & Stats",
+      "description": "Monitor relationships, scenes, and progression",
+      "icon": "📊"
+    },
+    {
+      "id": "utility",
+      "name": "Utilities",
+      "description": "Tools and helpers",
+      "icon": "🔧"
+    }
+  ]
+}

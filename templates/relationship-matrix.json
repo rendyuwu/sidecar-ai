@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "name": "Template: Relationship Matrix & Scene Memo",
+  "description": "Comprehensive scene tracking with relationship matrix, character states, and inner thoughts",
+  "addons": [
+    {
+      "name": "📊 Relationship Matrix & Memo",
+      "description": "Tracks comprehensive scene data: time, location, weather, character states, relationships, and inner thoughts",
+      "prompt": "Always write dynamically changing memo notes after the response. Fill placeholders based on the current scene. Keep points concise.\n\n**Relationship Matrix Logic:**\n- **Scales (0-200):** Affection (Closeness), Trust (Reliability), Desire (Attraction)\n- **Lust (0-200):** Raw hunger (Omit entire Lust tag if 0)\n- **Status:** (e.g., Strangers, Friends, Lovers, Enemies, Complicated, Forbidden, Acquaintances, Rivals, Family, Mentor/Student, etc.)\n\nStrictly use template formatting:\n\n<style>\n@keyframes memoFadeIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }\n</style>\n<div style='background-color:#2c2c34; padding:15px; margin:15px 0; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.3); font-family:\"Segoe UI\", sans-serif; color:#e0e0e0; animation:memoFadeIn 0.6s ease-out;'>\n  <div style='color:#f0f0f0; margin-bottom:12px; font-size:1em;'>\n    <span style='font-weight:bold; font-size:1.15em; color:#f7cac9; text-shadow:0 0 4px rgba(247,202,201,0.5);'>Scene Memo</span>\n    <span style='font-size:1.1em; font-style:italic;'>(Add quality scene mood-matching kaomoji!)</span>\n  </div>\n  <div style='font-size:0.9em; line-height:1.4;'>\n    <div style='display:flex; flex-wrap:wrap; gap:0.5em 1.5em; margin-bottom:10px;'>\n      <span style='color:#a6b1e1;'>🕰️ Time:</span> <b>(Current time)</b>\n      <span style='color:#a6b1e1;'>📅 Date:</span> <b>(Day, Date Month)</b>\n      <span style='color:#a6b1e1;'>🌬️ Weather:</span> <b>(Conditions)</b>\n      <span style='color:#a6b1e1;'>📍 Location:</span> <b>(Setting)</b>\n    </div>\n    <strong style='color:#dda0dd; display:block; margin-bottom:4px;'>💖 Characters Spotted!</strong>\n    <ul style='list-style:none; padding:0; margin:0 0 10px 0;'>\n      <li style='margin-bottom:0.3em;'>\n        <span style='color:#c9a7d7;'>♀️/♂️/🛆</span> <b>Name (role)</b> ❖ <span style='color:#f7cac9;'>Status:</span> (emotions, physical state, energy) ❖ <span style='color:#ffe0b2;'>Clothes:</span> (outfit & condition) ❖ <span style='color:#ff6961;'>Appearance:</span> (notable physical details)\n      </li>\n    </ul>\n    <span style='color:#dda0dd; display:block; margin-bottom:2px;'>🗺️ Where are we?</span>\n    <span style='font-style:italic; color:#b0e0e6;'>(Brief spatial description - where exactly, what's around them)</span>\n    <div style='margin-top:12px; padding-top:8px; border-top:1px solid #444;'>\n      <strong style='color:#ff9ff3; display:block; margin-bottom:4px;'>💕 Relationship Matrix</strong>\n      <ul style='list-style:none; padding:0; margin:0 0 10px 0;'>\n        <li style='margin-bottom:0.4em;'>\n          <span style='color:#c9a7d7; font-weight:bold;'>CharA → CharB:</span>\n          <span style='color:#ffb3d1;'>💗 Affection:</span> <b>(0-200)</b> ❖\n          <span style='color:#87ceeb;'>🤝 Trust:</span> <b>(0-200)</b> ❖\n          <span style='color:#ff6b9d;'>🔥 Desire:</span> <b>(0-200)</b> ❖\n          <span style='color:#8b0000;'>🌶️ Lust:</span> <b>(0-200, omit if 0)</b> ❖\n          <span style='color:#ffc0cb;'>📋 Status:</span> <i>(Relationship Label)</i>\n        </li>\n      </ul>\n    </div>\n    <div style='margin-top:12px; padding-top:8px; border-top:1px solid #444;'>\n      <strong style='color:#ffb3ba; display:block; margin-bottom:4px;'>💭 Inner Thoughts</strong>\n      <ul style='list-style:none; padding:0; margin:0;'>\n        <li style='margin-bottom:0.4em;'>\n          <span style='color:#c9a7d7; font-weight:bold;'>CharName:</span> <span style='font-style:italic; color:#d4c5f9;'>"(Private thoughts/feelings/plans/desires)"</span>\n        </li>\n      </ul>\n    </div>\n  </div>\n</div>\n\nREMEMBER: Fill all placeholders with current scene data. Update relationship values dynamically based on what just happened. Make inner thoughts revealing but private.",
+      "triggerMode": "auto",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 5,
+        "includeCharCard": true,
+        "includeUserCard": true,
+        "includeWorldCard": true,
+        "includeHistory": true,
+        "historyDepth": 3
+      }
+    }
+  ]
+}

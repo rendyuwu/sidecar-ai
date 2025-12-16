@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "name": "Template: Art Prompt Generator",
+  "description": "Generates detailed prompts for image generation AIs",
+  "addons": [
+    {
+      "name": "🎨 Art Prompt Generator",
+      "description": "Generates detailed prompts for image generation AIs",
+      "prompt": "Create a detailed image generation prompt for the current scene:\n\n**Stable Diffusion / Midjourney Prompt:**\n\n[Detailed visual description with artistic style, lighting, composition, mood, and technical details. 2-3 sentences, comma-separated for AI art tools.]\n\n**Style Tags:** [photorealistic, anime, oil painting, digital art, etc.]\n**Mood:** [atmospheric descriptors]\n**Lighting:** [time of day, light sources, shadows]\n**Composition:** [camera angle, framing]\n\nMake it detailed enough for an AI to generate an accurate scene visualization.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 4,
+        "includeCharCard": true,
+        "includeUserCard": false,
+        "includeWorldCard": true,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    }
+  ]
+}

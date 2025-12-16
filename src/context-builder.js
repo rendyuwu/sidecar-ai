@@ -72,6 +72,15 @@ export class ContextBuilder {
             parts.push('- NEVER use fixed colors or styles that override the theme.');
             parts.push('- Example structure: <div class="sidecar-comment-section"><div class="sidecar-comment">...</div></div>');
             parts.push('');
+            parts.push('COLOR & ACCESSIBILITY REQUIREMENTS:');
+            parts.push('- CRITICAL: All colors MUST meet WCAG AA contrast ratio standards (minimum 4.5:1 for normal text, 3:1 for large text).');
+            parts.push('- Light text on dark backgrounds: Use #ffffff, #f0f0f0, #e8e8e8 or similar (contrast ratio > 12:1).');
+            parts.push('- Dark text on light backgrounds: Use #000000, #1a1a1a, #2d2d2d or similar (contrast ratio > 12:1).');
+            parts.push('- For colored backgrounds, ensure text color has sufficient contrast (test at https://webaim.org/resources/contrastchecker/).');
+            parts.push('- Avoid using light gray (#aaa, #bbb) on white backgrounds or dark gray (#444, #555) on black backgrounds.');
+            parts.push('- Choose visually pleasing, harmonious color palettes (complementary or analogous colors).');
+            parts.push('- Use opacity/alpha channels carefully - ensure final rendered color still has good contrast.');
+            parts.push('');
         } else if (formatStyle === 'xml') {
             parts.push('FORMAT AS XML:');
             parts.push('- Output well-formed XML with proper structure.');
@@ -87,6 +96,40 @@ export class ContextBuilder {
             parts.push('- Use emojis and symbols sparingly for visual interest.');
             parts.push('- Structure content with clear visual hierarchy.');
             parts.push('- Make it visually appealing while maintaining readability.');
+            parts.push('');
+            parts.push('COLOR & ACCESSIBILITY REQUIREMENTS:');
+            parts.push('- CRITICAL: All colors MUST meet WCAG AA contrast ratio standards (minimum 4.5:1 for normal text, 3:1 for large text).');
+            parts.push('- Choose visually pleasing, harmonious color palettes (complementary or analogous colors).');
+            parts.push('- Ensure high contrast between text and backgrounds for readability.');
+            parts.push('- Light text on dark backgrounds: Use #ffffff, #f0f0f0, #e8e8e8 (contrast > 12:1).');
+            parts.push('- Dark text on light backgrounds: Use #000000, #1a1a1a, #2d2d2d (contrast > 12:1).');
+            parts.push('- Avoid low-contrast combinations (light gray on white, dark gray on black).');
+            parts.push('');
+            parts.push('STYLE CONSISTENCY RULES:');
+            if (context.addonHistory) {
+                parts.push('- IMPORTANT: Review the "Previous Output History" section below to see your past styling choices.');
+                parts.push('- MAINTAIN THE SAME VISUAL STYLE as your previous outputs.');
+                parts.push('- Use the same color schemes, formatting patterns, and decorative elements.');
+                parts.push('- Keep your aesthetic consistent across all responses.');
+            } else {
+                parts.push('- Choose a distinctive visual style and remember it for future responses.');
+                parts.push('- Be consistent with your formatting choices (colors, borders, spacing, etc.).');
+            }
+            parts.push('');
+            parts.push('AVATAR/IMAGE RULES:');
+            parts.push('- NEVER use placeholder image URLs (placeholder.com, via.placeholder, picsum, etc.).');
+            parts.push('- For avatars: Use emoji avatars (e.g., 🎭, 👤, 🤖) OR initials in colored circles.');
+            parts.push('- Initials example: <div style="width:40px;height:40px;border-radius:50%;background:#5e72e4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;">AB</div>');
+            parts.push('- Choose background colors that have high contrast with white text (dark, saturated colors work best).');
+            parts.push('');
+        } else if (formatStyle === 'markdown') {
+            parts.push('FORMAT AS MARKDOWN:');
+            parts.push('- Use clean, standard Markdown formatting.');
+            parts.push('- Use ## or ### for headings.');
+            parts.push('- Use **bold** and *italic* for emphasis.');
+            parts.push('- Use - or * for unordered lists.');
+            parts.push('- Use 1. 2. 3. for ordered lists.');
+            parts.push('- Keep formatting simple and readable.');
             parts.push('');
         }
 
@@ -159,7 +202,7 @@ export class ContextBuilder {
 
     /**
      * Get add-on history from chat log metadata
-     * Includes error recovery for corrupted or invalid data
+     * Now reads from message.extra.sidecarResults instead of HTML comments
      */
     getAddonHistory(chatLog, addonId, count) {
         if (!chatLog || !Array.isArray(chatLog) || !addonId) {
@@ -167,34 +210,32 @@ export class ContextBuilder {
         }
 
         const history = [];
-        const pattern = new RegExp(`<!-- sidecar-storage:${addonId}:(.+?) -->`);
 
         // Iterate backwards through chat log to find most recent history first
         for (let i = chatLog.length - 1; i >= 0 && history.length < count; i--) {
             const msg = chatLog[i];
+
+            // First, try modern storage (message.extra)
+            if (msg?.extra?.sidecarResults?.[addonId]) {
+                const stored = msg.extra.sidecarResults[addonId];
+                if (stored.result && stored.result.length > 0 && stored.result.length < 100000) {
+                    history.unshift(stored.result);
+                    continue;
+                }
+            }
+
+            // Fallback: Try old HTML comment storage (for backward compatibility)
             if (msg && msg.mes) {
+                const pattern = new RegExp(`<!-- sidecar-storage:${addonId}:(.+?) -->`);
                 const match = msg.mes.match(pattern);
                 if (match && match[1]) {
                     try {
-                        // Decode base64 content
-                        // Handle unicode strings correctly
                         const decoded = decodeURIComponent(escape(atob(match[1])));
-
-                        // Verify decoded content is valid (not empty, reasonable length)
                         if (decoded && decoded.length > 0 && decoded.length < 100000) {
-                            history.unshift(decoded); // Add to front to maintain chronological order
-                        } else {
-                            console.warn(`[Sidecar AI] Skipped invalid history item (length: ${decoded?.length || 0})`);
+                            history.unshift(decoded);
                         }
                     } catch (e) {
-                        console.warn('[Sidecar AI] Failed to decode history item:', e);
-                        console.warn('[Sidecar AI] History item details:', {
-                            addonId,
-                            messageIndex: i,
-                            matchLength: match[1]?.length,
-                            error: e.message
-                        });
-                        // Continue to next item instead of failing completely
+                        console.warn('[Sidecar AI] Failed to decode legacy history item:', e);
                     }
                 }
             }

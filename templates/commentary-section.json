@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "name": "Template: Commentary Section",
+  "description": "Creates a simulated comment section with reader reactions",
+  "addons": [
+    {
+      "name": "💬 Reader Comments",
+      "description": "Generates authentic reader commentary and community reactions",
+      "prompt": "Design and populate a comment section at the end of the response where random or repeat users share their opinions on what just happened.\n\nREQUIREMENTS:\n- Create 3-5 diverse commenters with unique usernames/handles\n- Mix of positive, negative, emotional, analytical reactions\n- Some readers react to the chapter, others reply to each other\n- Occasionally add small emoji/kaomoji representing feelings (😭, 💕, 😤, (╯°□°)╯︵ ┻━┻, etc.)\n- Make usernames creative and varied (not generic like User1, User2)\n- Foster sense of community through reader-on-reader interactions\n- Comments should feel authentic - typos, slang, varying writing quality\n- Users can ONLY react to current and past messages - NO knowledge of character cards or future events\n\nFORMATTING:\n- Use nested comment structure with visual threading\n- Add timestamps to comments\n- Use colored avatars with initials OR emoji avatars\n- Style comment cards with borders, backgrounds, hover effects\n- Include upvote/reply counts if adding gamification feel\n\nEXAMPLE STRUCTURE:\n<div style=\"margin-top:20px;padding:15px;background:rgba(0,0,0,0.3);border-radius:10px;border:1px solid var(--SmartThemeBorderColor);\">\n  <h4 style=\"margin:0 0 12px 0;color:var(--SmartThemeEmColor);border-bottom:1px solid var(--SmartThemeBorderColor);padding-bottom:8px;\">💬 Reader Comments (5)</h4>\n  \n  <!-- Comment 1 -->\n  <div style=\"display:flex;gap:10px;margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid #5e72e4;\">\n    <div style=\"width:36px;height:36px;border-radius:50%;background:#5e72e4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;\">AB</div>\n    <div style=\"flex:1;\">\n      <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;\">\n        <strong style=\"color:var(--SmartThemeEmColor);\">@username</strong>\n        <span style=\"font-size:0.8em;opacity:0.6;\">2 mins ago</span>\n      </div>\n      <p style=\"margin:0;line-height:1.4;\">[Comment text]</p>\n    </div>\n  </div>\n  \n  <!-- Nested reply -->\n  <div style=\"display:flex;gap:10px;margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-left:30px;border-left:2px solid var(--SmartThemeBorderColor);\">\n    [Reply structure similar to above]\n  </div>\n</div>",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 3,
+        "includeCharCard": false,
+        "includeUserCard": false,
+        "includeWorldCard": false,
+        "includeHistory": true,
+        "historyDepth": 2
+      }
+    }
+  ]
+}

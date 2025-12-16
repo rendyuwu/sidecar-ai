@@ -92,7 +92,18 @@ export class ResultFormatter {
             return response;
         }
 
-        let sanitized = response;
+        let sanitized = response.trim();
+
+        // Remove markdown code fences that wrap the entire response
+        // Matches: ```html\n<content>\n``` or ```\n<content>\n```
+        const codeFenceMatch = sanitized.match(/^```(?:html|css|xml|markdown)?\s*\n([\s\S]*)\n```\s*$/);
+        if (codeFenceMatch) {
+            sanitized = codeFenceMatch[1].trim();
+        }
+
+        // Also handle single-line code fence wrapping (less common)
+        sanitized = sanitized.replace(/^```(?:html|css|xml|markdown)?\s*/g, '');
+        sanitized = sanitized.replace(/\s*```$/g, '');
 
         // Remove dangerous position styles that could escape container
         sanitized = sanitized.replace(/position\s*:\s*(fixed|absolute)/gi, 'position: relative');
@@ -569,22 +580,30 @@ export class ResultFormatter {
         const resultItem = contentDiv.querySelector('.addon_result_item');
         if (!resultItem) return;
 
-        // Retrieve content - try to get raw content if we stored it, or decode from metadata
+        // Retrieve content from metadata
         let currentContent = '';
 
-        // Try getting from metadata first (most reliable source of truth)
+        // Get message object
         const message = this.findMessageObject(messageId);
-        if (message && message.mes) {
-            const pattern = new RegExp(`<!-- sidecar-storage:${addon.id}:(.+?) -->`);
-            const match = message.mes.match(pattern);
-            if (match && match[1]) {
-                try {
-                    currentContent = decodeURIComponent(escape(atob(match[1])));
-                } catch (e) { console.warn('Decode failed', e); }
+
+        if (message) {
+            // Try modern storage first (message.extra)
+            if (message.extra?.sidecarResults?.[addon.id]) {
+                currentContent = message.extra.sidecarResults[addon.id].result;
+            }
+            // Fallback to old HTML comment storage
+            else if (message.mes) {
+                const pattern = new RegExp(`<!-- sidecar-storage:${addon.id}:(.+?) -->`);
+                const match = message.mes.match(pattern);
+                if (match && match[1]) {
+                    try {
+                        currentContent = decodeURIComponent(escape(atob(match[1])));
+                    } catch (e) { console.warn('Decode legacy storage failed', e); }
+                }
             }
         }
 
-        // Fallback to text content if no metadata
+        // Last resort fallback to displayed text
         if (!currentContent) {
             currentContent = resultItem.innerText;
         }
@@ -690,9 +709,8 @@ export class ResultFormatter {
     }
 
     /**
-     * Save result to message metadata (hidden comment) for history retrieval
-     * This ensures state persistence regardless of display mode
-     * Includes error recovery and verification
+     * Save result to message.extra metadata (SillyTavern's clean metadata field)
+     * This keeps results out of message.mes, preventing context pollution
      */
     saveResultToMetadata(message, addon, result) {
         if (!message || !addon || !result) {
@@ -701,41 +719,34 @@ export class ResultFormatter {
         }
 
         try {
-            // Encode result to Base64 to avoid HTML comment syntax conflicts
-            // Use utf-8 safe encoding
-            const encoded = btoa(unescape(encodeURIComponent(result)));
-
-            // Verify encoding worked correctly
-            try {
-                const testDecode = decodeURIComponent(escape(atob(encoded)));
-                if (testDecode !== result) {
-                    console.warn('[Sidecar AI] Encoding verification failed, but continuing...');
-                }
-            } catch (verifyError) {
-                console.error('[Sidecar AI] Encoding verification error:', verifyError);
-                // Continue anyway - might still work
+            // Initialize message.extra if it doesn't exist
+            if (!message.extra) {
+                message.extra = {};
             }
 
-            const storageTag = `<!-- sidecar-storage:${addon.id}:${encoded} -->`;
-
-            // Ensure message.mes exists
-            if (!message.mes) {
-                message.mes = '';
+            // Initialize sidecar results storage
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
             }
 
-            // Append to message content if not already present (avoid duplicates)
-            // We append to the 'mes' property which acts as the source of truth
-            if (!message.mes.includes(`sidecar-storage:${addon.id}:`)) {
-                message.mes += '\n' + storageTag;
-                console.log(`[Sidecar AI] Saved result metadata for ${addon.name} (${result.length} chars)`);
-                return true;
-            } else {
-                // Update existing storage tag
-                const pattern = new RegExp(`<!-- sidecar-storage:${addon.id}:[^>]+ -->`, 'g');
-                message.mes = message.mes.replace(pattern, storageTag);
-                console.log(`[Sidecar AI] Updated result metadata for ${addon.name}`);
-                return true;
+            // Store result with timestamp and metadata
+            message.extra.sidecarResults[addon.id] = {
+                result: result,
+                addonName: addon.name,
+                timestamp: Date.now(),
+                formatStyle: addon.formatStyle || 'html-css'
+            };
+
+            console.log(`[Sidecar AI] Saved result in message.extra for ${addon.name} (${result.length} chars)`);
+
+            // Also remove old HTML comment storage if it exists (migration cleanup)
+            if (message.mes && message.mes.includes(`sidecar-storage:${addon.id}:`)) {
+                const pattern = new RegExp(`\\n?<!-- sidecar-storage:${addon.id}:[^>]+ -->`, 'g');
+                message.mes = message.mes.replace(pattern, '');
+                console.log(`[Sidecar AI] Cleaned up old HTML comment storage for ${addon.name}`);
             }
+
+            return true;
         } catch (error) {
             console.error(`[Sidecar AI] Error saving result metadata:`, error);
             console.error(`[Sidecar AI] Error details:`, {
@@ -745,24 +756,13 @@ export class ResultFormatter {
                 messageId: message?.uid || message?.id,
                 errorMessage: error.message
             });
-
-            // Try fallback: save to a simpler format
-            try {
-                if (message.mes) {
-                    const fallbackTag = `<!-- sidecar-fallback:${addon.id}:${Date.now()} -->`;
-                    message.mes += '\n' + fallbackTag;
-                    console.warn(`[Sidecar AI] Saved fallback metadata tag for ${addon.name}`);
-                }
-            } catch (fallbackError) {
-                console.error(`[Sidecar AI] Fallback save also failed:`, fallbackError);
-            }
-
             return false;
         }
     }
 
     /**
      * Get all results for a specific add-on from chat history
+     * Reads from message.extra.sidecarResults (with fallback to old HTML comments)
      */
     getAllResultsForAddon(addonId) {
         const results = [];
@@ -774,31 +774,44 @@ export class ResultFormatter {
 
         // Iterate through chat log to find saved results
         chatLog.forEach((msg, index) => {
+            // Try modern storage first (message.extra)
+            if (msg?.extra?.sidecarResults?.[addonId]) {
+                const stored = msg.extra.sidecarResults[addonId];
+                results.push({
+                    content: stored.result,
+                    timestamp: stored.timestamp || msg.send_date || Date.now(),
+                    messageId: this.getMessageId(msg),
+                    messageIndex: index,
+                    messagePreview: (msg.mes || '').substring(0, 50).replace(/<[^>]+>/g, '') + '...',
+                    edited: stored.edited || false,
+                    addonId: addonId
+                });
+                return; // Skip HTML comment check
+            }
+
+            // Fallback: Try old HTML comment storage (backward compatibility)
             if (msg && msg.mes) {
-                // Check for storage tag
                 const pattern = new RegExp(`<!-- sidecar-storage:${addonId}:(.+?) -->`);
                 const match = msg.mes.match(pattern);
 
                 if (match && match[1]) {
                     try {
                         const decoded = decodeURIComponent(escape(atob(match[1])));
-
-                        // Check if edited
                         const isEdited = msg.mes.includes(`<!-- sidecar-edited:${addonId} -->`);
 
-                        if (decoded) {
+                        if (decoded && decoded.length > 0 && decoded.length < 100000) {
                             results.push({
                                 content: decoded,
-                                timestamp: msg.send_date || Date.now(), // Fallback if send_date missing
+                                timestamp: msg.send_date || Date.now(),
                                 messageId: this.getMessageId(msg),
                                 messageIndex: index,
-                                messagePreview: (msg.mes || '').substring(0, 50) + '...',
+                                messagePreview: (msg.mes || '').substring(0, 50).replace(/<[^>]+>/g, '') + '...',
                                 edited: isEdited,
                                 addonId: addonId
                             });
                         }
                     } catch (e) {
-                        console.warn(`[Sidecar AI] Failed to decode result for history:`, e);
+                        console.warn(`[Sidecar AI] Failed to decode legacy result:`, e);
                     }
                 }
             }
@@ -809,34 +822,44 @@ export class ResultFormatter {
     }
 
     /**
-     * Delete result from metadata and content
+     * Delete result from metadata (message.extra and legacy HTML comments)
      */
     deleteResultFromMetadata(message, addonId) {
-        if (!message || !message.mes || !addonId) {
+        if (!message || !addonId) {
             return false;
         }
 
         let modified = false;
 
-        // Remove storage tag
-        const storagePattern = new RegExp(`\\n?<!-- sidecar-storage:${addonId}:.+? -->`, 'g');
-        if (message.mes.match(storagePattern)) {
-            message.mes = message.mes.replace(storagePattern, '');
+        // Remove from message.extra (modern storage)
+        if (message.extra?.sidecarResults?.[addonId]) {
+            delete message.extra.sidecarResults[addonId];
             modified = true;
+            console.log(`[Sidecar AI] Deleted result from message.extra`);
         }
 
-        // Remove result comment (for chatHistory mode)
-        const resultPattern = new RegExp(`<!-- addon-result:${addonId} -->[\\s\\S]*?<!-- /addon-result:${addonId} -->`, 'g');
-        if (message.mes.match(resultPattern)) {
-            message.mes = message.mes.replace(resultPattern, '');
-            modified = true;
-        }
+        // Remove legacy HTML comment storage
+        if (message.mes) {
+            // Remove storage tag
+            const storagePattern = new RegExp(`\\n?<!-- sidecar-storage:${addonId}:.+? -->`, 'g');
+            if (message.mes.match(storagePattern)) {
+                message.mes = message.mes.replace(storagePattern, '');
+                modified = true;
+            }
 
-        // Remove edited tag if present
-        const editedPattern = new RegExp(`\\n?<!-- sidecar-edited:${addonId} -->`, 'g');
-        if (message.mes.match(editedPattern)) {
-            message.mes = message.mes.replace(editedPattern, '');
-            modified = true;
+            // Remove result comment (for chatHistory mode)
+            const resultPattern = new RegExp(`<!-- addon-result:${addonId} -->[\\s\\S]*?<!-- /addon-result:${addonId} -->`, 'g');
+            if (message.mes.match(resultPattern)) {
+                message.mes = message.mes.replace(resultPattern, '');
+                modified = true;
+            }
+
+            // Remove edited tag if present
+            const editedPattern = new RegExp(`\\n?<!-- sidecar-edited:${addonId} -->`, 'g');
+            if (message.mes.match(editedPattern)) {
+                message.mes = message.mes.replace(editedPattern, '');
+                modified = true;
+            }
         }
 
         // If we modified the message, we should also update the DOM if possible
@@ -871,29 +894,42 @@ export class ResultFormatter {
      * Update result in metadata and content
      */
     updateResultInMetadata(message, addonId, newContent, addon) {
-        if (!message || !message.mes || !addonId || !newContent) {
+        if (!message || !addonId || !newContent) {
             return false;
         }
 
-        // 1. Update storage tag
+        // 1. Update in message.extra (modern storage)
         try {
-            const encoded = btoa(unescape(encodeURIComponent(newContent)));
-            const storageTag = `<!-- sidecar-storage:${addonId}:${encoded} -->`;
-            const storagePattern = new RegExp(`<!-- sidecar-storage:${addonId}:.+? -->`);
-
-            if (message.mes.match(storagePattern)) {
-                message.mes = message.mes.replace(storagePattern, storageTag);
-            } else {
-                message.mes += '\n' + storageTag;
+            if (!message.extra) {
+                message.extra = {};
+            }
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
             }
 
-            // Add edited tag
-            const editedTag = `<!-- sidecar-edited:${addonId} -->`;
-            if (!message.mes.includes(editedTag)) {
-                message.mes += '\n' + editedTag;
+            // Update or create entry
+            message.extra.sidecarResults[addonId] = {
+                result: newContent,
+                addonName: addon?.name || 'Unknown',
+                timestamp: Date.now(),
+                formatStyle: addon?.formatStyle || 'html-css',
+                edited: true
+            };
+
+            console.log(`[Sidecar AI] Updated result in message.extra for addon ${addonId}`);
+
+            // Also clean up old HTML comment storage if present
+            if (message.mes && message.mes.includes(`sidecar-storage:${addonId}:`)) {
+                const storagePattern = new RegExp(`\\n?<!-- sidecar-storage:${addonId}:.+? -->`, 'g');
+                message.mes = message.mes.replace(storagePattern, '');
+
+                const editedPattern = new RegExp(`\\n?<!-- sidecar-edited:${addonId} -->`, 'g');
+                message.mes = message.mes.replace(editedPattern, '');
+
+                console.log(`[Sidecar AI] Cleaned up legacy HTML comment storage`);
             }
         } catch (e) {
-            console.error('[Sidecar AI] Error encoding updated content:', e);
+            console.error('[Sidecar AI] Error updating metadata:', e);
             return false;
         }
 

@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "name": "Template: Director's Commentary",
+  "description": "Provides meta-analysis like DVD commentary",
+  "addons": [
+    {
+      "name": "🎬 Director's Commentary",
+      "description": "Provides meta-analysis like DVD commentary",
+      "prompt": "Provide director's commentary on the last message (as if analyzing a film scene):\n\n🎬 **Scene Analysis:**\n[What's happening on a meta level - narrative techniques, character beats, foreshadowing]\n\n**Notable Techniques:**\n- [Technique 1]: [How it's used]\n- [Technique 2]: [How it's used]\n\nKeep it insightful but concise. Focus on craft, not just plot summary.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 5,
+        "includeCharCard": true,
+        "includeUserCard": false,
+        "includeWorldCard": false,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    }
+  ]
+}

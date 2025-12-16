@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "name": "Template: Soundtrack Suggester",
+  "description": "Suggests music tracks that would fit the scene",
+  "addons": [
+    {
+      "name": "🎵 Soundtrack Suggester",
+      "description": "Suggests music tracks that would fit the scene",
+      "prompt": "Suggest 3 songs/music tracks that would fit this scene perfectly:\n\n🎵 **Scene Soundtrack:**\n\n1. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\n2. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\n3. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\nSuggest real songs that exist. Consider mood, pacing, lyrics, and atmosphere.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 5,
+        "includeCharCard": false,
+        "includeUserCard": false,
+        "includeWorldCard": true,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    }
+  ]
+}

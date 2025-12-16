@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-12-16
+
+### Added
+- **🪄 AI Template Maker (Built-in UI)**: Create sidecars by describing them in plain English
+  - Uses your existing SillyTavern API connection
+  - AI generates complete JSON configuration
+  - Preview generated config before adding
+  - Export as JSON file or add directly to your sidecars
+  - Auto-opens edit modal after adding for API key setup
+  - No manual JSON editing required!
+- **Template Library System**: Pre-made sidecar configurations for quick setup
+  - Template browser modal with local and community template support
+  - 8+ pre-made templates (Perspective Flip, Director's Commentary, Soundtrack Suggester, Art Prompt, Commentary Section, Actor Interview, Relationship Matrix, Template Maker)
+  - `templates/` folder with organized template files
+  - Template import from local files or GitHub community repo
+  - Comprehensive template documentation in `templates/README.md`
+- **Content Security & Isolation**: Multi-layer defense against malicious AI-generated content
+  - CSS containment (layout/style/paint isolation)
+  - Content sanitization (strips scripts, dangerous positioning, event handlers)
+  - Position locking (converts fixed/absolute to relative)
+  - Z-index normalization
+  - Iframe/embed/object blocking
+  - `SECURITY.md` documentation with threat model and testing guide
+- **WCAG Accessibility Guidelines**: AI instructed to use proper contrast ratios
+  - Minimum 4.5:1 contrast for normal text, 3:1 for large text
+  - Color recommendations for light/dark themes
+  - Specific guidance on visually pleasing, accessible color palettes
+- **History Depth Enforcement**: Always minimum 1 history for consistency
+  - Random Beautify uses history to maintain style consistency
+  - Prevents placeholder images, requires emoji or initial avatars
+  - Style consistency instructions for creative formats
+
+### Fixed
+- **Modal Click-Through Bug**: Clicking inside modals no longer closes them
+  - Only backdrop clicks close modals now
+  - Proper event propagation handling
+- **Result Container Duplication**: Sidecars no longer duplicate on reload
+  - Checks for existing containers before creating new ones
+  - Removes old error/loading indicators before adding new ones
+- **Card Layout Issues**: Fixed overlapping buttons and broken layouts
+  - Removed Move Up/Down buttons (unnecessary complexity)
+  - Icon-only action buttons with consistent sizing
+  - Proper flex wrapping for mobile
+  - Fixed button gaps and alignment
+- **Content Overflow**: All text properly wraps within containers
+  - Word-break rules for long URLs and code
+  - Proper max-width constraints on all elements
+  - Scrollable tables and pre blocks
+- **Code Fence Stripping**: AI responses wrapped in ```html blocks now render properly
+  - Automatically strips markdown code fences from HTML/CSS/XML responses
+  - No more visible ``` markers in rendered output
+- **Storage Migration**: Moved result storage from HTML comments to message.extra
+  - **CRITICAL FIX**: No longer pollutes context with massive base64-encoded HTML comments
+  - Uses SillyTavern's native `message.extra` field for clean metadata storage
+  - Backward compatible with old HTML comment storage
+  - Automatic migration: Cleans up old comments when updating results
+  - Reduces token usage significantly (previously 2-5KB per result, now 0 in context)
+
+### Changed
+- **Simplified CSS**: Reduced from 1300+ lines to ~450 lines
+  - Removed heavy custom theming system
+  - Uses SillyTavern's native CSS variables directly
+  - Minimal custom styling, maximum compatibility
+  - Follows Qvink extension's lightweight philosophy
+- **Default Format Style**: Changed from Markdown to HTML+CSS
+  - Better visual output by default
+  - Markdown still available as option
+- **History Settings**: Changed defaults for better UX
+  - History enabled by default (`includeHistory: true`)
+  - Default depth reduced from 5 to 1
+  - UI shows depth field by default (was hidden)
+
+### Removed
+- Move Up/Down buttons from addon cards (pointless complexity)
+- Custom markdown parser (SillyTavern handles natively)
+- Complex token-based theming system
+- Heavy CSS abstractions and overrides
+
+### Security
+- Added defense-in-depth security with 8 protection layers
+- Sanitizes all AI-generated content before rendering
+- Prevents layout breaks, style pollution, and code execution
+- Safe by default - no configuration needed
+
 ## [0.1.3] - 2025-12-16
 
 ### Added
@@ -83,6 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatically handles API keys, URLs, proxies, and headers via SillyTavern backend
 - Proper event namespacing to prevent conflicts with SillyTavern's native handlers
 
+[0.3.0]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.0
 [0.1.3]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.3
 [0.1.2]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.2
 [0.1.1]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.1

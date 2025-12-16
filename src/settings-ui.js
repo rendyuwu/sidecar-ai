@@ -93,16 +93,10 @@ export class SettingsUI {
                             <span class="add_ons_badge">${addon.triggerMode || 'auto'}</span>
                             <span class="add_ons_badge">${addon.requestMode || 'standalone'}</span>
                             <span class="add_ons_badge">${addon.responseLocation || 'outsideChatlog'}</span>
-                            ${addon.formatStyle && addon.formatStyle !== 'markdown' ? `<span class="add_ons_badge" title="Format Style">${addon.formatStyle}</span>` : ''}
+                            ${addon.formatStyle && addon.formatStyle !== 'html-css' ? `<span class="add_ons_badge" title="Format Style">${addon.formatStyle}</span>` : ''}
                         </span>
                     </div>
                     <div class="add_ons_item_actions">
-                        ${index > 0 ? `<button class="menu_button add_ons_button_small" data-action="move-up" data-addon-id="${addon.id}" title="Move Up">
-                            <i class="fa-solid fa-arrow-up"></i>
-                        </button>` : ''}
-                        ${index < addons.length - 1 ? `<button class="menu_button add_ons_button_small" data-action="move-down" data-addon-id="${addon.id}" title="Move Down">
-                            <i class="fa-solid fa-arrow-down"></i>
-                        </button>` : ''}
                         <label class="add_ons_toggle" title="Enable/Disable">
                             <input type="checkbox" ${addon.enabled ? 'checked' : ''} data-addon-id="${addon.id}" class="add_ons_enable_toggle">
                             <span class="add_ons_toggle_slider"></span>
@@ -139,6 +133,20 @@ export class SettingsUI {
             e.preventDefault();
             e.stopPropagation();
             self.openModal();
+        });
+
+        // AI Template Maker button
+        $(document).off('click.sidecar', '#sidecar_ai_maker_button').on('click.sidecar', '#sidecar_ai_maker_button', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.openAIMakerModal();
+        });
+
+        // Templates button
+        $(document).off('click.sidecar', '#sidecar_templates_button').on('click.sidecar', '#sidecar_templates_button', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.openTemplatesModal();
         });
 
         // Export button
@@ -195,21 +203,121 @@ export class SettingsUI {
             self.saveAddon();
         });
 
+        // Result format hint
+        $(document).off('change.sidecar', '#add_ons_form_result_format').on('change.sidecar', '#add_ons_form_result_format', function (e) {
+            e.stopPropagation();
+            const format = $(this).val();
+            const hint = $('#add_ons_result_format_hint');
+
+            switch (format) {
+                case 'collapsible':
+                    hint.html('Collapsible: &lt;details&gt; tag - <strong>Click to expand/collapse</strong> (best for long content)');
+                    break;
+                case 'separate':
+                    hint.html('Separate Block: <strong>Always visible</strong> with --- Name --- borders (good for short content)');
+                    break;
+                case 'append':
+                    hint.html('Append: <strong>Seamlessly inline</strong> - No wrapper, flows with message (use carefully)');
+                    break;
+            }
+        });
+
         // Response location hint - prevent event bubbling
         $(document).off('change.sidecar', '#add_ons_form_response_location').on('change.sidecar', '#add_ons_form_response_location', function (e) {
             e.stopPropagation();
             const location = $(this).val();
             const hint = $('#add_ons_response_location_hint');
             if (location === 'chatHistory') {
-                hint.text('Results hidden in HTML comment at end of message, accessible to main AI');
+                hint.text('Chat History: Injected as HTML comment inside message (main AI can see it)');
             } else {
-                hint.text('Results appear in expandable dropdown below chat area');
+                hint.text('Outside: Shows in card below message (clean, doesn\'t clutter chat)');
             }
+        });
+
+        // Prevent modal content clicks from closing modal (stop propagation)
+        $(document).off('click.sidecar', '.add_ons_modal_content').on('click.sidecar', '.add_ons_modal_content', function (e) {
+            e.stopPropagation();
+        });
+
+        // Close modal when clicking backdrop (outside content)
+        $(document).off('click.sidecar', '.add_ons_modal').on('click.sidecar', '.add_ons_modal', function (e) {
+            if (e.target === this) {
+                self.closeModal();
+            }
+        });
+
+        // Close history modal when clicking backdrop
+        $(document).off('click.sidecar', '#add_ons_history_modal').on('click.sidecar', '#add_ons_history_modal', function (e) {
+            if (e.target === this) {
+                $('#add_ons_history_modal').hide();
+            }
+        });
+
+        // Close templates modal when clicking backdrop
+        $(document).off('click.sidecar', '#add_ons_templates_modal').on('click.sidecar', '#add_ons_templates_modal', function (e) {
+            if (e.target === this) {
+                $('#add_ons_templates_modal').hide();
+            }
+        });
+
+        // AI Maker modal close
+        $(document).off('click.sidecar', '#add_ons_ai_maker_modal_close, #ai_maker_cancel').on('click.sidecar', '#add_ons_ai_maker_modal_close, #ai_maker_cancel', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.closeAIMakerModal();
+        });
+
+        // Close AI Maker modal when clicking backdrop
+        $(document).off('click.sidecar', '#add_ons_ai_maker_modal').on('click.sidecar', '#add_ons_ai_maker_modal', function (e) {
+            if (e.target === this) {
+                self.closeAIMakerModal();
+            }
+        });
+
+        // AI Maker generate button
+        $(document).off('click.sidecar', '#ai_maker_generate').on('click.sidecar', '#ai_maker_generate', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.generateTemplate();
+        });
+
+        // AI Maker export button
+        $(document).off('click.sidecar', '#ai_maker_export').on('click.sidecar', '#ai_maker_export', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.exportGeneratedTemplate();
+        });
+
+        // AI Maker add button
+        $(document).off('click.sidecar', '#ai_maker_add').on('click.sidecar', '#ai_maker_add', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.addGeneratedTemplate();
         });
 
         // Prevent select dropdowns from being interfered with
         $(document).off('click.sidecar', '.add_ons_modal select').on('click.sidecar', '.add_ons_modal select', function (e) {
             e.stopPropagation();
+        });
+
+        // Format style change - ensure history depth minimum for beautify
+        $(document).off('change.sidecar', '#add_ons_form_format_style').on('change.sidecar', '#add_ons_form_format_style', function (e) {
+            const formatStyle = $(this).val();
+            const historyDepthInput = $('#add_ons_form_history_depth');
+
+            // Enforce minimum depth of 1 (always, but especially for beautify)
+            const currentDepth = parseInt(historyDepthInput.val()) || 0;
+            if (currentDepth < 1) {
+                historyDepthInput.val(1);
+            }
+        });
+
+        // History depth input validation - enforce minimum of 1
+        $(document).off('change.sidecar input.sidecar', '#add_ons_form_history_depth').on('change.sidecar input.sidecar', '#add_ons_form_history_depth', function (e) {
+            const val = parseInt($(this).val()) || 0;
+            if (val < 1) {
+                $(this).val(1);
+            }
         });
 
         // Variable insertion buttons removed - no longer needed
@@ -349,19 +457,25 @@ export class SettingsUI {
             self.duplicateAddon(addonId);
         });
 
-        // Move up/down buttons
-        $(document).off('click.sidecar', '[data-action="move-up"]').on('click.sidecar', '[data-action="move-up"]', function (e) {
+        // Templates modal close
+        $(document).off('click.sidecar', '#add_ons_templates_modal_close, #add_ons_templates_close').on('click.sidecar', '#add_ons_templates_modal_close, #add_ons_templates_close', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            const addonId = $(this).data('addon-id');
-            self.moveAddonUp(addonId);
+            $('#add_ons_templates_modal').hide();
         });
 
-        $(document).off('click.sidecar', '[data-action="move-down"]').on('click.sidecar', '[data-action="move-down"]', function (e) {
+        // Browse local templates
+        $(document).off('click.sidecar', '#sidecar_browse_local_templates').on('click.sidecar', '#sidecar_browse_local_templates', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            const addonId = $(this).data('addon-id');
-            self.moveAddonDown(addonId);
+            self.loadLocalTemplates();
+        });
+
+        // Browse community templates
+        $(document).off('click.sidecar', '#sidecar_browse_community_templates').on('click.sidecar', '#sidecar_browse_community_templates', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.loadCommunityTemplates();
         });
 
         // History viewer
@@ -982,7 +1096,7 @@ export class SettingsUI {
 
         $('#add_ons_form_result_format').val(addon.resultFormat);
         $('#add_ons_form_response_location').val(addon.responseLocation);
-        $('#add_ons_form_format_style').val(addon.formatStyle || 'markdown');
+        $('#add_ons_form_format_style').val(addon.formatStyle || 'html-css');
 
         // Load models for provider, then set selected model
         this.loadModelsForProvider(addon.aiProvider);
@@ -997,9 +1111,12 @@ export class SettingsUI {
         $('#add_ons_form_include_world_card').prop('checked', ctx.includeWorldCard !== false);
 
         // Add-on History settings
-        const includeHistory = ctx.includeHistory === true;
+        const includeHistory = ctx.includeHistory !== false;  // Default to true
         $('#add_ons_form_include_history').prop('checked', includeHistory);
-        $('#add_ons_form_history_depth').val(ctx.historyDepth || 5);
+
+        // Enforce minimum historyDepth of 1
+        const historyDepth = Math.max(1, ctx.historyDepth || 1);
+        $('#add_ons_form_history_depth').val(historyDepth);
 
         if (includeHistory) {
             $('#add_ons_history_depth_group').show();
@@ -1283,14 +1400,14 @@ export class SettingsUI {
                 serviceProvider: serviceProvider, // Array of service providers for OpenRouter
                 resultFormat: $('#add_ons_form_result_format').val(),
                 responseLocation: $('#add_ons_form_response_location').val(),
-                formatStyle: $('#add_ons_form_format_style').val() || 'markdown',
+                formatStyle: $('#add_ons_form_format_style').val() || 'html-css',
                 contextSettings: {
                     messagesCount: parseInt($('#add_ons_form_messages_count').val()) || 10,
                     includeCharCard: $('#add_ons_form_include_char_card').is(':checked'),
                     includeUserCard: $('#add_ons_form_include_user_card').is(':checked'),
                     includeWorldCard: $('#add_ons_form_include_world_card').is(':checked'),
                     includeHistory: $('#add_ons_form_include_history').is(':checked'),
-                    historyDepth: parseInt($('#add_ons_form_history_depth').val()) || 5
+                    historyDepth: Math.max(1, parseInt($('#add_ons_form_history_depth').val()) || 1)  // Minimum 1 always
                 },
                 enabled: true
             };
@@ -1482,18 +1599,6 @@ export class SettingsUI {
         if (duplicated) {
             this.refreshSettings();
             console.log(`[Sidecar AI] Duplicated add-on: ${duplicated.name}`);
-        }
-    }
-
-    moveAddonUp(addonId) {
-        if (this.addonManager.moveAddonUp(addonId)) {
-            this.refreshSettings();
-        }
-    }
-
-    moveAddonDown(addonId) {
-        if (this.addonManager.moveAddonDown(addonId)) {
-            this.refreshSettings();
         }
     }
 
@@ -1820,6 +1925,535 @@ export class SettingsUI {
         } catch (error) {
             console.error('[Sidecar AI] Import error:', error);
             alert('Error importing add-ons: ' + error.message);
+        }
+    }
+
+    /**
+     * Open templates browser modal
+     */
+    openTemplatesModal() {
+        $('#add_ons_templates_modal').show();
+        this.loadLocalTemplates();
+    }
+
+    /**
+     * Load local templates from templates folder
+     */
+    async loadLocalTemplates() {
+        const listContainer = $('#add_ons_templates_list');
+        listContainer.html('<p style="opacity: 0.7;">Loading local templates...</p>');
+
+        try {
+            // Get extension directory
+            const extensionDir = this.getExtensionDirectory();
+
+            // List of known template files
+            const templateFiles = [
+                'starter-pack.json',  // Bundle of 4 essential templates
+                'perspective-flip.json',
+                'directors-commentary.json',
+                'soundtrack-suggester.json',
+                'art-prompt-generator.json',
+                'commentary-section.json',
+                'actor-interview.json',
+                'relationship-matrix.json',
+                '_template-maker.json'
+            ];
+
+            listContainer.html('');
+
+            // Load each template
+            for (const filename of templateFiles) {
+                try {
+                    const response = await fetch(`${extensionDir}/templates/${filename}`);
+                    if (!response.ok) continue;
+
+                    const template = await response.json();
+                    this.renderTemplateCard(listContainer, template, filename);
+                } catch (error) {
+                    console.warn(`[Sidecar AI] Failed to load template: ${filename}`, error);
+                }
+            }
+
+            if (listContainer.children().length === 0) {
+                listContainer.html('<p style="opacity: 0.7;">No templates found in templates folder.</p>');
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Error loading templates:', error);
+            listContainer.html('<p style="color: #ef4444;">Error loading templates. Check console for details.</p>');
+        }
+    }
+
+    /**
+     * Load community templates from GitHub
+     */
+    async loadCommunityTemplates() {
+        const listContainer = $('#add_ons_templates_list');
+        listContainer.html('<p style="opacity: 0.7;"><i class="fa-solid fa-spinner fa-spin"></i> Loading community templates from GitHub...</p>');
+
+        try {
+            // GitHub API endpoint for templates folder
+            const repo = 'skirianov/sidecar-ai';
+            const branch = 'main';
+            const apiUrl = `https://api.github.com/repos/${repo}/contents/templates/community?ref=${branch}`;
+
+            const response = await fetch(apiUrl);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    listContainer.html('<p style="opacity: 0.7;">No community templates available yet. Be the first to contribute!</p>');
+                    return;
+                }
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+
+            const files = await response.json();
+            const jsonFiles = files.filter(f => f.name.endsWith('.json') && f.type === 'file');
+
+            if (jsonFiles.length === 0) {
+                listContainer.html('<p style="opacity: 0.7;">No community templates found.</p>');
+                return;
+            }
+
+            listContainer.html('');
+
+            // Load each template
+            for (const file of jsonFiles) {
+                try {
+                    const templateResponse = await fetch(file.download_url);
+                    const template = await templateResponse.json();
+                    this.renderTemplateCard(listContainer, template, file.name, true);
+                } catch (error) {
+                    console.warn(`[Sidecar AI] Failed to load community template: ${file.name}`, error);
+                }
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Error loading community templates:', error);
+            listContainer.html(`
+                <div style="padding: 15px; background: rgba(239,100,100,0.1); border: 1px solid #ef4444; border-radius: 8px;">
+                    <p style="margin: 0 0 10px 0; color: #ef4444; font-weight: 600;">⚠️ Unable to load community templates</p>
+                    <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">This might be because:</p>
+                    <ul style="margin: 5px 0 10px 20px; font-size: 0.9em; opacity: 0.8;">
+                        <li>Repository not set up yet</li>
+                        <li>No internet connection</li>
+                        <li>GitHub API rate limit reached</li>
+                    </ul>
+                    <p style="margin: 0; font-size: 0.85em; opacity: 0.7;">Check console for details.</p>
+                </div>
+            `);
+        }
+    }
+
+    /**
+     * Render template card in list
+     */
+    renderTemplateCard(container, template, filename, isCommunity = false) {
+        const addon = template.addons && template.addons[0];
+        if (!addon) return;
+
+        const card = $('<div></div>').css({
+            'padding': '12px',
+            'border': '1px solid var(--SmartThemeBorderColor)',
+            'border-radius': '8px',
+            'background': 'var(--SmartThemeBlurTintColor)',
+            'transition': 'border-color 0.2s ease'
+        }).hover(
+            function () { $(this).css('border-color', 'var(--SmartThemeEmColor)'); },
+            function () { $(this).css('border-color', 'var(--SmartThemeBorderColor)'); }
+        );
+
+        const header = $('<div></div>').css({
+            'display': 'flex',
+            'justify-content': 'space-between',
+            'align-items': 'center',
+            'margin-bottom': '8px',
+            'gap': '10px'
+        });
+
+        const info = $('<div></div>').css('flex', '1');
+        const title = $('<h4></h4>').css({
+            'margin': '0 0 4px 0',
+            'font-size': '1em'
+        }).text(addon.name);
+        const desc = $('<p></p>').css({
+            'margin': '0',
+            'font-size': '0.9em',
+            'opacity': '0.8'
+        }).text(addon.description || template.description || '');
+
+        info.append(title).append(desc);
+
+        const badges = $('<div></div>').css({
+            'display': 'flex',
+            'gap': '5px',
+            'margin-top': '6px',
+            'flex-wrap': 'wrap'
+        });
+
+        // Add badges
+        const triggerBadge = $('<span></span>').css({
+            'padding': '2px 6px',
+            'border-radius': '3px',
+            'border': '1px solid var(--SmartThemeBorderColor)',
+            'font-size': '0.8em',
+            'white-space': 'nowrap'
+        }).text(addon.triggerMode);
+
+        const formatBadge = $('<span></span>').css({
+            'padding': '2px 6px',
+            'border-radius': '3px',
+            'border': '1px solid var(--SmartThemeBorderColor)',
+            'font-size': '0.8em',
+            'white-space': 'nowrap'
+        }).text(addon.formatStyle);
+
+        if (isCommunity) {
+            const communityBadge = $('<span></span>').css({
+                'padding': '2px 6px',
+                'border-radius': '3px',
+                'background': 'rgba(59,130,246,0.2)',
+                'color': '#3b82f6',
+                'border': '1px solid #3b82f6',
+                'font-size': '0.8em',
+                'white-space': 'nowrap'
+            }).html('<i class="fa-brands fa-github"></i> Community');
+            badges.append(communityBadge);
+        }
+
+        badges.append(triggerBadge).append(formatBadge);
+        info.append(badges);
+
+        const importBtn = $('<button></button>')
+            .addClass('menu_button add_ons_button_small')
+            .html('<i class="fa-solid fa-download"></i> Import')
+            .css('flex-shrink', '0')
+            .on('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.importTemplate(template, filename);
+            });
+
+        header.append(info).append(importBtn);
+        card.append(header);
+        container.append(card);
+    }
+
+    /**
+     * Import a template
+     */
+    importTemplate(template, filename) {
+        try {
+            if (!template || !template.addons || template.addons.length === 0) {
+                alert('Invalid template format.');
+                return;
+            }
+
+            const addon = template.addons[0];
+
+            // Confirm import
+            if (!confirm(`Import template: ${addon.name}?\n\nYou can edit it after import to customize settings and add your API key.`)) {
+                return;
+            }
+
+            // Import as new addon
+            const result = this.addonManager.importAddons(template, 'merge');
+
+            if (result.imported > 0) {
+                console.log(`[Sidecar AI] Imported template: ${filename}`);
+                alert(`✓ Template imported successfully!\n\nDon't forget to edit it and add your API key.`);
+
+                // Close templates modal and refresh
+                $('#add_ons_templates_modal').hide();
+                this.refreshSettings();
+            } else {
+                alert('Failed to import template. Check console for details.');
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Template import error:', error);
+            alert('Error importing template: ' + error.message);
+        }
+    }
+
+    /**
+     * Get extension directory path
+     */
+    getExtensionDirectory() {
+        // Try to get from script tag
+        const scripts = document.querySelectorAll('script[src*="sidecar"]');
+        if (scripts.length > 0) {
+            const scriptSrc = scripts[0].src;
+            return scriptSrc.substring(0, scriptSrc.lastIndexOf('/'));
+        }
+
+        // Fallback: assume standard extension path
+        return '/scripts/extensions/third-party/sidecar-ai';
+    }
+
+    /**
+     * Open AI Template Maker modal
+     */
+    openAIMakerModal() {
+        $('#add_ons_ai_maker_modal').show();
+        this.loadConnectionProfiles();
+        this.loadCompletionPresets();
+
+        // Reset state
+        $('#ai_maker_description').val('');
+        $('#ai_maker_result').hide();
+        $('#ai_maker_export').hide();
+        $('#ai_maker_add').hide();
+        $('#ai_maker_generate').show();
+        this.generatedTemplate = null;
+    }
+
+    /**
+     * Close AI Maker modal
+     */
+    closeAIMakerModal() {
+        $('#add_ons_ai_maker_modal').hide();
+        this.generatedTemplate = null;
+    }
+
+    /**
+     * Load connection profiles for AI Maker
+     */
+    loadConnectionProfiles() {
+        const select = $('#ai_maker_connection');
+        select.empty();
+
+        try {
+            // Get connection profiles from SillyTavern
+            const profiles = this.context?.extensionSettings?.connectionManager?.profiles || [];
+
+            if (profiles.length === 0) {
+                select.append('<option value="">No API connections configured</option>');
+                return;
+            }
+
+            profiles.forEach(profile => {
+                const option = $('<option></option>')
+                    .val(profile.id || profile.name)
+                    .text(`${profile.name || profile.api} (${profile.api})`);
+                select.append(option);
+            });
+
+            // Select first profile by default
+            if (profiles.length > 0) {
+                select.val(profiles[0].id || profiles[0].name);
+            }
+        } catch (error) {
+            console.error('[Sidecar AI] Error loading connection profiles:', error);
+            select.append('<option value="">Error loading profiles</option>');
+        }
+    }
+
+    /**
+     * Load completion presets for AI Maker
+     */
+    loadCompletionPresets() {
+        const select = $('#ai_maker_preset');
+        select.empty();
+        select.append('<option value="">Default</option>');
+
+        try {
+            // Get presets from SillyTavern context
+            const presets = this.context?.presets || [];
+
+            presets.forEach(preset => {
+                const option = $('<option></option>')
+                    .val(preset.name || preset)
+                    .text(preset.name || preset);
+                select.append(option);
+            });
+        } catch (error) {
+            console.warn('[Sidecar AI] Could not load presets:', error);
+        }
+    }
+
+    /**
+     * Generate template using AI
+     */
+    async generateTemplate() {
+        const description = $('#ai_maker_description').val().trim();
+
+        if (!description) {
+            alert('Please describe the sidecar you want to create.');
+            return;
+        }
+
+        const connectionId = $('#ai_maker_connection').val();
+        if (!connectionId) {
+            alert('Please select an API connection.');
+            return;
+        }
+
+        const generateBtn = $('#ai_maker_generate');
+        const originalText = generateBtn.html();
+        generateBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...').prop('disabled', true);
+
+        try {
+            // Build prompt for template generation
+            const prompt = `You are a Sidecar AI template generator. The user will describe a sidecar they want to create, and you will generate a complete JSON configuration.
+
+USER'S DESCRIPTION:
+${description}
+
+Generate a complete sidecar configuration following this exact structure (return ONLY valid JSON, no markdown formatting, no explanations):
+
+{
+  "name": "[Emoji] [Descriptive Name]",
+  "description": "[Brief description of what this sidecar does]",
+  "prompt": "[The actual instruction prompt for the AI - be specific and include example output format]",
+  "triggerMode": "manual" or "auto",
+  "requestMode": "standalone",
+  "aiProvider": "openai",
+  "aiModel": "gpt-4o-mini",
+  "apiKey": "",
+  "resultFormat": "collapsible",
+  "responseLocation": "outsideChatlog",
+  "formatStyle": "html-css",
+  "contextSettings": {
+    "messagesCount": [appropriate number 1-50],
+    "includeCharCard": true/false,
+    "includeUserCard": true/false,
+    "includeWorldCard": true/false,
+    "includeHistory": true,
+    "historyDepth": 1
+  }
+}
+
+GUIDELINES:
+- Choose appropriate emoji for the sidecar name
+- Write clear, specific prompts with example output formatting
+- Set triggerMode "auto" for continuous tracking, "manual" for on-demand
+- Choose formatStyle: "html-css" for styled output, "markdown" for simple text, "beautify" for creative
+- Set messagesCount based on context needs (2-5 for immediate, 10-20 for broader)
+- includeCharCard if character personality matters
+- includeUserCard if user personality matters
+- includeWorldCard if setting/world context matters
+- Always set includeHistory: true and historyDepth: 1 minimum
+
+Return ONLY the JSON object, properly formatted.`;
+
+            // Use SillyTavern's ChatCompletionService with selected profile
+            if (!this.context || !this.context.ChatCompletionService) {
+                throw new Error('ChatCompletionService not available');
+            }
+
+            const response = await this.context.ChatCompletionService.processRequest({
+                stream: false,
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 2048,
+                temperature: 0.7
+            }, {
+                presetName: $('#ai_maker_preset').val() || undefined
+            }, true);
+
+            // Extract content
+            const content = response?.content || response?.choices?.[0]?.message?.content || String(response);
+
+            // Clean up response - remove markdown code fences if present
+            let jsonStr = content.trim();
+            const codeFenceMatch = jsonStr.match(/^```(?:json)?\s*\n([\s\S]*)\n```\s*$/);
+            if (codeFenceMatch) {
+                jsonStr = codeFenceMatch[1].trim();
+            }
+
+            // Parse JSON
+            const generatedConfig = JSON.parse(jsonStr);
+
+            // Store for export/add
+            this.generatedTemplate = generatedConfig;
+
+            // Display preview
+            $('#ai_maker_preview').text(JSON.stringify(generatedConfig, null, 2));
+            $('#ai_maker_result').show();
+            $('#ai_maker_export').show();
+            $('#ai_maker_add').show();
+            $('#ai_maker_generate').html(originalText).prop('disabled', false);
+
+            console.log('[Sidecar AI] Generated template:', generatedConfig);
+        } catch (error) {
+            console.error('[Sidecar AI] Template generation error:', error);
+            alert('Error generating template: ' + error.message + '\n\nCheck console for details.');
+            generateBtn.html(originalText).prop('disabled', false);
+        }
+    }
+
+    /**
+     * Export generated template as JSON file
+     */
+    exportGeneratedTemplate() {
+        if (!this.generatedTemplate) {
+            alert('No template generated yet.');
+            return;
+        }
+
+        try {
+            // Wrap in export format
+            const exportData = {
+                version: '1.0',
+                name: `Template: ${this.generatedTemplate.name}`,
+                description: this.generatedTemplate.description,
+                addons: [this.generatedTemplate]
+            };
+
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${this.generatedTemplate.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-template.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('[Sidecar AI] Template exported');
+        } catch (error) {
+            console.error('[Sidecar AI] Export error:', error);
+            alert('Error exporting template: ' + error.message);
+        }
+    }
+
+    /**
+     * Add generated template as new sidecar
+     */
+    addGeneratedTemplate() {
+        if (!this.generatedTemplate) {
+            alert('No template generated yet.');
+            return;
+        }
+
+        try {
+            // Confirm
+            if (!confirm(`Add "${this.generatedTemplate.name}" as a new sidecar?\n\nYou can edit it later to customize settings.`)) {
+                return;
+            }
+
+            // Create addon from template
+            const addon = this.addonManager.createAddon(this.generatedTemplate);
+
+            console.log('[Sidecar AI] Added generated template as sidecar:', addon.name);
+            alert(`✓ Sidecar created: ${addon.name}\n\nDon't forget to add your API key!`);
+
+            // Close modal and refresh
+            this.closeAIMakerModal();
+            this.refreshSettings();
+
+            // Auto-open edit modal for the new addon
+            setTimeout(() => {
+                this.openModal(addon.id);
+            }, 300);
+        } catch (error) {
+            console.error('[Sidecar AI] Error adding template:', error);
+            alert('Error adding template: ' + error.message);
         }
     }
 }

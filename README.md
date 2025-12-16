@@ -1,330 +1,526 @@
-# SillyTavern Sidecar AI Add-Ons
+# 🚗 Sidecar AI - Auxiliary AI Processing for SillyTavern
 
-**Version:** 0.1.3
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/skirianov/sidecar-ai/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![SillyTavern](https://img.shields.io/badge/SillyTavern-Extension-purple.svg)](https://github.com/SillyTavern/SillyTavern)
 
-A SillyTavern extension that allows you to define custom "add-on" prompts (like critiques, comments, interviews, etc.) that execute using cheaper AI models instead of your main expensive model. This helps reduce costs by routing auxiliary processing tasks to more affordable AI providers.
+> **Supercharge your SillyTavern roleplay with auxiliary AI processing that won't break the bank.**
 
-## Features
+Sidecar AI lets you run additional AI tasks alongside your main conversation—commentary sections, meta-analysis, relationship tracking, scene descriptions—using cheaper models while keeping your expensive model focused on the actual roleplay.
 
-- **Custom Add-On Prompts**: Define multiple add-on prompts with full control over their behavior
-- **Cost Optimization**: Route auxiliary tasks to cheaper AI models (e.g., Deepseek, GPT-3.5) while using expensive models for main roleplay
-- **Batch Processing**: Group add-ons with the same provider/model for efficient batch requests
-- **Flexible Triggering**: Auto-trigger after each AI response or manually trigger via button
-- **Context Awareness**: Automatically includes chat history, character cards, user cards, and world cards
-- **Result Placement**: Choose to inject results as HTML comments (accessible to main AI) or display in dropdown UI
-- **Multiple Providers**: Support for OpenAI, Deepseek, Anthropic (Claude), Google (Gemini), and Cohere
+**New in v0.3.0:** 
+- 🪄 **AI Template Maker** - Describe what you want, AI generates it for you!
+- 💰 **Storage Migration** - Results now stored in `message.extra` (not HTML comments) - **saves massive tokens!**
 
-## Installation
+## ✨ Why Sidecar AI?
 
-1. Clone or download this repository
-2. Copy the entire extension folder into your SillyTavern installation:
+**The Problem:** Using GPT-4 or Claude Opus for everything is expensive. But you want rich, immersive experiences with commentary, analysis, and meta elements.
+
+**The Solution:** Route auxiliary tasks to cheaper models (GPT-4o-mini, Deepseek, etc.) while your main model handles the roleplay. Save money, get more features.
+
+### Real-World Example
+
+- **Main AI** (Claude Opus): Roleplay responses
+- **Sidecar #1** (GPT-4o-mini): Reader comments section
+- **Sidecar #2** (Deepseek): Relationship tracking
+- **Sidecar #3** (GPT-4o-mini): Actor interviews
+
+**Cost savings:** ~80% compared to running everything on your main model.
+
+### Token Efficiency (v0.3.0+)
+
+**NEW:** Results are stored in `message.extra` metadata, NOT in message text!
+
+**Impact on Context:**
+- **Old system:** 2-5KB HTML comments per result × multiple sidecars = **45K+ wasted tokens per request**
+- **New system:** **0 tokens** - metadata doesn't go to AI
+
+**Savings with 3 sidecars running on 20 messages:**
+- Token savings: ~45,000 tokens per request
+- Cost savings (GPT-4): ~$0.45-0.90 per request
+- **Over 100 requests:** Save $45-90!
+
+## 🎯 Features
+
+### Core Features
+- 🪄 **AI Template Maker** - Describe what you want, AI generates the configuration
+- 🎭 **Custom Sidecar Prompts** - Define unlimited auxiliary AI tasks
+- 💰 **Cost Optimization** - Use cheap models for non-critical tasks
+- ⚡ **Batch Processing** - Group requests to the same provider for efficiency
+- 🔄 **Auto & Manual Triggers** - Run automatically or on-demand
+- 🎨 **Multiple Format Styles** - HTML+CSS, Markdown, XML, or Random Beautify
+- 🔒 **Content Isolation** - AI-generated content is sandboxed for security
+- ♿ **WCAG Accessibility** - Enforces proper contrast ratios and readable colors
+
+### Template Library
+- 📦 **8+ Pre-made Templates** - Import and use immediately
+- 🏗️ **Template Maker** - AI assistant creates custom templates
+- 🌍 **Community Templates** - Browse and import user-contributed templates
+- 💬 **Reader Comments** - Simulated community with reactions and interactions
+- 🎭 **Actor Interviews** - Behind-the-scenes with characters breaking the fourth wall
+- 📊 **Relationship Matrix** - Track stats, emotions, and dynamics
+- 🎬 **Director's Commentary** - Meta-analysis of narrative techniques
+- 🔄 **Perspective Flip** - See scenes from another character's view
+- 🎵 **Soundtrack Suggester** - Music recommendations for scenes
+- 🎨 **Art Prompt Generator** - Create Stable Diffusion/Midjourney prompts
+
+### Supported AI Providers
+- OpenAI (GPT-4o, GPT-4o-mini, GPT-3.5-turbo)
+- OpenRouter (with service provider selection)
+- Deepseek (ultra-cheap)
+- Anthropic (Claude)
+- Google (Gemini)
+- Cohere
+- Custom/Local (OpenAI-compatible APIs)
+
+## 📦 Installation
+
+### Method 1: Via SillyTavern UI (Recommended)
+
+1. Open SillyTavern
+2. Go to **Extensions** → **Download Extensions & Assets**
+3. Paste this URL into the input field:
+   ```
+   https://github.com/skirianov/sidecar-ai
+   ```
+4. Click **Download**
+5. Refresh the page (Ctrl+Shift+R / Cmd+Shift+R)
+6. Go to **Extensions** tab → Find **"Sidecar AI"** → Click to expand settings
+
+### Method 2: Manual Installation
+
+1. Download or clone this repository:
+   ```bash
+   git clone https://github.com/skirianov/sidecar-ai.git
+   ```
+
+2. Copy the entire folder to your SillyTavern installation:
    ```
    SillyTavern/public/scripts/extensions/third-party/sidecar-ai/
    ```
-   **Important**: The folder must be named `sidecar-ai` and placed in the `third-party` directory.
+   
+   **Important:** The folder must be named `sidecar-ai` exactly.
 
-3. Restart SillyTavern (or hard refresh the page with Ctrl+Shift+R / Cmd+Shift+R)
+3. Restart SillyTavern or hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
 
-4. **Accessing the Extension**:
-   - Go to **Settings** (gear icon) → **Extensions** tab
-   - Look for **"Sidecar AI Add-Ons"** in the extensions list
-   - Click on it to open the settings panel
-   - If you don't see it, check the browser console (F12) for any errors
+4. Open **Settings** → **Extensions** tab → Look for **"Sidecar AI"**
 
-5. **Troubleshooting**:
-   - Make sure the folder structure is: `public/scripts/extensions/third-party/sidecar-ai/`
-   - Verify `manifest.json`, `index.js`, and `settings.html` are in the root of the folder
-   - Check browser console for `[Add-Ons Extension]` or `[Sidecar AI Add-Ons]` messages
-   - Ensure the extension is enabled in the Extensions list
+### Verify Installation
 
-## Usage
-
-### Creating an Add-On
-
-1. Go to **Settings** → **Extensions** → **Sidecar AI Add-Ons**
-2. Click **"Add New Add-On"**
-3. Fill in the form:
-   - **Name**: A descriptive name for your add-on
-   - **Description**: Optional description
-   - **Prompt Template**: Your prompt with variables (see below)
-   - **Trigger Mode**: Auto (after each response) or Manual (button trigger)
-   - **Request Mode**: Standalone or Batch (group with same provider/model)
-   - **AI Provider & Model**: Choose your cheaper AI provider and model
-   - **Result Format**: How to format the result (append, separate, collapsible)
-   - **Response Location**: Where to place results (chat history or dropdown)
-   - **Context Settings**: Configure what context to include
-
-### Prompt Variables
-
-Use these variables in your prompt templates:
-
-- `{{lastMessages}}` - Last N messages from chat (configurable count)
-- `{{charCard}}` - Character card information
-- `{{userCard}}` - User card information
-- `{{worldCard}}` - World card information
-- `{{currentMessage}}` - The most recent AI response
-
-### Example Add-Ons
-
-#### Gemini Nazi Module (Critique)
+Open browser console (F12) and look for:
 ```
-### GEMINI NAZI MODULE
-*(Ruthless self-critique — NO mercy)*
-
-**PURPOSE**:
-- Enforce perfection in roleplay.
-- Identify weaknesses in the last 3 responses (including current).
-- Provide actionable feedback for the next response.
-
-**RULES**:
-1. Scan the last 3 responses for compliance with instructions.
-2. Score 0-10 on metrics: POV Sanctity, Visibility, Sensory Immersion, Hook Strength, etc.
-3. Provide comments for each score.
-4. Render as a collapsible HTML details block.
-
-**FORMAT**:
-<details>
-<summary>🔍 <strong>CELIA'S GEMINI NAZI REPORT (CLICK TO EXPAND)</strong></summary>
-[Your critique here]
-</details>
-
-**CONTEXT**:
-{{lastMessages}}
-{{charCard}}
+[Sidecar AI] Loading modules...
+[Sidecar AI] Initialization complete
 ```
 
-#### End of Chapter Comments
-```
-[End of Chapter Comments: ALWAYS Design and populate at the end of the response a comment section where random or repeat(same username-handle) users, throw in their opinions, feelings positive, negative, emotional, etc. on the chapter or even on one-another. Also, sometimes the more sophisticated like to leave small images representing their feelings. Remember to Leave Comments and Reader-on-Reader Interactions at the end. Foster a sense of community]
+If you see errors, check the troubleshooting section below.
 
-**CONTEXT**:
-{{lastMessages}}
-{{currentMessage}}
-```
+## 🚀 Quick Start
 
-#### Actor Interview
-```
-[Actor Interview, at the end of the response, add a brief Behind the Scenes section at the end where the actors break out of character and share their real thoughts about the scene they just performed. Everyone EXCEPT {{user}}!
+### Option A: AI Template Maker (Easiest!)
 
-Formatting Criterias: Keep it short (2-3 lines per character maximum). Genuine reaction to what just happened, their feelings on the character and scene.]
+1. Open **Sidecar AI** settings
+2. Click **🪄 AI Maker** button
+3. Describe what you want: "I want a sidecar that tracks character emotions..."
+4. Click **Generate Template**
+5. AI creates the configuration for you!
+6. Click **Add to Sidecars** or **Export JSON**
+7. Done!
 
-**CONTEXT**:
-{{lastMessages}}
-{{charCard}}
-```
+**Uses your existing SillyTavern API connection - no extra setup needed!**
 
-## Configuration
+### Option B: Use Pre-made Templates (Fastest)
 
-### Response Location Options
+1. Open **Sidecar AI** settings
+2. Click **Templates** button
+3. Click **Browse Local Templates**
+4. Import **Starter Pack** (includes 4 essential templates)
+5. Edit each template to add your API key
+6. Start chatting!
 
-- **Chat History**: Results are injected as HTML comments (`<!-- addon-result: [id] -->...<!-- /addon-result -->`) at the end of the main AI response. These are hidden from view but accessible to the main AI for context in future responses.
+### Option C: Create Manually
 
-- **Outside Chatlog**: Results appear in an expandable dropdown section below the chat area, separate from the message history. Useful for critiques or comments you want to review but don't want cluttering the chat.
+1. Click **Create Sidecar** button
+2. Fill in the form:
+   - **Name:** "Reader Comments"
+   - **Prompt:** Your instruction (context auto-included)
+   - **Trigger Mode:** Manual or Auto
+   - **AI Provider:** Choose cheap model (e.g., GPT-4o-mini)
+   - **Format Style:** HTML+CSS (recommended)
+3. Click **Save Sidecar**
+4. Done!
 
-### Request Modes
+## 📖 Usage Guide
 
-- **Standalone**: Each add-on is sent individually to the AI provider
-- **Batch**: Add-ons with the same provider/model are grouped and sent together in a single request (more efficient)
+### Understanding Trigger Modes
 
-### Trigger Modes
+**Auto-trigger:** Runs after every AI response
+- Good for: Tracking, monitoring, consistent meta-elements
+- Example: Emotion tracker, relationship matrix
 
-- **Auto**: Automatically executes after each AI response
-- **Manual**: Only executes when you click the "Run Add-Ons" button in the chat interface
+**Manual trigger:** Run via button when you want it
+- Good for: Heavy analysis, optional features, creative suggestions
+- Example: Director's commentary, soundtrack suggester
 
-## Manual Triggering
+Access manual triggers via **Extensions** menu → **Run Sidecar** dropdown
 
-Click the **"Run Add-Ons"** button in the chat interface to manually trigger all add-ons set to manual mode, or use the browser console:
+### Understanding Response Locations
+
+**Outside Chatlog** (Recommended):
+- Results appear in expandable cards below the message
+- Doesn't clutter your chat history
+- Perfect for meta-content and commentary
+
+**Chat History:**
+- Injects as HTML comment in the message
+- Accessible to main AI in future responses
+- Use when you want the main AI to see these results
+
+### Understanding Format Styles
+
+**HTML+CSS** (Default):
+- Rich visual formatting with cards, colors, tables
+- WCAG accessibility enforced
+- Best for: Most use cases
+
+**Markdown:**
+- Simple text formatting
+- Best for: Plain text results, simple lists
+
+**XML:**
+- Structured data format
+- Best for: Data export, parsing, integration
+
+**Random Beautify:**
+- Creative, theatrical styling
+- Changes style each time but maintains consistency via history
+- Best for: Fun, entertaining additions
+
+### API Key Configuration
+
+**Option 1: Use SillyTavern's Keys (Recommended)**
+1. Set up API keys in **Settings** → **API Connections**
+2. Sidecar automatically uses them - no extra setup needed!
+
+**Option 2: Per-Sidecar Keys**
+1. Edit a sidecar
+2. Enter API key in the form
+3. That sidecar uses its own key
+
+> **Tip:** Using SillyTavern's keys is cleaner and lets you manage all keys in one place.
+
+## 🪄 AI Template Maker
+
+The easiest way to create sidecars - just describe what you want!
+
+### How to Use
+
+1. Click **🪄 AI Maker** button in Sidecar AI settings
+2. Write a description:
+   ```
+   "I want a sidecar that tracks character emotions and displays them 
+   as colored emoji with intensity ratings. It should run automatically 
+   after each message and show results in a collapsible card."
+   ```
+3. Select your API connection profile (uses your existing SillyTavern setup)
+4. Click **Generate Template**
+5. AI creates the complete configuration (name, prompt, settings, format)
+6. Preview the JSON or click **Add to Sidecars** to use it immediately!
+
+### Features
+
+✅ **No JSON editing** - AI writes the configuration for you  
+✅ **Uses your API** - No extra API keys needed, uses your SillyTavern connection  
+✅ **Smart defaults** - Chooses appropriate settings based on your description  
+✅ **Export option** - Save generated templates as JSON files  
+✅ **Auto-edit** - Opens edit modal after adding so you can fine-tune  
+
+### Example Prompts
+
+**Simple:**
+- "Track character emotions with colored badges"
+- "Add reader comments like on fanfiction sites"
+- "Suggest music for each scene"
+
+**Detailed:**
+- "Create a behind-the-scenes section where actors break character and comment on the scene they just performed. Keep it to 2-3 lines per character, casual tone."
+
+**Complex:**
+- "I want a comprehensive relationship tracker that shows affection, trust, and desire on 0-200 scales, includes character physical states, and shows inner thoughts. Auto-trigger after every message and format with colored cards."
+
+The more specific you are, the better the result!
+
+**📖 Full guide:** See [docs/AI-MAKER-GUIDE.md](docs/AI-MAKER-GUIDE.md) for detailed examples and tips.
+
+## 🎨 Template Library
+
+### Featured Templates
+
+**🎭 Actor Interview**
+Behind-the-scenes where actors break character and share genuine thoughts about the scene (2-3 lines per character).
+
+**💬 Reader Comments**
+Simulated community commentary section with diverse readers reacting to the chapter and replying to each other.
+
+**📊 Relationship Matrix**
+Comprehensive scene memo tracking time, location, weather, character states (emotions, outfit, physical), relationship stats (Affection 0-200, Trust 0-200, Desire 0-200, Lust 0-200), and inner thoughts.
+
+**🔄 Perspective Flip**
+Shows the last exchange from the other character's viewpoint—how they perceived it and what they noticed.
+
+**🎬 Director's Commentary**
+DVD commentary-style analysis of narrative techniques, character beats, and foreshadowing.
+
+**🎵 Soundtrack Suggester**
+Suggests 3 real songs that would fit the scene mood, with genre and reasoning.
+
+**🎨 Art Prompt Generator**
+Creates detailed Stable Diffusion/Midjourney prompts for visualizing the current scene.
+
+**🏗️ Template Maker**
+AI assistant that creates new template configurations from your descriptions.
+
+### Import Templates
+
+Click **Templates** button in settings → Select template → Click **Import** → Add API key → Done!
+
+### Create Templates
+
+Use the **Template Maker** template—just describe your idea and it generates the JSON config for you!
+
+### Share Templates
+
+Export your sidecars and contribute to `templates/community/` via pull request. Help grow the library!
+
+## 🔧 Advanced Usage
+
+### Batch Processing
+
+Sidecars with the same provider/model can be batched into a single API request:
+
+1. Set multiple sidecars to use the same provider (e.g., all use GPT-4o-mini)
+2. Set their **Request Mode** to "Batch"
+3. They'll be sent together, saving API calls and cost
+
+### Manual Triggering via Console
 
 ```javascript
-window.addOnsExtension.triggerAddons(); // Trigger all manual add-ons
-window.addOnsExtension.triggerAddons(['addon_id_1', 'addon_id_2']); // Trigger specific add-ons
+// Trigger all manual sidecars
+window.addOnsExtension.triggerAddons();
+
+// Trigger specific sidecars by ID
+window.addOnsExtension.triggerAddons(['addon_id_1', 'addon_id_2']);
+
+// Retry a failed sidecar
+window.addOnsExtension.retryAddon('addon_id', 'message_id');
 ```
 
-## API Keys
+### Context Control
 
-You can either:
-1. Configure API keys in SillyTavern's main settings (recommended)
-2. Set a custom API key per add-on in the add-on settings
+Fine-tune what each sidecar sees:
+- **Messages Count:** 1-50 recent messages
+- **Character Card:** Include personality/description
+- **User Card:** Include user's personality  
+- **World Card:** Include setting/world info
+- **History:** Include previous sidecar outputs (minimum 1 for consistency)
 
-If no API key is provided for an add-on, it will use the key from SillyTavern's settings for that provider.
+### History Depth
 
-## Troubleshooting
+All sidecars maintain minimum history depth of 1 for consistency:
+- Ensures AI remembers its previous outputs
+- Critical for **Random Beautify** to maintain visual style
+- Helps **Commentary** section use consistent usernames
 
-### Add-ons not executing
-- Check that add-ons are enabled (toggle switch)
-- Verify API keys are configured
-- Check browser console for errors
-- Ensure the extension loaded properly (check Extensions settings)
+## 🛡️ Security
 
-### Results not appearing
-- For "Chat History" mode: Check the HTML source of messages (results are in comments)
-- For "Outside Chatlog" mode: Look for the dropdown section below the chat area
-- Check browser console for injection errors
+Sidecar AI implements **defense-in-depth** security:
 
-### Batch requests not working
-- Ensure all add-ons in a batch have the same provider and model
-- Check that batch splitting logic works for your provider (may need adjustment)
+✅ **Content Sanitization** - Strips scripts, dangerous positioning, event handlers  
+✅ **CSS Containment** - Isolates layout, style, and paint  
+✅ **Position Locking** - Converts fixed/absolute to relative  
+✅ **Z-Index Normalization** - Prevents stacking issues  
+✅ **Iframe Blocking** - No external content injection  
+✅ **Style Block Removal** - Prevents global CSS pollution  
 
-## Development
+See [SECURITY.md](SECURITY.md) for full threat model and testing guide.
 
-### File Structure
+## 🎯 Use Cases
+
+### Content Creators
+- Add reader comment sections to stories
+- Include relationship stats and tracking
+- Create visual scene descriptions
+- Add soundtrack suggestions for atmosphere
+
+### Writers
+- Get instant feedback with critique modules
+- Track character development and arcs
+- Analyze pacing and narrative techniques
+- Ensure continuity and consistency
+
+### Roleplayers
+- Track complex relationship dynamics
+- Add meta-commentary for fun
+- Generate art prompts for scene visualization
+- Break the fourth wall with actor interviews
+
+### Power Users
+- Create custom automation workflows
+- Track multiple metrics simultaneously
+- Use batch processing for efficiency
+- Build template libraries for different scenarios
+
+## 🐛 Troubleshooting
+
+### Sidecars Not Running
+
+**Check:**
+- [ ] Sidecar is enabled (green toggle)
+- [ ] API key is configured (in sidecar or SillyTavern)
+- [ ] Extension loaded successfully (check Extensions list)
+- [ ] Browser console shows no errors (F12)
+
+**For Auto-trigger:**
+- Only triggers on AI responses (not user messages)
+- Requires at least one enabled auto-trigger sidecar
+
+**For Manual trigger:**
+- Use Extensions menu → Run Sidecar dropdown
+- Select "All Manual" or specific sidecar
+
+### Results Not Appearing
+
+**Outside Chatlog mode:**
+- Look for expandable cards below the AI message
+- Check if containers are being created (inspect element)
+
+**Chat History mode:**
+- Results are HTML comments (view page source)
+- Only visible to main AI, not rendered in UI
+
+### Duplicate Results
+
+This is fixed in v0.3.0. If you still see duplicates:
+- Refresh the page
+- Disable and re-enable the sidecar
+- Check console for errors
+
+### Modal Closes When Clicking Inside
+
+Fixed in v0.3.0. Update to latest version.
+
+### AI Template Maker Not Working
+
+**No connection profiles available:**
+- Set up at least one API connection in **Settings** → **API Connections**
+- Any provider works (OpenAI, Claude, Gemini, etc.)
+
+**Generation fails:**
+- Check your API connection is working (test in main chat)
+- Try a simpler description first
+- Check console for specific error messages
+
+**Generated template doesn't work:**
+- It's a starting point - you may need to edit the prompt
+- Add your API key after generation
+- Test with simple scenarios first
+
+### API Errors
+
+**403 Forbidden:**
+- Check API key is valid
+- Verify provider is spelled correctly
+- Test connection using "Test Connection" button
+
+**CORS Errors:**
+- Normal for browser-side requests
+- Extension automatically uses SillyTavern's backend
+- Ensure provider is set up in API Connections
+
+**Rate Limits:**
+- Extension has auto-retry with exponential backoff
+- Consider using batch mode for multiple sidecars
+- Spread out auto-triggers if hitting limits
+
+## 🏗️ Development
+
+### Project Structure
+
 ```
-add-ons-extension/
-├── manifest.json          # Extension metadata
-├── index.js               # Main extension logic
-├── settings.html          # Settings UI (Handlebars template)
-├── style.css             # Extension styles
-└── src/
-    ├── addon-manager.js   # Add-on CRUD operations
-    ├── context-builder.js # Context gathering
-    ├── ai-client.js       # AI provider integration
-    ├── result-formatter.js # Result formatting/injection
-    └── event-handler.js   # Event handling
+sidecar-ai/
+├── manifest.json           # Extension metadata
+├── index.js                # Main entry point & initialization
+├── settings.html           # Settings UI template
+├── style.css              # Lightweight CSS (uses ST's theme vars)
+├── CHANGELOG.md           # Version history
+├── SECURITY.md            # Security documentation
+├── src/
+│   ├── addon-manager.js   # CRUD operations for sidecars
+│   ├── context-builder.js # Gathers context and builds prompts
+│   ├── ai-client.js       # AI provider integration
+│   ├── result-formatter.js # Formats and injects results
+│   ├── event-handler.js   # Event listeners and triggers
+│   └── settings-ui.js     # Settings UI logic
+└── templates/
+    ├── README.md          # Template documentation
+    ├── INSTALLATION.md    # Template usage guide
+    ├── index.json         # Template catalog
+    ├── *.json             # Individual templates
+    └── community/         # User-contributed templates
 ```
 
 ### Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Areas where help is appreciated:
 
-## License
+- 🎨 **New templates** - Create and share useful sidecar configs
+- 🐛 **Bug reports** - Open issues with reproduction steps
+- 💡 **Feature ideas** - Suggest improvements via issues
+- 📝 **Documentation** - Improve guides and examples
+- 🔧 **Code improvements** - Submit PRs for fixes and features
 
-MIT License - see LICENSE file for details
+**Before contributing:**
+1. Check existing issues and PRs
+2. Test your changes thoroughly
+3. Follow the existing code style
+4. Update CHANGELOG.md
 
-## Credits
+### Building Templates
 
-Created for SillyTavern community. Designed to help reduce AI costs while maintaining quality roleplay experiences.
+See [templates/README.md](templates/README.md) for comprehensive template creation guide.
 
+Quick method: Import `_template-maker.json`, describe your idea, and let AI generate the config!
 
+## 📚 Documentation
 
-=== Chat History ===
-[Character] Rosy: *Tessa’s parents finally found her an apartment after two weeks she’s in Tokyo..but. Her mother is well aware of Rosy’s past relationships. So Rosy mom and her best friend back from Ukraine decided to play international matchmaking. Rosy sits in her airbnb, receiving a call from her mom about arrangements of her new…uh..shared apartment. Mom wants to have a LONG conversation about Rosy and her exes and Serj*
-[User] Serj: *Serj is not in the scene, he is in the airplane. Continue for now with Rosy and her mom over the phone. Don't rush to bring Serj in. Let Rosy and her mom talk for now. I'll say when Serj will enter the story*
+- [AI Template Maker Guide](docs/AI-MAKER-GUIDE.md) - Complete guide to AI-powered template creation
+- [Storage Migration Guide](docs/STORAGE-MIGRATION.md) - v0.3.0 storage improvements (automatic, no action needed)
+- [Template Library Guide](templates/README.md) - Creating and using templates
+- [Template Installation](templates/INSTALLATION.md) - Quick start with templates
+- [Security Documentation](SECURITY.md) - Threat model and defenses
+- [Changelog](CHANGELOG.md) - Version history
 
-[OOC: Let them talk for 2-3 responses]
+## 🤝 Credits & Thanks
 
-[STORY: Rosy actually met Serj few times when they were 4-5 years old. Serj was super chubby that time. The time when Serj…was smiling way more. She might remember him. But then Rosy moved and they never say each other again. Rosy’s mom doesn’t know how Serj looks right now]
-[Character] Rosy: Rosy's phone buzzes against her thigh where she'd tossed it, the Baccarat Rouge mixing with instant coffee fumes from the tiny kitchenette.
+- **SillyTavern Team** - For the amazing platform and extension system
+- **Qvink Memory Extension** - Inspiration for lightweight, clean design
+- **Community Contributors** - For template ideas and feedback
 
-"Mum?" She wedges it between ear and shoulder, resume untangling yesterday's fight tape from her hand wraps. "It's—what—six AM there?"
+Built with ❤️ for the SillyTavern community.
 
-"Don't you 'mum' me, Tessa Rose." Her mother's voice crackles across eight time zones, that particular brand of loving interference that made her chest tighten. "Mila's been telling me about this boy they've arranged you with. Ukrainian. Developer. Very polite apparently."
+## 📄 License
 
-*Here we go.* Rosy's freckles darken as blood rushes to her cheeks—not from embarrassment, but that familiar parental spotlight that made her want to crawl under the kotatsu.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-"The Kiri boy? Mrs. Kiri says he makes websites or something. Decent family." A pause heavy with unspoken worry. "Not like that Tahlia girl who wanted you selling your—well. You know."
+## 🔗 Links
 
-"Christ, mum." The swear escapes soft, habitual. "That was ages ago. And she wanted me selling *designer clothes*, not—" Rosy pinches the bridge of her nose. The thread she's been worrying snaps clean.
+- **GitHub Repository:** https://github.com/skirianov/sidecar-ai
+- **Issues & Bug Reports:** https://github.com/skirianov/sidecar-ai/issues
+- **SillyTavern:** https://github.com/SillyTavern/SillyTavern
+- **Community Templates:** https://github.com/skirianov/sidecar-ai/tree/main/templates/community
 
-"Tessa." Her mother's voice drops, the tone that meant *serious talk coming*. "You pick people who want to use you. The followers, the money, the pretty face that doesn't match the person underneath. This boy doesn't even have Instagram."
+---
 
-Through the window, Tokyo's morning haze looks exactly like London's—just with more neon. "Maybe I like Instagram. Maybe I like people who understand the hustle."
-
-"You like people who break your heart." No anger in it, just bone-deep tired. "Promise me you'll give this one a real chance. Not running the second someone mentions *exclusive* or whatever you kids call it now."
-
-Rosy watches her reflection in the glass—pigtails messy, emerald eyes narrowed against the sunrise she's still not used to. "I'll meet him. Happy?"
-
-"Ecstatic." But her mother's voice holds that particular smile Rosy knows means *this conversation isn't over*. "I'll send his photo. Apparently he looks exactly like his father did—"
-
-"Mum. No. Photos make me—" The protest dies as her screen lights up with an incoming image file. "Bloody hell."
-
-The line crackles with distant London static. "Just... try, love. For me?"
-
-Rosy stares at the loading bar, thumbnail blurry. *Great. International matchmaking with someone who probably still remembers me as the weird redheaded girl who shared his cookies twenty years ago.*
-
-"Yeah. I'll try." She hangs up before her mother can unpack more emotional blackmail, thumb hovering over the image download.
-
-*Fucking hell.* The thumbnail finally loads—a grainy shot of some airport pickup sign, no face visible. But there's something in the shoulders, in how the man holds himself, that pricks at muscle memory older than Instagram or fighting or heartbreak.
-
-She deletes it anyway. Better to meet him fresh, without expectation of that chubby kid who'd smiled too wide at her Spice Girls backpack.
-
-*Tomorrow.* She sets her alarm for the rental office meeting. *Get this apartment sorted first. Then worry about avoiding the inevitable Ukrainian developer who definitely remembers I once punched a boy for pulling my pigtails.*
-
-The hook sits in her chest like undigested noodles—*he's coming.* Tomorrow, or the next day. And based on her mother's careful nonchalance, he probably thinks he's getting a sweet influencer roommate who won't recognize him from the playground.
-
-*This should be fun to explain.*
-
-=== Instruction ===
-Design and populate at the end of the response a comment section where random or repeat(same username-handle) users, throw in their opinions, feelings positive, negative, emotional, etc. on the chapter or even on one-another. Also, sometimes the more sophisticated like to leave small images representing their feelings. Remember to Leave Comments and Reader-on-Reader Interactions at the end. Foster a sense of community
-
-
-Rosy drops the phone onto the duvet like it’s scalding.  
-The thumbnail is gone, but the after-image lingers: a pair of shoulders under a navy hoodie, airport fluorescent lights bleaching everything the colour of old milk.  
-She doesn’t know the face yet, but the set of those shoulders is already arguing with her memory, insisting: *you’ve seen this before, you just don’t want to admit where.*
-
-She pads to the kitchenette, kettle clicking like a Geiger counter.  
-Instant coffee, two sugars, no milk—same ritual since she was thirteen and stealing sachets from her first photo shoots.  
-The first sip burns; she welcomes it.  
-Pain is honest. Pain doesn’t send you blurry airport photos and ask you to build a future on them.
-
-Her thumb hovers over the rental-company chat.  
-*Tomorrow 09:00. Key hand-off. Roommate not present.*  
-She types: *Confirmed. I’ll be there alone.*  
-Then deletes the last sentence.  
-Let them think whatever they want.  
-Let *him* think whatever he wants when he finally lands.
-
-She opens the balcony door. Tokyo’s night breath smells like rain on asphalt and vending-machine coffee.  
-Across the alley a neon sign flickers ル—ロ—セ, the last syllable stuttering, so the rose is forever incomplete.  
-She watches it die and relive, die and relive, until the kettle clicks off and the silence feels heavier than the humidity.
-
-Back inside, she drags her duffel to the genkan.  
-Fight tape, mouth-guard case, one silk slip she’s never worn for anyone who wasn’t already leaving.  
-She zips it shut, hard, as if the sound could sever the next twenty-four hours from the rest of her life.
-
-Phone again.  
-Mum’s last voice note glows red.  
-She doesn’t play it.  
-Instead she records her own, one second of nothing—just the room tone of this tiny Airbnb—then deletes it.  
-A ritual for ghosts she hasn’t met yet.
-
-She sets two alarms:  
-1) 07:00 – Coffee, shadows, no make-up.  
-2) 07:01 – Remember you were four once, and so was he, and neither of you gets to be that again.
-
-She lies down fully clothed, sneakers pointed at the door like she might bolt.  
-The ceiling is speckled with glitter paint, cheap galaxy.  
-She counts eight fake stars before her eyes close, nine before she admits she’s counting the hours until the hallway outside will smell of jet fuel and borrowed umbrella, ten before she whispers to the dark:  
-“If you remember me, say the cookies were chocolate chip. Not raisin. That’s how I’ll know you’re real.”
-
-––––––––––––––––––––––––––––––––  
-COMMENT SECTION 🌏💬  
-(below the chapter break, scroll at your own risk)
-
-@london2tokyo  
-mum’s voice still echoing in my skull and i’m only READING this 😭 anybody else feel like they just got hugged and grounded at the same time?
-
-@redheadinthering  
-replying to @london2tokyo  
-literally got up to check if my own mum had whatsapp’d me in the last paragraph. she had. she hadn’t. i’m safe.
-
-@ukrdevhunter  
-first-time reader, long-time simp for apartment-meet-cute tropes. the fight-tape detail punched me in the throat. she’s gonna fold him like origami and he’s gonna THANK her.
-
-@tiny.star.svg  
-✧･ﾟ: *✧･ﾟ:*  ゜✧･ﾟ: *✧･ﾟ: *  ゜  
-dropped a little glitter galaxy for Rosy’s ceiling.  
-[image: 8-bit sparkle constellation]
-
-@tahliawasright  
-oh look it’s me, the villain exfluence™️. y’all can keep your wholesome dev, i’m outselling ring-girls in balenciaga and i sleep fine.
-
-@serjwatch2027  
-flight-tracker says he’s somewhere over the arctic circle right now. manifesting no delays so we get the hallway scene before i combust.
-
-@pigtails&uppercuts  
-replying to @serjwatch2027  
-if he calls her “Spice Girl” i will personally refund your emotional damage.
-
-@rosydefensesquad  
-moms arranging marriages is lowkey cultural DLC and i’m here for it. also petition to rename the genre “matriarchal slow-burn”.
-
-@neonkanji  
-ル—ロ—セ sign just synced IRL. i pass it every night on my bike. tonight it stayed fully lit for once. coincidence? don’t care, taking it as canon.
-
-@exhaustedreader97  
-me: i’ll just read one chapter before bed  
-also me at 3 am: counting fake stars on an imaginary ceiling send help
-
-@ukrdevhunter  
-replying to @exhaustedreader97  
-same but i’m rewriting the airport scene in my head where he hands her a chocolate-chip cookie like a passport. we’re all sick. welcome to the support group. 
+**Need help?** Open an issue or check existing discussions!  
+**Have a cool template?** Submit a PR to `templates/community/`!  
+**Love the extension?** ⭐ Star the repo and share with friends!

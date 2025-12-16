@@ -12,8 +12,8 @@ export class AddonManager {
             includeCharCard: true,
             includeUserCard: true,
             includeWorldCard: true,
-            includeHistory: false,
-            historyDepth: 5
+            includeHistory: true,
+            historyDepth: 1  // Minimum 1 for style consistency
         };
     }
 
@@ -180,6 +180,13 @@ export class AddonManager {
             order = maxOrder + 1;
         }
 
+        // ALWAYS use minimum historyDepth of 1 for style/context consistency
+        let includeHistory = addon.contextSettings?.includeHistory ?? this.defaultSettings.includeHistory;
+        let historyDepth = addon.contextSettings?.historyDepth ?? this.defaultSettings.historyDepth;
+
+        // Enforce minimum historyDepth of 1
+        historyDepth = Math.max(historyDepth, 1);
+
         return {
             id: addon.id || this.generateId(),
             name: addon.name || 'Unnamed Sidecar',
@@ -194,14 +201,14 @@ export class AddonManager {
             serviceProvider: addon.serviceProvider || [], // Array of service providers for OpenRouter
             resultFormat: addon.resultFormat || 'collapsible',
             responseLocation: addon.responseLocation || 'outsideChatlog',
-            formatStyle: addon.formatStyle || 'markdown',
+            formatStyle: addon.formatStyle || 'html-css',
             contextSettings: {
                 messagesCount: addon.contextSettings?.messagesCount ?? this.defaultSettings.messagesCount,
                 includeCharCard: addon.contextSettings?.includeCharCard ?? this.defaultSettings.includeCharCard,
                 includeUserCard: addon.contextSettings?.includeUserCard ?? this.defaultSettings.includeUserCard,
                 includeWorldCard: addon.contextSettings?.includeWorldCard ?? this.defaultSettings.includeWorldCard,
-                includeHistory: addon.contextSettings?.includeHistory ?? this.defaultSettings.includeHistory,
-                historyDepth: addon.contextSettings?.historyDepth ?? this.defaultSettings.historyDepth
+                includeHistory: includeHistory,
+                historyDepth: historyDepth  // Always minimum 1
             },
             enabled: addon.enabled !== undefined ? addon.enabled : true,
             order: order

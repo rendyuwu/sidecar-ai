@@ -1,0 +1,92 @@
+{
+  "version": "1.0",
+  "name": "Sidecar AI Starter Pack",
+  "description": "Essential templates to get started - import all at once!",
+  "exportDate": "2025-12-16",
+  "addons": [
+    {
+      "name": "🔄 Perspective Flip",
+      "description": "Shows the scene from another character's viewpoint",
+      "prompt": "Briefly describe the last exchange from the OTHER character's perspective:\n\n**How they perceived it:**\n[2-3 sentences from their viewpoint]\n\n**What they noticed:**\n[1-2 key details they picked up on]\n\nThis helps understand how your actions/words are being interpreted.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 4,
+        "includeCharCard": true,
+        "includeUserCard": true,
+        "includeWorldCard": false,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    },
+    {
+      "name": "🎬 Director's Commentary",
+      "description": "Provides meta-analysis like DVD commentary",
+      "prompt": "Provide director's commentary on the last message (as if analyzing a film scene):\n\n🎬 **Scene Analysis:**\n[What's happening on a meta level - narrative techniques, character beats, foreshadowing]\n\n**Notable Techniques:**\n- [Technique 1]: [How it's used]\n- [Technique 2]: [How it's used]\n\nKeep it insightful but concise. Focus on craft, not just plot summary.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 5,
+        "includeCharCard": true,
+        "includeUserCard": false,
+        "includeWorldCard": false,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    },
+    {
+      "name": "🎵 Soundtrack Suggester",
+      "description": "Suggests music tracks that would fit the scene",
+      "prompt": "Suggest 3 songs/music tracks that would fit this scene perfectly:\n\n🎵 **Scene Soundtrack:**\n\n1. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\n2. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\n3. **[Song Title]** by [Artist]\n   - Genre: [Genre]\n   - Why: [How it matches the mood/scene]\n\nSuggest real songs that exist. Consider mood, pacing, lyrics, and atmosphere.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 5,
+        "includeCharCard": false,
+        "includeUserCard": false,
+        "includeWorldCard": true,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    },
+    {
+      "name": "🎨 Art Prompt Generator",
+      "description": "Generates detailed prompts for image generation AIs",
+      "prompt": "Create a detailed image generation prompt for the current scene:\n\n**Stable Diffusion / Midjourney Prompt:**\n\n[Detailed visual description with artistic style, lighting, composition, mood, and technical details. 2-3 sentences, comma-separated for AI art tools.]\n\n**Style Tags:** [photorealistic, anime, oil painting, digital art, etc.]\n**Mood:** [atmospheric descriptors]\n**Lighting:** [time of day, light sources, shadows]\n**Composition:** [camera angle, framing]\n\nMake it detailed enough for an AI to generate an accurate scene visualization.",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 4,
+        "includeCharCard": true,
+        "includeUserCard": false,
+        "includeWorldCard": true,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    }
+  ]
+}

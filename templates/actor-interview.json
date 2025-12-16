@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "name": "Template: Actor Interview",
+  "description": "Behind-the-scenes with actors breaking character",
+  "addons": [
+    {
+      "name": "🎭 Actor Interview",
+      "description": "Behind-the-scenes where actors share real thoughts on the scene",
+      "prompt": "Add a brief Behind the Scenes section where the actors break out of character and share their real thoughts about the scene they just performed.\n\nFORMATTING CRITERIA:\n- Keep it short (2-3 lines per character maximum)\n- Genuine reaction to what just happened\n- Their feelings on the character and scene\n- Casual, conversational tone (like real BTS interviews)\n- Can include: surprise at character choices, difficulty of scene, what they enjoyed, challenges faced\n\nEXAMPLE FORMAT:\n<div style=\"margin-top:20px;padding:15px;background:rgba(0,0,0,0.25);border-radius:10px;border:2px dashed var(--SmartThemeBorderColor);\">\n  <h4 style=\"margin:0 0 12px 0;color:var(--SmartThemeEmColor);\">🎬 Behind the Scenes</h4>\n  \n  <div style=\"display:flex;gap:10px;margin-bottom:10px;align-items:start;\">\n    <div style=\"width:32px;height:32px;border-radius:50%;background:#f59e0b;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.9em;\">🎭</div>\n    <div>\n      <strong style=\"color:#f59e0b;\">[Character Name]'s Actor:</strong>\n      <p style=\"margin:4px 0 0 0;font-style:italic;opacity:0.9;line-height:1.4;\">"[
+        2-3 line genuine reaction/thought about the scene
+      ]"</p>\n    </div>\n  </div>\n  \n  <div style=\"display:flex;gap:10px;align-items:start;\">\n    <div style=\"width:32px;height:32px;border-radius:50%;background:#3b82f6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.9em;\">👤</div>\n    <div>\n      <strong style=\"color:#3b82f6;\">[User Name]'s Actor:</strong>\n      <p style=\"margin:4px 0 0 0;font-style:italic;opacity:0.9;line-height:1.4;\">"[
+        2-3 line genuine reaction/thought about the scene
+      ]"</p>\n    </div>\n  </div>\n</div>",
+      "triggerMode": "manual",
+      "requestMode": "standalone",
+      "aiProvider": "openai",
+      "aiModel": "gpt-4o-mini",
+      "apiKey": "",
+      "resultFormat": "collapsible",
+      "responseLocation": "outsideChatlog",
+      "formatStyle": "html-css",
+      "contextSettings": {
+        "messagesCount": 3,
+        "includeCharCard": true,
+        "includeUserCard": true,
+        "includeWorldCard": false,
+        "includeHistory": true,
+        "historyDepth": 1
+      }
+    }
+  ]
+}
