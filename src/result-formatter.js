@@ -1045,17 +1045,31 @@ export class ResultFormatter {
             return false;
         }
 
-        // 1. Update in message.extra (modern storage)
         try {
-            if (!message.extra) {
-                message.extra = {};
+            // Get current swipe_id
+            const swipeId = message.swipe_id ?? 0;
+            
+            // Initialize swipe_info if needed
+            if (!Array.isArray(message.swipe_info)) {
+                message.swipe_info = [];
             }
-            if (!message.extra.sidecarResults) {
-                message.extra.sidecarResults = {};
+            if (!message.swipe_info[swipeId]) {
+                message.swipe_info[swipeId] = {
+                    send_date: message.send_date,
+                    gen_started: message.gen_started,
+                    gen_finished: message.gen_finished,
+                    extra: {}
+                };
+            }
+            if (!message.swipe_info[swipeId].extra) {
+                message.swipe_info[swipeId].extra = {};
+            }
+            if (!message.swipe_info[swipeId].extra.sidecarResults) {
+                message.swipe_info[swipeId].extra.sidecarResults = {};
             }
 
-            // Update or create entry
-            message.extra.sidecarResults[addonId] = {
+            // Update in current swipe variant
+            message.swipe_info[swipeId].extra.sidecarResults[addonId] = {
                 result: newContent,
                 addonName: addon?.name || 'Unknown',
                 timestamp: Date.now(),
@@ -1063,7 +1077,16 @@ export class ResultFormatter {
                 edited: true
             };
 
-            console.log(`[Sidecar AI] Updated result in message.extra for addon ${addonId}`);
+            // Also update message.extra for backward compatibility
+            if (!message.extra) {
+                message.extra = {};
+            }
+            if (!message.extra.sidecarResults) {
+                message.extra.sidecarResults = {};
+            }
+            message.extra.sidecarResults[addonId] = message.swipe_info[swipeId].extra.sidecarResults[addonId];
+
+            console.log(`[Sidecar AI] Updated result for addon ${addonId} in swipe variant ${swipeId}`);
         } catch (e) {
             console.error('[Sidecar AI] Error updating metadata:', e);
             return false;
