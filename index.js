@@ -327,17 +327,9 @@ async function loadModules() {
                 console.log(`[Sidecar AI] Registered listener for ${swipeEvent}`);
             }
 
-            // Listen for generation start events
-            // When a new AI response is requested, hide all sidecars (they'll be shown when the response arrives)
-            const generationStartEvent = context.event_types.GENERATION_STARTED || 'GENERATION_STARTED';
-            if (generationStartEvent) {
-                context.eventSource.on(generationStartEvent, () => {
-                    console.log(`[Sidecar AI] Generation started event detected: ${generationStartEvent}`);
-                    // Hide all sidecars when generation starts - new ones will appear when response arrives
-                    resultFormatter.hideAllSidecarCards();
-                });
-                console.log(`[Sidecar AI] Registered listener for ${generationStartEvent}`);
-            }
+            // Note: We no longer hide cards on GENERATION_STARTED
+            // Cards are only hidden on swipe (MESSAGE_SWIPED) or when message is regenerated
+            // This ensures cards stay visible unless explicitly swiped away
         }
 
         // Note: Periodic cleanup, scroll cleanup, touch cleanup, and mutation observer cleanup
