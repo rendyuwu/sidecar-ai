@@ -344,17 +344,19 @@ export class AIClient {
      */
     async testConnection(provider, model, apiKey, apiUrl = null) {
         try {
-            const chatCompletionSource = this.getChatCompletionSource(provider);
+            // Always use direct API testing when API key is explicitly provided
+            // This ensures we test with the exact credentials the user entered
+            if (apiKey) {
+                console.log(`[Sidecar AI] Testing connection directly: ${provider} (${model})`);
+                return await this.testConnectionDirect(provider, model, apiKey, apiUrl);
+            }
             
-            // Use SillyTavern's ChatCompletionService if available
+            // If no API key provided, try using ChatCompletionService with ST's configured key
+            const chatCompletionSource = this.getChatCompletionSource(provider);
             if (this.context && this.context.ChatCompletionService) {
-                console.log(`[Sidecar AI] Testing connection: ${provider} (${model})`);
+                console.log(`[Sidecar AI] Testing connection via ChatCompletionService: ${provider} (${model})`);
                 
-                // Create a minimal test request
                 const testMessages = [{ role: 'user', content: 'test' }];
-                
-                // Temporarily override API key if provided
-                const originalApiKey = this.getProviderApiKey(provider);
                 
                 const requestOptions = {
                     stream: false,
@@ -366,14 +368,6 @@ export class AIClient {
                     custom_url: apiUrl || undefined,
                 };
                 
-                // If we have a custom API key, we need to pass it somehow
-                // ChatCompletionService might use connection profiles, so we'll try direct API fallback
-                // if we have a custom key
-                if (apiKey && (!originalApiKey || apiKey !== originalApiKey)) {
-                    // Use fallback for custom API key
-                    return await this.testConnectionDirect(provider, model, apiKey, apiUrl);
-                }
-                
                 const response = await this.context.ChatCompletionService.processRequest(
                     requestOptions,
                     { presetName: undefined },
@@ -384,8 +378,7 @@ export class AIClient {
                 return { success: true, message: 'Connection successful' };
             }
             
-            // Fallback: test direct API connection
-            return await this.testConnectionDirect(provider, model, apiKey, apiUrl);
+            throw new Error('No API key provided and ChatCompletionService not available');
         } catch (error) {
             console.error('[Sidecar AI] Connection test failed:', error);
             const errorMessage = error.message || String(error);
@@ -397,6 +390,8 @@ export class AIClient {
                     ? 'Invalid model or endpoint'
                     : errorMessage.includes('429')
                     ? 'Rate limit exceeded'
+                    : errorMessage.includes('403') || errorMessage.includes('Forbidden')
+                    ? 'API key does not have permission'
                     : `Connection failed: ${errorMessage}`
             };
         }
