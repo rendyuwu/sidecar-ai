@@ -344,38 +344,47 @@ export class AIClient {
      */
     async testConnection(provider, model, apiKey, apiUrl = null) {
         try {
-            // Always use direct API testing when API key is explicitly provided
-            // This ensures we test with the exact credentials the user entered
+            const chatCompletionSource = this.getChatCompletionSource(provider);
+            
+            // Try ChatCompletionService first (avoids CORS issues, uses server-side requests)
+            // This is especially important for providers like Deepseek that block browser requests
+            if (this.context && this.context.ChatCompletionService) {
+                console.log(`[Sidecar AI] Testing connection via ChatCompletionService: ${provider} (${model})`);
+                
+                try {
+                    const testMessages = [{ role: 'user', content: 'test' }];
+
+                    const requestOptions = {
+                        stream: false,
+                        messages: testMessages,
+                        model: model,
+                        chat_completion_source: chatCompletionSource,
+                        max_tokens: 10, // Minimal tokens for test
+                        temperature: 0.7,
+                        custom_url: apiUrl || undefined,
+                    };
+
+                    const response = await this.context.ChatCompletionService.processRequest(
+                        requestOptions,
+                        { presetName: undefined },
+                        true
+                    );
+
+                    // If we got a response (even empty), connection works
+                    console.log('[Sidecar AI] ChatCompletionService test successful');
+                    return { success: true, message: 'Connection successful' };
+                } catch (chatServiceError) {
+                    console.warn('[Sidecar AI] ChatCompletionService test failed:', chatServiceError);
+                    // Fall through to direct API test if ChatCompletionService fails
+                    // This might happen if ST doesn't have the API key configured
+                }
+            }
+
+            // Fallback: Use direct API testing
+            // Note: This may fail with CORS for some providers (like Deepseek)
             if (apiKey) {
                 console.log(`[Sidecar AI] Testing connection directly: ${provider} (${model})`);
                 return await this.testConnectionDirect(provider, model, apiKey, apiUrl);
-            }
-
-            // If no API key provided, try using ChatCompletionService with ST's configured key
-            const chatCompletionSource = this.getChatCompletionSource(provider);
-            if (this.context && this.context.ChatCompletionService) {
-                console.log(`[Sidecar AI] Testing connection via ChatCompletionService: ${provider} (${model})`);
-
-                const testMessages = [{ role: 'user', content: 'test' }];
-
-                const requestOptions = {
-                    stream: false,
-                    messages: testMessages,
-                    model: model,
-                    chat_completion_source: chatCompletionSource,
-                    max_tokens: 10, // Minimal tokens for test
-                    temperature: 0.7,
-                    custom_url: apiUrl || undefined,
-                };
-
-                const response = await this.context.ChatCompletionService.processRequest(
-                    requestOptions,
-                    { presetName: undefined },
-                    true
-                );
-
-                // If we got a response (even empty), connection works
-                return { success: true, message: 'Connection successful' };
             }
 
             throw new Error('No API key provided and ChatCompletionService not available');
@@ -386,9 +395,9 @@ export class AIClient {
                 message: error.message,
                 stack: error.stack
             });
-            
+
             const errorMessage = error.message || String(error);
-            
+
             // Handle specific error cases
             if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
                 return { success: false, message: 'Invalid API key - check your credentials' };
@@ -402,17 +411,23 @@ export class AIClient {
             if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
                 return { success: false, message: 'API key does not have permission' };
             }
-            if (errorMessage.includes('Network error') || errorMessage.includes('fetch')) {
-                return { success: false, message: `Network error: ${errorMessage}. Check endpoint URL and CORS settings.` };
+            if (errorMessage.includes('Network error') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+                return { 
+                    success: false, 
+                    message: `CORS/Network error: This provider (${provider}) blocks browser requests.\n\nSolution: Configure this provider in SillyTavern's API Connection settings and use that configured key, or use a reverse proxy.\n\nError: ${errorMessage}` 
+                };
             }
-            if (errorMessage.includes('CORS')) {
-                return { success: false, message: 'CORS error - endpoint may not allow browser requests. Try using a proxy.' };
+            if (errorMessage.includes('CORS') || errorMessage.includes('Access-Control')) {
+                return { 
+                    success: false, 
+                    message: `CORS error: ${provider} API blocks direct browser requests.\n\nSolution: Configure ${provider} in SillyTavern's API Connection settings, then the extension will use server-side requests automatically.` 
+                };
             }
-            
+
             // Default error message
-            return { 
-                success: false, 
-                message: errorMessage || 'Unknown error occurred. Check browser console for details.' 
+            return {
+                success: false,
+                message: errorMessage || 'Unknown error occurred. Check browser console for details.'
             };
         }
     }
@@ -511,7 +526,7 @@ export class AIClient {
                 console.error('[Sidecar AI] Network error:', error);
                 throw new Error(`Network error: ${error.message}. Check if endpoint is correct and CORS is enabled.`);
             }
-            
+
             // Re-throw other errors as-is
             throw error;
         }
