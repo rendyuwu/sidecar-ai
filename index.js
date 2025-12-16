@@ -3,20 +3,42 @@
  * Allows users to define custom add-on prompts that execute using cheaper AI models
  */
 
-// Use dynamic imports with error handling
-let AddonManager, ContextBuilder, AIClient, ResultFormatter, EventHandler, getContext;
+// Import getContext using static import (as per SillyTavern docs)
+// For third-party extensions, use the global SillyTavern object instead
+// import { getContext } from "../../extensions.js"; // This may not work for dynamic imports
+
+// Use dynamic imports only for our own modules
+let AddonManager, ContextBuilder, AIClient, ResultFormatter, EventHandler;
+
+// Get getContext function - use global SillyTavern object (more reliable for third-party extensions)
+function getGetContext() {
+    // Try global SillyTavern object first (recommended for third-party extensions)
+    if (typeof SillyTavern !== 'undefined' && typeof SillyTavern.getContext === 'function') {
+        return SillyTavern.getContext;
+    }
+
+    // Fallback: try window.getContext
+    if (typeof window !== 'undefined' && typeof window.getContext === 'function') {
+        return window.getContext;
+    }
+
+    // Last resort: try global getContext
+    if (typeof getContext === 'function') {
+        return getContext;
+    }
+
+    return null;
+}
 
 async function loadModules() {
     try {
         const [
-            extensionsModule,
             addonManagerModule,
             contextBuilderModule,
             aiClientModule,
             resultFormatterModule,
             eventHandlerModule
         ] = await Promise.all([
-            import("../../extensions.js"),
             import("./src/addon-manager.js"),
             import("./src/context-builder.js"),
             import("./src/ai-client.js"),
@@ -24,7 +46,6 @@ async function loadModules() {
             import("./src/event-handler.js")
         ]);
 
-        getContext = extensionsModule.getContext;
         AddonManager = addonManagerModule.AddonManager;
         ContextBuilder = contextBuilderModule.ContextBuilder;
         AIClient = aiClientModule.AIClient;
@@ -50,14 +71,28 @@ async function loadModules() {
         return;
     }
 
-    console.log('[Add-Ons Extension] Modules loaded, initializing...');
+    console.log('[Add-Ons Extension] Modules loaded, getting context...');
+
+    // Get getContext function
+    const getContext = getGetContext();
+    if (!getContext) {
+        console.error('[Add-Ons Extension] getContext function not available. Trying to wait...');
+        // Wait a bit for SillyTavern to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const getContextRetry = getGetContext();
+        if (!getContextRetry) {
+            console.error('[Add-Ons Extension] getContext still not available after wait. Extension disabled.');
+            return;
+        }
+        getContext = getContextRetry;
+    }
 
     try {
         // Get SillyTavern context
         const context = getContext();
 
         if (!context) {
-            console.error('[Add-Ons Extension] Failed to get context');
+            console.error('[Add-Ons Extension] Failed to get context - getContext() returned null/undefined');
             return;
         }
 
