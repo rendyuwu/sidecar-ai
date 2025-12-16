@@ -16,9 +16,10 @@ export class AIClient {
             const provider = addon.aiProvider || 'openai';
             const model = addon.aiModel || 'gpt-3.5-turbo';
             const apiKey = addon.apiKey || this.getProviderApiKey(provider);
+            const apiUrl = addon.apiUrl; // Custom endpoint support
 
-            if (!apiKey) {
-                throw new Error(`No API key found for provider: ${provider}`);
+            if (!apiKey && provider !== 'custom' && provider !== 'koboldcpp') { // Some local providers don't need keys
+                 // Warn but maybe proceed if user knows what they're doing (e.g. local)
             }
 
             // Use SillyTavern's API system if available
@@ -27,9 +28,9 @@ export class AIClient {
             }
 
             // Fallback to direct API calls
-            return await this.sendDirectAPI(addon, prompt, provider, model, apiKey);
+            return await this.sendDirectAPI(addon, prompt, provider, model, apiKey, apiUrl);
         } catch (error) {
-            console.error(`[Add-Ons Extension] Error sending to AI (${addon.name}):`, error);
+            console.error(`[Sidecar AI] Error sending to AI (${addon.name}):`, error);
             throw error;
         }
     }
@@ -123,8 +124,14 @@ export class AIClient {
     /**
      * Send direct API request
      */
-    async sendDirectAPI(addon, prompt, provider, model, apiKey) {
-        const endpoint = this.getProviderEndpoint(provider);
+    async sendDirectAPI(addon, prompt, provider, model, apiKey, apiUrl = null) {
+        let endpoint = apiUrl;
+        
+        if (!endpoint) {
+            endpoint = this.getProviderEndpoint(provider);
+        } else {
+             console.log('[Sidecar AI] Using custom API URL:', endpoint);
+        }
 
         const requestBody = this.buildRequestBody(provider, model, prompt);
 

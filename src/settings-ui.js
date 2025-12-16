@@ -669,6 +669,7 @@ export class SettingsUI {
         $('#add_ons_form_request_mode').val(addon.requestMode);
         $('#add_ons_form_ai_provider').val(addon.aiProvider);
         $('#add_ons_form_api_key').val(addon.apiKey || '');
+        $('#add_ons_form_api_url').val(addon.apiUrl || '');
         $('#add_ons_form_result_format').val(addon.resultFormat);
         $('#add_ons_form_response_location').val(addon.responseLocation);
 
@@ -702,6 +703,7 @@ export class SettingsUI {
             aiProvider: $('#add_ons_form_ai_provider').val(),
             aiModel: $('#add_ons_form_ai_model').val(),
             apiKey: $('#add_ons_form_api_key').val(),
+            apiUrl: $('#add_ons_form_api_url').val(),
             resultFormat: $('#add_ons_form_result_format').val(),
             responseLocation: $('#add_ons_form_response_location').val(),
             contextSettings: {
