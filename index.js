@@ -117,8 +117,15 @@ async function loadModules() {
         // Register event listeners
         eventHandler.registerListeners();
 
-        // Initialize settings UI
-        initializeSettingsUI(context);
+        // Initialize settings UI - wait for settings.html to load
+        // SillyTavern loads settings.html asynchronously, so we need to wait
+        waitForSettingsTemplate().then(() => {
+            initializeSettingsUI(context);
+        }).catch(() => {
+            console.warn('[Add-Ons Extension] Settings template not found after waiting. Extension may not appear in Extensions list.');
+            // Still initialize, but template won't be available
+            initializeSettingsUI(context);
+        });
 
         // Initialize dropdown UI for outsideChatlog results
         initializeDropdownUI();
@@ -147,6 +154,45 @@ async function loadModules() {
         // Don't re-throw - SillyTavern extensions should handle errors gracefully
     }
 
+    // Wait for settings template to be loaded by SillyTavern
+    // SillyTavern loads settings.html and looks for templates matching the extension folder name
+    async function waitForSettingsTemplate() {
+        const maxAttempts = 30; // Increased attempts
+        const delay = 100;
+
+        // Try multiple possible template ID formats
+        const possibleIds = [
+            'sidecar-ai-settings-template',  // Folder name format
+            'sidecar_ai_settings_template',  // Underscore format
+            'add-ons-extension-settings-template', // Display name format
+            'addons-extension-settings-template'
+        ];
+
+        for (let i = 0; i < maxAttempts; i++) {
+            for (const id of possibleIds) {
+                const template = document.getElementById(id);
+                if (template) {
+                    console.log(`[Add-Ons Extension] Settings template found with ID "${id}" after ${i * delay}ms`);
+                    return Promise.resolve();
+                }
+            }
+
+            // Also check all Handlebars templates to see what's available
+            if (i === 5 || i === 15) {
+                const allTemplates = document.querySelectorAll('script[type="text/x-handlebars-template"]');
+                console.log(`[Add-Ons Extension] Check ${i}: Found ${allTemplates.length} Handlebars templates`);
+                allTemplates.forEach((t, idx) => {
+                    console.log(`[Add-Ons Extension]   Template ${idx}: id="${t.id}"`);
+                });
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        console.error('[Add-Ons Extension] Settings template not found after waiting. Extension may not appear in Extensions list.');
+        return Promise.reject('Template not found');
+    }
+
     function initializeSettingsUI(context) {
         if (!context.extensionSettings) {
             context.extensionSettings = {};
@@ -159,25 +205,45 @@ async function loadModules() {
             };
         }
 
-        // Register settings template - SillyTavern should auto-detect it
-        // The template ID should match: {extension-folder-name}-settings-template
-        const settingsTemplate = document.getElementById('sidecar-ai-settings-template') ||
-            document.getElementById('add-ons-extension-settings-template');
+        // Try multiple template ID formats - SillyTavern might use different naming
+        // For third-party extensions, the ID might be based on folder name or display_name
+        const possibleTemplateIds = [
+            'sidecar-ai-settings-template',  // Folder name format (most likely)
+            'sidecar-ai-settings',           // Without -template suffix
+            'add-ons-extension-settings-template', // Display name format
+            'addons-extension-settings-template',
+            'add-ons-extension-settings',
+            'sidecar_ai_settings_template',  // Underscore format
+            'settings'                       // Just 'settings' (unlikely but possible)
+        ];
 
-        if (settingsTemplate) {
-            console.log('[Add-Ons Extension] Settings template found');
+        let settingsTemplate = null;
+        for (const id of possibleTemplateIds) {
+            settingsTemplate = document.getElementById(id);
+            if (settingsTemplate) {
+                console.log(`[Add-Ons Extension] Settings template found with ID: ${id}`);
+                break;
+            }
+        }
 
-            // Render settings UI when extension settings panel is opened
-            // SillyTavern will handle rendering, but we can prepare data
+        if (!settingsTemplate) {
+            // Check if settings.html script tags exist at all
+            const allScripts = document.querySelectorAll('script[type="text/x-handlebars-template"]');
+            console.log(`[Add-Ons Extension] Found ${allScripts.length} Handlebars templates total`);
+            allScripts.forEach((script, idx) => {
+                console.log(`[Add-Ons Extension] Template ${idx}: id="${script.id}"`);
+            });
+
+            console.warn('[Add-Ons Extension] Settings template not found. Extension may not appear in Extensions list.');
+            console.warn('[Add-Ons Extension] Make sure settings.html is in the extension folder and SillyTavern has loaded it.');
+        } else {
+            // Template found - ensure settings UI handler is ready
             if (window.addOnsExtension && window.addOnsExtension.getAddonManager) {
                 const addonManager = window.addOnsExtension.getAddonManager();
                 if (addonManager) {
-                    // Data will be passed to template via SillyTavern's rendering system
                     console.log('[Add-Ons Extension] Add-on manager available for settings UI');
                 }
             }
-        } else {
-            console.warn('[Add-Ons Extension] Settings template not found. Make sure settings.html is loaded.');
         }
     }
 
