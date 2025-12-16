@@ -100,7 +100,7 @@ export class AIClient {
         }
 
         try {
-            const apiKey = addons[0].apiKey || this.getProviderApiKey(provider);
+            const apiKey = addons[0].apiKey || await this.getProviderApiKey(provider);
 
             if (!apiKey) {
                 throw new Error(`No API key found for provider: ${provider}`);
@@ -161,7 +161,7 @@ export class AIClient {
         }
 
         // Get API key from addon or fallback to provider key
-        const apiKey = addon.apiKey || this.getProviderApiKey(provider);
+        const apiKey = addon.apiKey || await this.getProviderApiKey(provider);
         if (!apiKey) {
             throw new Error(`No API key found for provider: ${provider}`);
         }
@@ -561,15 +561,119 @@ export class AIClient {
     }
 
     /**
+     * Map provider name to SECRET_KEY constant
+     */
+    getSecretKeyForProvider(provider) {
+        const providerToSecretKey = {
+            'openai': 'api_key_openai',
+            'openrouter': 'api_key_openrouter',
+            'anthropic': 'api_key_claude',
+            'claude': 'api_key_claude',
+            'google': 'api_key_makersuite',
+            'deepseek': 'api_key_deepseek',
+            'cohere': 'api_key_cohere',
+            'groq': 'api_key_groq',
+            'mistralai': 'api_key_mistralai',
+            'mistral': 'api_key_mistralai',
+            'xai': 'api_key_xai',
+            'perplexity': 'api_key_perplexity',
+            'ai21': 'api_key_ai21',
+            'nanogpt': 'api_key_nanogpt',
+            'aimlapi': 'api_key_aimlapi',
+            'custom': 'api_key_custom',
+        };
+        return providerToSecretKey[provider?.toLowerCase()] || null;
+    }
+
+    /**
      * Get API key for provider from SillyTavern settings
      * Uses same approach as SillyTavern's API connection system
+     * @returns {Promise<string|null>} API key or null if not found
      */
-    getProviderApiKey(provider) {
-        // Method 1: Check connection profiles (ST's primary method)
+    async getProviderApiKey(provider) {
+        if (!provider) {
+            return null;
+        }
+
+        // Method 1: Check Connection Manager profiles (ST's primary method)
+        // Connection Manager profiles store secret-id, not the actual key
+        if (this.context && this.context.extensionSettings && this.context.extensionSettings.connectionManager) {
+            const profiles = this.context.extensionSettings.connectionManager.profiles || [];
+            for (const profile of profiles) {
+                if (profile && profile.api === provider && profile['secret-id']) {
+                    const secretId = profile['secret-id'];
+                    const secretKey = this.getSecretKeyForProvider(provider);
+                    
+                    if (secretKey && typeof window !== 'undefined') {
+                        // Try to access secret_state from window (imported from secrets.js)
+                        const secretState = window.secret_state || (window.SillyTavern && window.SillyTavern.secret_state);
+                        if (secretState && secretState[secretKey]) {
+                            // Check secret_state for the matching secret ID
+                            const secrets = secretState[secretKey];
+                            if (Array.isArray(secrets)) {
+                                const secret = secrets.find(s => s.id === secretId);
+                                if (secret && secret.value) {
+                                    return secret.value;
+                                }
+                            }
+                        }
+
+                        // If secret_state doesn't have the value, try to fetch it via findSecret
+                        // findSecret is imported from secrets.js and may be available on window
+                        const findSecretFn = window.findSecret || (window.SillyTavern && window.SillyTavern.findSecret);
+                        if (findSecretFn && typeof findSecretFn === 'function') {
+                            try {
+                                const apiKey = await findSecretFn(secretKey, secretId);
+                                if (apiKey) {
+                                    return apiKey;
+                                }
+                            } catch (error) {
+                                console.warn('[Sidecar AI] Failed to fetch secret via findSecret:', error);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Method 2: Check secret_state directly for active secrets
+        const secretKey = this.getSecretKeyForProvider(provider);
+        if (secretKey && typeof window !== 'undefined') {
+            const secretState = window.secret_state || (window.SillyTavern && window.SillyTavern.secret_state);
+            if (secretState && secretState[secretKey]) {
+                const secrets = secretState[secretKey];
+                if (Array.isArray(secrets)) {
+                    // Find active secret
+                    const activeSecret = secrets.find(s => s.active);
+                    if (activeSecret && activeSecret.value) {
+                        return activeSecret.value;
+                    }
+                    // If no active secret, use the first one
+                    if (secrets.length > 0 && secrets[0].value) {
+                        return secrets[0].value;
+                    }
+                }
+            }
+
+            // Method 3: Try to fetch via findSecret for active secret
+            const findSecretFn = window.findSecret || (window.SillyTavern && window.SillyTavern.findSecret);
+            if (findSecretFn && typeof findSecretFn === 'function') {
+                try {
+                    const apiKey = await findSecretFn(secretKey);
+                    if (apiKey) {
+                        return apiKey;
+                    }
+                } catch (error) {
+                    console.warn('[Sidecar AI] Failed to fetch secret via findSecret:', error);
+                }
+            }
+        }
+
+        // Method 4: Legacy fallback - check old connection_profiles structure
         if (this.context && this.context.connection_profiles) {
             const profiles = Object.values(this.context.connection_profiles || {});
             for (const profile of profiles) {
-                if (profile && profile.api_provider === provider) {
+                if (profile && (profile.api_provider === provider || profile.api === provider)) {
                     if (profile.api_key) {
                         return profile.api_key;
                     }
@@ -577,7 +681,7 @@ export class AIClient {
             }
         }
 
-        // Method 2: Check API settings directly
+        // Method 5: Check API settings directly
         if (this.context && this.context.api_settings) {
             const providerSettings = this.context.api_settings[provider];
             if (providerSettings && providerSettings.api_key) {
@@ -585,12 +689,12 @@ export class AIClient {
             }
         }
 
-        // Method 3: Check settings.api_keys
+        // Method 6: Check settings.api_keys
         if (this.context && this.context.settings && this.context.settings.api_keys) {
             return this.context.settings.api_keys[provider];
         }
 
-        // Method 4: Try global ST storage
+        // Method 7: Try global ST storage
         if (typeof window !== 'undefined') {
             if (window.SillyTavern && window.SillyTavern.api_keys) {
                 return window.SillyTavern.api_keys[provider];

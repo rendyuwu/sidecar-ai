@@ -157,11 +157,11 @@ export class SettingsUI {
         // Variable insertion buttons removed - no longer needed
 
         // Provider change - load models and check for saved API key
-        $(document).off('change.sidecar', '#add_ons_form_ai_provider').on('change.sidecar', '#add_ons_form_ai_provider', function (e) {
+        $(document).off('change.sidecar', '#add_ons_form_ai_provider').on('change.sidecar', '#add_ons_form_ai_provider', async function (e) {
             e.stopPropagation();
             const provider = $(this).val();
             self.loadModelsForProvider(provider);
-            self.checkAndPrefillAPIKey(provider);
+            await self.checkAndPrefillAPIKey(provider);
         });
 
         // Test Connection button
@@ -184,7 +184,7 @@ export class SettingsUI {
 
     }
 
-    openModal(addonId = null) {
+    async openModal(addonId = null) {
         const modal = $('#add_ons_modal');
         const form = $('#add_ons_form')[0];
 
@@ -193,7 +193,7 @@ export class SettingsUI {
             if (this.addonManager) {
                 const addon = this.addonManager.getAddon(addonId);
                 if (addon) {
-                    this.populateForm(addon);
+                    await this.populateForm(addon);
                     $('#add_ons_modal_title').text('Edit Sidecar');
                     $('#add_ons_form_save').text('Save Sidecar');
                 }
@@ -205,9 +205,9 @@ export class SettingsUI {
             $('#add_ons_modal_title').text('Create New Sidecar');
             $('#add_ons_form_save').text('Create Sidecar');
             // Load models for default provider and check for saved API key
-            setTimeout(() => {
+            setTimeout(async () => {
                 this.loadModelsForProvider('openai');
-                this.checkAndPrefillAPIKey('openai');
+                await this.checkAndPrefillAPIKey('openai');
             }, 100);
         }
 
@@ -575,7 +575,7 @@ export class SettingsUI {
     /**
      * Check if API key exists in SillyTavern settings and prefill form
      */
-    checkAndPrefillAPIKey(provider) {
+    async checkAndPrefillAPIKey(provider) {
         if (!provider || !this.aiClient) {
             return;
         }
@@ -589,7 +589,7 @@ export class SettingsUI {
         }
 
         // Check if ST has API key configured
-        const stApiKey = this.aiClient.getProviderApiKey(provider);
+        const stApiKey = await this.aiClient.getProviderApiKey(provider);
         if (stApiKey) {
             apiKeyField.val('Using saved key from SillyTavern');
             apiKeyField.attr('data-using-st-key', 'true');
@@ -603,7 +603,7 @@ export class SettingsUI {
         }
     }
 
-    populateForm(addon) {
+    async populateForm(addon) {
         $('#add_ons_form_id').val(addon.id);
         $('#add_ons_form_name').val(addon.name);
         $('#add_ons_form_description').val(addon.description);
@@ -620,7 +620,7 @@ export class SettingsUI {
             $('#add_ons_form_api_key').css('color', '');
         } else {
             // Check for ST's saved key
-            this.checkAndPrefillAPIKey(addon.aiProvider);
+            await this.checkAndPrefillAPIKey(addon.aiProvider);
         }
 
         $('#add_ons_form_api_url').val(addon.apiUrl || '');
@@ -671,7 +671,7 @@ export class SettingsUI {
         // If using ST's saved key, get it from ST settings
         if (isUsingSTKey) {
             if (this.aiClient) {
-                apiKey = this.aiClient.getProviderApiKey(provider);
+                apiKey = await this.aiClient.getProviderApiKey(provider);
             } else {
                 apiKey = null;
             }
@@ -771,7 +771,7 @@ export class SettingsUI {
         // If using ST's saved key, get it from ST settings
         if (isUsingSTKey) {
             if (this.aiClient) {
-                apiKey = this.aiClient.getProviderApiKey(provider);
+                apiKey = await this.aiClient.getProviderApiKey(provider);
             } else {
                 apiKey = null;
             }
