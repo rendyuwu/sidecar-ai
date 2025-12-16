@@ -141,7 +141,8 @@ export class ContextBuilder {
     }
 
     /**
-     * Format character card
+     * Format character card using SillyTavern's actual field structure
+     * Matches the context_story_string template format
      */
     formatCharCard(charData) {
         if (!charData) {
@@ -150,36 +151,50 @@ export class ContextBuilder {
 
         const parts = [];
 
-        if (charData.name) {
-            parts.push(`Name: ${charData.name}`);
+        // Follow SillyTavern's context_story_string template order
+        if (charData.anchorBefore) {
+            parts.push(charData.anchorBefore);
+        }
+
+        if (charData.system) {
+            parts.push(charData.system);
+        }
+
+        if (charData.wiBefore) {
+            parts.push(charData.wiBefore);
         }
 
         if (charData.description) {
-            parts.push(`Description: ${charData.description}`);
+            parts.push(charData.description);
         }
 
         if (charData.personality) {
-            parts.push(`Personality: ${charData.personality}`);
+            const charName = charData.name || 'Character';
+            parts.push(`${charName}'s personality: ${charData.personality}`);
         }
 
         if (charData.scenario) {
             parts.push(`Scenario: ${charData.scenario}`);
         }
 
-        if (charData.first_mes) {
-            parts.push(`First Message: ${charData.first_mes}`);
+        if (charData.wiAfter) {
+            parts.push(charData.wiAfter);
         }
 
-        if (charData.mes_example) {
-            parts.push(`Message Example: ${charData.mes_example}`);
+        if (charData.persona) {
+            parts.push(charData.persona);
         }
 
-        // Include system prompt if available
-        if (charData.system) {
-            parts.push(`System: ${charData.system}`);
+        if (charData.anchorAfter) {
+            parts.push(charData.anchorAfter);
         }
 
-        return parts.join('\n') || 'No character card data available.';
+        // Fallback: Include name if available (not in template but useful)
+        if (charData.name && !parts.length) {
+            parts.push(`Name: ${charData.name}`);
+        }
+
+        return parts.join('\n\n') || 'No character card data available.';
     }
 
     /**

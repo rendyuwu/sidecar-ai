@@ -345,12 +345,12 @@ export class AIClient {
     async testConnection(provider, model, apiKey, apiUrl = null) {
         try {
             const chatCompletionSource = this.getChatCompletionSource(provider);
-            
+
             // Try ChatCompletionService first (avoids CORS issues, uses server-side requests)
             // This is especially important for providers like Deepseek that block browser requests
             if (this.context && this.context.ChatCompletionService) {
                 console.log(`[Sidecar AI] Testing connection via ChatCompletionService: ${provider} (${model})`);
-                
+
                 try {
                     const testMessages = [{ role: 'user', content: 'test' }];
 
@@ -412,15 +412,15 @@ export class AIClient {
                 return { success: false, message: 'API key does not have permission' };
             }
             if (errorMessage.includes('Network error') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
-                return { 
-                    success: false, 
-                    message: `CORS/Network error: This provider (${provider}) blocks browser requests.\n\nSolution: Configure this provider in SillyTavern's API Connection settings and use that configured key, or use a reverse proxy.\n\nError: ${errorMessage}` 
+                return {
+                    success: false,
+                    message: `CORS/Network error: This provider (${provider}) blocks browser requests.\n\nSolution: Configure this provider in SillyTavern's API Connection settings and use that configured key, or use a reverse proxy.\n\nError: ${errorMessage}`
                 };
             }
             if (errorMessage.includes('CORS') || errorMessage.includes('Access-Control')) {
-                return { 
-                    success: false, 
-                    message: `CORS error: ${provider} API blocks direct browser requests.\n\nSolution: Configure ${provider} in SillyTavern's API Connection settings, then the extension will use server-side requests automatically.` 
+                return {
+                    success: false,
+                    message: `CORS error: ${provider} API blocks direct browser requests.\n\nSolution: Configure ${provider} in SillyTavern's API Connection settings, then the extension will use server-side requests automatically.`
                 };
             }
 
