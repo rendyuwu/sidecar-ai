@@ -3,32 +3,32 @@
  * Matches SillyTavern's design system
  */
 
-/* Main Settings Container */
-.sidecar_ai_settings {
+/* Main Settings Container - Scoped to avoid affecting other extensions */
+#sidecar_ai_settings {
     width: 100%;
 }
 
-.sidecar_settings_content {
+#sidecar_ai_settings .sidecar_settings_content {
     padding: 5px;
 }
 
-/* Use SillyTavern's variables where possible */
-:root {
+/* Define local variables mapped to ST variables */
+#sidecar_ai_settings {
     --sidecar-border: var(--SmartThemeBorderColor, #ccc);
     --sidecar-bg: var(--SmartThemeBodyColor, #1e1e1e);
     --sidecar-text: var(--SmartThemeBodyColor, #eee);
     --sidecar-accent: var(--SmartThemeEmColor, #9fc);
 }
 
-/* Inline Drawer (Fallback if not provided by ST) */
-.inline-drawer {
+/* Inline Drawer */
+#sidecar_ai_settings .inline-drawer {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--sidecar-border);
     border-radius: 5px;
     margin-bottom: 5px;
 }
 
-.inline-drawer-toggle {
+#sidecar_ai_settings .inline-drawer-toggle {
     cursor: pointer;
     padding: 10px;
     display: flex;
@@ -37,26 +37,26 @@
     user-select: none;
 }
 
-.inline-drawer-toggle:hover {
+#sidecar_ai_settings .inline-drawer-toggle:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.inline-drawer-content {
+#sidecar_ai_settings .inline-drawer-content {
     padding: 10px;
     border-top: 1px solid var(--sidecar-border);
-    display: block; /* ST usually manages display, default open for now or JS handles it */
+    display: block; 
 }
 
 /* Add-ons List */
-.add_ons_list {
+#sidecar_ai_settings .add_ons_list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
 }
 
-/* Add-on Item Card - styling match */
-.add_ons_item {
+/* Add-on Item Card */
+#sidecar_ai_settings .add_ons_item {
     margin: 0 0.5em;
     padding: 10px;
     border: 1px solid var(--sidecar-border);
@@ -66,12 +66,12 @@
     transition: all 0.2s ease;
 }
 
-.add_ons_item:hover {
+#sidecar_ai_settings .add_ons_item:hover {
     border-color: var(--sidecar-accent);
     box-shadow: -1px 1px 8px rgba(0, 0, 0, 0.4);
 }
 
-.add_ons_item_header {
+#sidecar_ai_settings .add_ons_item_header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -79,13 +79,13 @@
     gap: 1em;
 }
 
-.add_ons_item_info h4 {
+#sidecar_ai_settings .add_ons_item_info h4 {
     margin: 0 0 5px 0;
     font-size: 1.1em;
     font-weight: 600;
 }
 
-.add_ons_item_meta {
+#sidecar_ai_settings .add_ons_item_meta {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
@@ -93,26 +93,26 @@
     opacity: 0.8;
 }
 
-.add_ons_badge {
+#sidecar_ai_settings .add_ons_badge {
     padding: 2px 6px;
     border-radius: 4px;
     background: rgba(128, 128, 128, 0.2);
     border: 1px solid rgba(128, 128, 128, 0.3);
 }
 
-.add_ons_badge_enabled {
+#sidecar_ai_settings .add_ons_badge_enabled {
     color: #4cd137;
     border-color: #4cd137;
     background: rgba(76, 209, 55, 0.1);
 }
 
-.add_ons_badge_disabled {
+#sidecar_ai_settings .add_ons_badge_disabled {
     color: #e84118;
     border-color: #e84118;
     background: rgba(232, 65, 24, 0.1);
 }
 
-.add_ons_item_description {
+#sidecar_ai_settings .add_ons_item_description {
     margin: 0;
     font-size: 0.9em;
     opacity: 0.8;
@@ -122,13 +122,14 @@
 }
 
 /* Controls */
-.add_ons_controls {
+#sidecar_ai_settings .add_ons_controls {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 10px;
 }
 
-/* Modal */
+/* Modal - These need to be top level as they might be appended to body, 
+   but let's scope them with a unique class prefix or ID */
 .add_ons_modal {
     position: fixed;
     z-index: 10000;
@@ -144,8 +145,8 @@
 }
 
 .add_ons_modal_content {
-    background: var(--sidecar-bg);
-    border: 1px solid var(--sidecar-border);
+    background: var(--SmartThemeBodyColor, #1e1e1e); /* Fallback to ST var */
+    border: 1px solid var(--SmartThemeBorderColor, #ccc);
     border-radius: 10px;
     width: 90%;
     max-width: 700px;
@@ -157,7 +158,7 @@
 
 .add_ons_modal_header {
     padding: 15px;
-    border-bottom: 1px solid var(--sidecar-border);
+    border-bottom: 1px solid var(--SmartThemeBorderColor, #ccc);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -187,7 +188,7 @@
 
 .add_ons_modal_footer {
     padding: 15px;
-    border-top: 1px solid var(--sidecar-border);
+    border-top: 1px solid var(--SmartThemeBorderColor, #ccc);
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -205,20 +206,22 @@
     font-size: 0.9em;
 }
 
-/* Fallback for text_pole if not available */
-.text_pole {
+/* Fallback for text_pole if not available - Scoped */
+#sidecar_ai_settings .text_pole, 
+.add_ons_modal .text_pole {
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
     background-color: rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--sidecar-border);
+    border: 1px solid var(--SmartThemeBorderColor, #ccc);
     color: inherit;
     border-radius: 4px;
 }
 
-.text_pole:focus {
+#sidecar_ai_settings .text_pole:focus,
+.add_ons_modal .text_pole:focus {
     outline: none;
-    border-color: var(--sidecar-accent);
+    border-color: var(--SmartThemeEmColor, #9fc);
 }
 
 .add_ons_form_row {
@@ -233,7 +236,8 @@
     gap: 8px;
 }
 
-.checkbox_label {
+#sidecar_ai_settings .checkbox_label,
+.add_ons_modal .checkbox_label {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -241,14 +245,16 @@
     user-select: none;
 }
 
-.checkbox_label input[type="checkbox"] {
+#sidecar_ai_settings .checkbox_label input[type="checkbox"],
+.add_ons_modal .checkbox_label input[type="checkbox"] {
     margin: 0;
 }
 
-/* Button Styles - Fallback for menu_button */
-.menu_button {
+/* Button Styles - Scoped to avoid overriding global .menu_button */
+#sidecar_ai_settings .menu_button,
+.add_ons_modal .menu_button {
     padding: 8px 16px;
-    border: 1px solid var(--sidecar-border);
+    border: 1px solid var(--SmartThemeBorderColor, #ccc);
     background: rgba(128, 128, 128, 0.1);
     color: inherit;
     cursor: pointer;
@@ -257,36 +263,44 @@
     font-weight: 500;
 }
 
-.menu_button:hover {
+#sidecar_ai_settings .menu_button:hover,
+.add_ons_modal .menu_button:hover {
     background: rgba(128, 128, 128, 0.2);
-    border-color: var(--sidecar-accent);
+    border-color: var(--SmartThemeEmColor, #9fc);
 }
 
-.add_ons_button_danger {
+#sidecar_ai_settings .add_ons_button_danger,
+.add_ons_modal .add_ons_button_danger {
     color: #ff6b6b;
     border-color: rgba(255, 107, 107, 0.3);
 }
 
-.add_ons_button_danger:hover {
+#sidecar_ai_settings .add_ons_button_danger:hover,
+.add_ons_modal .add_ons_button_danger:hover {
     background: rgba(255, 107, 107, 0.1);
     border-color: #ff6b6b;
 }
 
-/* Toggle Switch */
-.add_ons_toggle {
+#sidecar_ai_settings .add_ons_button_small {
+    padding: 4px 8px;
+    font-size: 0.85em;
+}
+
+/* Toggle Switch - Scoped */
+#sidecar_ai_settings .add_ons_toggle {
     position: relative;
     display: inline-block;
     width: 40px;
     height: 20px;
 }
 
-.add_ons_toggle input {
+#sidecar_ai_settings .add_ons_toggle input {
     opacity: 0;
     width: 0;
     height: 0;
 }
 
-.add_ons_toggle_slider {
+#sidecar_ai_settings .add_ons_toggle_slider {
     position: absolute;
     cursor: pointer;
     top: 0;
@@ -298,7 +312,7 @@
     border-radius: 20px;
 }
 
-.add_ons_toggle_slider:before {
+#sidecar_ai_settings .add_ons_toggle_slider:before {
     position: absolute;
     content: "";
     height: 16px;
@@ -310,11 +324,11 @@
     border-radius: 50%;
 }
 
-input:checked + .add_ons_toggle_slider {
-    background-color: var(--sidecar-accent);
+#sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider {
+    background-color: var(--SmartThemeEmColor, #9fc);
 }
 
-input:checked + .add_ons_toggle_slider:before {
+#sidecar_ai_settings .add_ons_toggle input:checked + .add_ons_toggle_slider:before {
     transform: translateX(20px);
 }
 
@@ -322,14 +336,14 @@ input:checked + .add_ons_toggle_slider:before {
 .add-ons-dropdown-container {
     margin: 10px;
     padding: 10px;
-    border: 1px solid var(--sidecar-border);
+    border: 1px solid var(--SmartThemeBorderColor, #ccc);
     border-radius: 5px;
-    background: var(--sidecar-bg);
+    background: var(--SmartThemeBodyColor, #1e1e1e);
 }
 
 .addon_result_section {
     margin-bottom: 10px;
-    border: 1px solid var(--sidecar-border);
+    border: 1px solid var(--SmartThemeBorderColor, #ccc);
     border-radius: 5px;
     overflow: hidden;
 }
