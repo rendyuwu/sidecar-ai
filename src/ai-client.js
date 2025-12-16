@@ -455,6 +455,11 @@ export class AIClient {
 
             console.log(`[Sidecar AI] Response status: ${response.status} ${response.statusText}`);
 
+            // Handle status 0 (network/CORS error)
+            if (response.status === 0) {
+                throw new Error('Network error: Request blocked (likely CORS issue). Deepseek API may require server-side requests or a proxy.');
+            }
+
             if (!response.ok) {
                 let errorText = '';
                 try {
