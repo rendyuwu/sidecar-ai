@@ -14,7 +14,7 @@
 
 #sidecar_ai_settings,
 #sidecar_ai_settings > *,
-#sidecar_ai_settings *:not(input):not(textarea):not(select):not(option) {
+#sidecar_ai_settings *:not(input):not(textarea):not(select):not(option):not(button) {
     background-color: #1e1e1e !important;
     background: #1e1e1e !important;
 }
