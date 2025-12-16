@@ -142,17 +142,32 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.7) !important;
     display: flex;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(2px);
 }
 
+/* NUCLEAR OPTION: Force dark theme on modal */
+.add_ons_modal_content {
+    /* Force dark background - use actual dark color if theme var fails */
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+}
+
+/* Override any light backgrounds */
+.add_ons_modal_content[style*="background"],
+.add_ons_modal_content[style*="background-color"] {
+    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+}
+
 .add_ons_modal_content {
     background: var(--SmartThemeBodyColor) !important;
+    background-color: var(--SmartThemeBodyColor) !important;
     color: var(--SmartThemeBodyColor) !important;
-    border: 1px solid var(--SmartThemeBorderColor);
+    border: 1px solid var(--SmartThemeBorderColor) !important;
     border-radius: 10px;
     width: 90%;
     max-width: 700px;
@@ -162,9 +177,22 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* Force dark background on ALL modal content */
 .add_ons_modal_content,
-.add_ons_modal_content * {
+.add_ons_modal_content > *,
+.add_ons_modal_content *:not(input):not(textarea):not(select) {
     background-color: var(--SmartThemeBodyColor) !important;
+    background: var(--SmartThemeBodyColor) !important;
+}
+
+/* Force text color */
+.add_ons_modal_content,
+.add_ons_modal_content h3,
+.add_ons_modal_content h4,
+.add_ons_modal_content p,
+.add_ons_modal_content label,
+.add_ons_modal_content small,
+.add_ons_modal_content span {
     color: var(--SmartThemeBodyColor) !important;
 }
 
@@ -174,44 +202,50 @@
 
 .add_ons_modal_header {
     padding: 15px;
-    border-bottom: 1px solid var(--SmartThemeBorderColor, #ccc);
+    border-bottom: 1px solid var(--SmartThemeBorderColor, #ccc) !important;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: var(--SmartThemeBodyColor) !important;
+    background-color: var(--SmartThemeBodyColor) !important;
 }
 
 .add_ons_modal_header h3 {
     margin: 0;
+    color: var(--SmartThemeBodyColor) !important;
 }
 
 .add_ons_modal_close {
-    background: none;
-    border: none;
+    background: none !important;
+    background-color: transparent !important;
+    border: none !important;
     font-size: 1.5em;
     cursor: pointer;
-    color: inherit;
+    color: var(--SmartThemeBodyColor) !important;
     opacity: 0.7;
 }
 
 .add_ons_modal_close:hover {
     opacity: 1;
+    color: var(--SmartThemeBodyColor) !important;
 }
 
 .add_ons_modal_body {
     padding: 20px;
     overflow-y: auto;
     background: var(--SmartThemeBodyColor) !important;
-    color: inherit !important;
+    background-color: var(--SmartThemeBodyColor) !important;
+    color: var(--SmartThemeBodyColor) !important;
 }
 
 .add_ons_modal_footer {
     padding: 15px;
-    border-top: 1px solid var(--SmartThemeBorderColor, #ccc);
+    border-top: 1px solid var(--SmartThemeBorderColor, #ccc) !important;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     background: var(--SmartThemeBodyColor) !important;
+    background-color: var(--SmartThemeBodyColor) !important;
 }
 
 /* Form Styles */
@@ -238,10 +272,26 @@
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
-    background-color: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.3)) !important;
-    border: 1px solid var(--SmartThemeBorderColor, #ccc) !important;
-    color: var(--SmartThemeBodyColor) !important;
+    background-color: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.4)) !important;
+    background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.4)) !important;
+    border: 1px solid var(--SmartThemeBorderColor, #555) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
     border-radius: 4px;
+}
+
+/* Force dark inputs */
+.add_ons_modal input.text_pole,
+.add_ons_modal textarea.text_pole,
+.add_ons_modal select.text_pole {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    color: var(--SmartThemeBodyColor, #eee) !important;
+}
+
+.add_ons_modal input.text_pole::placeholder,
+.add_ons_modal textarea.text_pole::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 0.7;
 }
 
 /* Select dropdowns - prevent interference */
@@ -296,9 +346,10 @@
 /* Button Styles - Scoped to avoid overriding global .menu_button */
 #sidecar_ai_settings .menu_button,
 .add_ons_modal .menu_button {
-    padding: 8px 16px;
+    padding: 8px 16px !important;
     border: 1px solid var(--SmartThemeBorderColor, #ccc) !important;
-    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.2)) !important;
+    background: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
+    background-color: var(--SmartThemeBlurTintColor, rgba(128, 128, 128, 0.3)) !important;
     color: var(--SmartThemeBodyColor) !important;
     cursor: pointer;
     border-radius: 4px;
@@ -308,7 +359,8 @@
 
 #sidecar_ai_settings .menu_button:hover,
 .add_ons_modal .menu_button:hover {
-    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.2)) !important;
+    background: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.3)) !important;
+    background-color: var(--SmartThemeEmColor, rgba(153, 255, 204, 0.3)) !important;
     border-color: var(--SmartThemeEmColor, #9fc) !important;
     color: var(--SmartThemeBodyColor) !important;
 }
