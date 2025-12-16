@@ -307,7 +307,7 @@ export class SettingsUI {
 
                     const optionCount = $el.find('option').length;
                     console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${optionCount} options`);
-                    
+
                     // For OpenRouter, if we only find 2 options, it might not be fully loaded yet
                     // But let's still try to extract what we can
                     $el.find('option').each(function () {
@@ -327,7 +327,7 @@ export class SettingsUI {
                             });
                         }
                     });
-                    
+
                     // For OpenRouter, if we got very few models (2 or less), don't return yet
                     // Continue to next strategies to get the full list
                     if (models.length > 0) {
@@ -350,7 +350,7 @@ export class SettingsUI {
         if (provider === 'openrouter') {
             // Try to access openRouterModels from window or module exports
             let openRouterModelsList = null;
-            
+
             if (typeof window !== 'undefined') {
                 // Check if it's on window
                 if (window.openRouterModels && Array.isArray(window.openRouterModels)) {
@@ -363,7 +363,7 @@ export class SettingsUI {
                     console.log('[Sidecar AI] Found openRouterModels in SillyTavern:', openRouterModelsList.length);
                 }
             }
-            
+
             if (openRouterModelsList && openRouterModelsList.length > 0) {
                 openRouterModelsList.forEach(m => {
                     const id = m.id || m.name || m;

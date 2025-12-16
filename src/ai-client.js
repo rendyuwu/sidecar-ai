@@ -376,20 +376,48 @@ export class AIClient {
                         requestOptions.provider = serviceProvider;
                     }
 
-                    const response = await this.context.ChatCompletionService.processRequest(
-                        requestOptions,
-                        { presetName: undefined },
-                        true
-                    );
+                    let response;
+                    try {
+                        response = await this.context.ChatCompletionService.processRequest(
+                            requestOptions,
+                            { presetName: undefined },
+                            true
+                        );
+                    } catch (chatServiceError) {
+                        // Log the raw error first
+                        console.warn('[Sidecar AI] ChatCompletionService test failed:', chatServiceError);
+                        console.warn('[Sidecar AI] Error type:', typeof chatServiceError);
+                        console.warn('[Sidecar AI] Error keys:', chatServiceError ? Object.keys(chatServiceError) : 'null');
+                        console.warn('[Sidecar AI] Full error object:', chatServiceError);
+                        
+                        // Try to get more details from the error
+                        // The error might have a response property or other details
+                        if (chatServiceError && typeof chatServiceError === 'object') {
+                            // Check if there's a response property (from fetch)
+                            if (chatServiceError.response) {
+                                console.warn('[Sidecar AI] Error has response property:', chatServiceError.response);
+                            }
+                            // Check if there's a cause property (from newer Error objects)
+                            if (chatServiceError.cause) {
+                                console.warn('[Sidecar AI] Error has cause property:', chatServiceError.cause);
+                            }
+                            // Log all enumerable and non-enumerable properties
+                            console.warn('[Sidecar AI] Error object properties:', Object.getOwnPropertyNames(chatServiceError));
+                            for (const key in chatServiceError) {
+                                console.warn(`[Sidecar AI] Error.${key}:`, chatServiceError[key]);
+                            }
+                        }
+                        
+                        // Re-throw to be handled below
+                        throw chatServiceError;
+                    }
 
                     // If we got a response (even empty), connection works
                     console.log('[Sidecar AI] ChatCompletionService test successful');
                     return { success: true, message: 'Connection successful' };
                 } catch (chatServiceError) {
-                    console.warn('[Sidecar AI] ChatCompletionService test failed:', chatServiceError);
-                    console.warn('[Sidecar AI] Error type:', typeof chatServiceError);
-                    console.warn('[Sidecar AI] Error keys:', chatServiceError ? Object.keys(chatServiceError) : 'null');
-                    console.warn('[Sidecar AI] Full error object:', chatServiceError);
+                    // This catch handles the re-thrown error
+                    console.warn('[Sidecar AI] ChatCompletionService error handling:', chatServiceError);
 
                     // Log all properties to help debug
                     if (chatServiceError && typeof chatServiceError === 'object') {
@@ -452,16 +480,30 @@ export class AIClient {
                     if (!errorMsg || errorMsg === 'true' || errorMsg === '{}' || errorMsg === '{"error":true}') {
                         // The API returned {error: true} which means 400 Bad Request
                         // Common causes: invalid model name, API key doesn't have access, or configuration issue
+                        let modelHint = '';
+                        if (provider === 'google') {
+                            // Common Google/Gemini model names
+                            modelHint = `\n\nCommon Google/Gemini model names:\n` +
+                                `• gemini-1.5-pro\n` +
+                                `• gemini-1.5-flash\n` +
+                                `• gemini-2.0-flash-exp\n` +
+                                `• gemini-2.0-pro-exp\n` +
+                                `• gemini-pro\n` +
+                                `\nNote: "gemini-2.5-pro" might not exist. Try "gemini-1.5-pro" or "gemini-2.0-pro-exp" instead.`;
+                        }
+                        
                         errorMsg = `Bad Request (400) - The API rejected the request.\n\n` +
                             `Common causes:\n` +
                             `• Invalid model name: "${model}"\n` +
                             `• API key doesn't have access to this model\n` +
                             `• Model not available in your region/account\n` +
-                            `• Provider configuration issue in SillyTavern\n\n` +
-                            `Try:\n` +
+                            `• Provider configuration issue in SillyTavern` +
+                            modelHint +
+                            `\n\nTry:\n` +
                             `1. Verify the model name is correct in SillyTavern's API Connection settings\n` +
                             `2. Check if the model is available for your API key\n` +
-                            `3. Test the connection directly in SillyTavern's API Connection tab`;
+                            `3. Test the connection directly in SillyTavern's API Connection tab\n` +
+                            `4. Check the browser console for more details`;
                     }
 
                     // If using ST key and ChatCompletionService fails, it's likely a configuration issue
