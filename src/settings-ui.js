@@ -1052,10 +1052,7 @@ export class SettingsUI {
             }
             // If using ST key, save empty string (we'll fetch from ST when needed)
 
-            // Get service provider (OpenRouter only)
-            const serviceProvider = provider === 'openrouter'
-                ? ($('#add_ons_form_service_provider').val() || [])
-                : [];
+            // serviceProvider is already defined above (line 982), reuse it
 
             const formData = {
                 id: $('#add_ons_form_id').val(),
