@@ -331,6 +331,19 @@ export class EventHandler {
     }
 
     /**
+     * Clean regex pattern by removing invalid inline flags
+     * JavaScript doesn't support inline flags like (?i), (?m), (?s)
+     * These are handled via RegExp constructor flags instead
+     */
+    cleanRegexPattern(pattern) {
+        // Remove common invalid inline flags: (?i), (?m), (?s), (?x), (?u)
+        // Also handle negated flags: (?-i), (?-m), etc.
+        return pattern
+            .replace(/\(\?[imsux-]+\)/gi, '') // Remove inline flags
+            .trim();
+    }
+
+    /**
      * Check if message matches trigger config
      */
     checkTriggerMatch(text, config) {
@@ -343,12 +356,15 @@ export class EventHandler {
         if (type === 'regex') {
             for (const pattern of config.triggers) {
                 try {
-                    const regex = new RegExp(pattern, 'i');
+                    // Clean pattern to remove invalid inline flags
+                    const cleanedPattern = this.cleanRegexPattern(pattern);
+                    const regex = new RegExp(cleanedPattern, 'i'); // Case-insensitive by default
                     if (regex.test(text)) {
                         return true;
                     }
                 } catch (e) {
                     console.error(`[Sidecar AI] Invalid regex pattern: ${pattern}`, e);
+                    console.error(`[Sidecar AI] Hint: JavaScript regex doesn't support inline flags like (?i). Use the pattern without flags - case-insensitive matching is automatic.`);
                 }
             }
         } else {

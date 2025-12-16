@@ -80,6 +80,11 @@ Pre-made sidecar configurations ready to import.
 - **Configuration:**
   - **Trigger Type:** Keyword (simple substring) or Regex (advanced pattern)
   - **Triggers:** One per line. For keywords, case-insensitive. For regex, standard JavaScript regex syntax.
+  - **Regex Notes:** 
+    - Case-insensitive matching is automatic (don't use `(?i)` inline flags)
+    - Use `\b` for word boundaries: `\binventory\b`
+    - Use `|` for OR: `\b(inventory|items|stuff)\b`
+    - Examples: `\bpouch\b`, `\b(check|show)\s+inventory\b`
 
 ---
 
