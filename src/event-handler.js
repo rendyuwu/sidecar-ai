@@ -261,7 +261,7 @@ export class EventHandler {
             console.log(`[Sidecar AI] Processing batch group: ${addons.length} add-on(s)`);
 
             const messageId = this.resultFormatter.getMessageId(message);
-            
+
             // Show loading indicators for all add-ons
             addons.forEach(addon => {
                 this.resultFormatter.showLoadingIndicator(messageId, addon);
@@ -346,7 +346,7 @@ export class EventHandler {
 
             // Hide loading and inject result
             this.resultFormatter.hideLoadingIndicator(messageId, addon);
-            
+
             if (response) {
                 await this.injectResult(addon, response, message);
             }

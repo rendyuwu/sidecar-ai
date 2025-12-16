@@ -4,12 +4,26 @@
  */
 
 /* Main Settings Container - Scoped to avoid affecting other extensions */
+/* NUCLEAR OPTION: Force dark theme on settings container */
 #sidecar_ai_settings {
     width: 100%;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+}
+
+#sidecar_ai_settings,
+#sidecar_ai_settings > *,
+#sidecar_ai_settings *:not(input):not(textarea):not(select):not(option) {
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
 }
 
 #sidecar_ai_settings .sidecar_settings_content {
     padding: 5px;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
 }
 
 /* Define local variables mapped to ST variables */
@@ -515,75 +529,133 @@
 }
 
 /* Sidecar Container - Inside chat, after each message */
+/* NUCLEAR OPTION: Force dark theme on sidecar container - same approach as modal */
 .sidecar-container {
     margin-top: 10px !important;
     padding: 10px !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
-.sidecar-container * {
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+/* Override ANY inline styles */
+.sidecar-container[style] {
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
 }
 
-/* Loading indicator */
+/* Force dark background on ALL sidecar container content */
+.sidecar-container,
+.sidecar-container > *,
+.sidecar-container *:not(input):not(textarea):not(select):not(option) {
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+}
+
+/* Force text color */
+.sidecar-container,
+.sidecar-container h1,
+.sidecar-container h2,
+.sidecar-container h3,
+.sidecar-container h4,
+.sidecar-container p,
+.sidecar-container label,
+.sidecar-container small,
+.sidecar-container span,
+.sidecar-container div,
+.sidecar-container details,
+.sidecar-container summary {
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
+}
+
+/* Loading indicator - NUCLEAR OPTION */
 .sidecar-loading {
     padding: 8px !important;
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
-    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important;
     background: transparent !important;
+    background-color: transparent !important;
     font-size: 0.9em !important;
+}
+
+.sidecar-loading,
+.sidecar-loading > *,
+.sidecar-loading *:not(input):not(textarea):not(select):not(option) {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important;
 }
 
 .sidecar-loading .fa-spinner {
     color: var(--SmartThemeEmColor, #9fc) !important;
 }
 
-/* Error indicator */
+/* Error indicator - NUCLEAR OPTION */
 .sidecar-error {
     padding: 8px !important;
     color: #ff6b6b !important;
     background: rgba(255, 107, 107, 0.1) !important;
+    background-color: rgba(255, 107, 107, 0.1) !important;
     border: 1px solid rgba(255, 107, 107, 0.3) !important;
     border-radius: 3px !important;
     font-size: 0.9em !important;
 }
 
-/* Dropdown UI - Legacy support (outside chat) */
+.sidecar-error,
+.sidecar-error > *,
+.sidecar-error *:not(input):not(textarea):not(select):not(option) {
+    background-color: rgba(255, 107, 107, 0.1) !important;
+    background: rgba(255, 107, 107, 0.1) !important;
+    color: #ff6b6b !important;
+}
+
+/* Dropdown UI - Legacy support (outside chat) - NUCLEAR OPTION */
 #add-ons-dropdown-container,
 .add-ons-dropdown-container {
     margin: 10px !important;
     padding: 15px !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
-#add-ons-dropdown-container *,
-.add-ons-dropdown-container * {
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+/* Override ANY inline styles */
+#add-ons-dropdown-container[style],
+.add-ons-dropdown-container[style] {
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
 }
 
+/* NUCLEAR OPTION: Force dark theme on result sections - same approach as modal */
 .addon_result_section {
     margin-bottom: 10px !important;
     border: 1px solid var(--SmartThemeBorderColor, #555) !important;
     border-radius: 5px !important;
     overflow: hidden !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+}
+
+/* Override ANY inline styles */
+.addon_result_section[style] {
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+}
+
+/* Force dark background on ALL result section content */
+.addon_result_section,
+.addon_result_section > *,
+.addon_result_section *:not(input):not(textarea):not(select):not(option) {
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
 }
 
 .addon_result_summary {
@@ -594,7 +666,7 @@
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     font-weight: 500 !important;
     border: none !important;
 }
@@ -607,9 +679,9 @@
 .addon_result_content {
     padding: 15px !important;
     display: block !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
     border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.2)) !important;
 }
 
@@ -619,7 +691,7 @@
     border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.1)) !important;
     background: transparent !important;
     background-color: transparent !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
 }
 
 .addon_result_item:last-child {
@@ -633,15 +705,21 @@
     font-style: italic !important;
 }
 
-/* Force dark theme on all dropdown content */
+/* Force dark theme on all dropdown content - NUCLEAR OPTION */
+#add-ons-dropdown-container,
+#add-ons-dropdown-container > *,
+#add-ons-dropdown-container *:not(input):not(textarea):not(select):not(option),
+.add-ons-dropdown-container,
+.add-ons-dropdown-container > *,
+.add-ons-dropdown-container *:not(input):not(textarea):not(select):not(option),
 #add-ons-dropdown-container details,
 #add-ons-dropdown-container summary,
 #add-ons-dropdown-container div,
 #add-ons-dropdown-container p,
 #add-ons-dropdown-container span {
-    background-color: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    background: var(--SmartThemeBodyColor, #1e1e1e) !important;
-    color: var(--SmartThemeBodyColor, #eee) !important;
+    background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important;
+    color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;
 }
 
 @media (max-width: 600px) {
