@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2025-12-16
+
+### Fixed
+- **OpenRouter Model Loading**: Fixed critical issue where OpenRouter models wouldn't load properly
+  - Now uses async model fetching with multiple fallback strategies
+  - Directly fetches from OpenRouter API if SillyTavern hasn't loaded models yet
+  - No longer depends on user visiting API Connections tab first
+  - Works reliably even when SillyTavern's dropdowns aren't populated
+  - Added comprehensive retry logic with intelligent delays
+  - Fixed race condition in model dropdown population
+
+### Changed
+- **OpenRouter Model Sorting**: Models are now sorted by provider name (company) first, then alphabetically
+  - Groups all models from same provider together (e.g., all OpenAI models, then all Anthropic models)
+  - Makes it much easier to find specific models in the dropdown
+  - Applies to models fetched directly from OpenRouter API
+
+### Technical
+- Converted `getProviderModels()` to async function to support API fetching
+- Added Strategy 4: Direct API fetch from `https://openrouter.ai/api/v1/models`
+- Improved error handling and logging for model loading debugging
+- Better handling of select2-enhanced dropdowns in SillyTavern
+
+
 ## [0.3.0] - 2025-12-16
 
 ### Added
@@ -167,6 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatically handles API keys, URLs, proxies, and headers via SillyTavern backend
 - Proper event namespacing to prevent conflicts with SillyTavern's native handlers
 
+[0.3.4]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.4
 [0.3.0]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.3.0
 [0.1.3]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.3
 [0.1.2]: https://github.com/skirianov/sidecar-ai/releases/tag/v0.1.2
