@@ -39,38 +39,57 @@ export class ContextBuilder {
         const userPrompt = addon.prompt || '';
         const parts = [];
 
+        // CRITICAL: OOC instruction at the very beginning
+        parts.push('[OOC: CRITICAL INSTRUCTION - READ THIS FIRST]');
+        parts.push('You are a task executor. Your ONLY job is to follow the instruction block below.');
+        parts.push('DO NOT continue the story or roleplay.');
+        parts.push('DO NOT generate character dialogue or narrative continuation.');
+        parts.push('IGNORE the chat history for story purposes - it is provided ONLY for context reference.');
+        parts.push('ONLY execute what the instruction block explicitly asks you to do.');
+        parts.push('If the instruction asks you to add something to the response, add ONLY that - do not write new story content.');
+        parts.push('');
+        parts.push('=== END OOC INSTRUCTION ===');
+        parts.push('');
+
         // Always include chat history (controlled by messagesCount)
+        // But make it clear this is for REFERENCE ONLY, not continuation
         if (context.lastMessages && context.lastMessages !== 'No previous messages.') {
-            parts.push('=== Chat History ===');
+            parts.push('=== Chat History (REFERENCE ONLY - DO NOT CONTINUE) ===');
             parts.push(context.lastMessages);
-            parts.push(''); // Empty line for spacing
+            parts.push('');
         }
 
         // Include character card if enabled
         if (settings.includeCharCard && context.charCard) {
-            parts.push('=== Character Card ===');
+            parts.push('=== Character Card (REFERENCE ONLY) ===');
             parts.push(context.charCard);
-            parts.push(''); // Empty line for spacing
+            parts.push('');
         }
 
         // Include user card if enabled
         if (settings.includeUserCard && context.userCard) {
-            parts.push('=== User Card ===');
+            parts.push('=== User Card (REFERENCE ONLY) ===');
             parts.push(context.userCard);
-            parts.push(''); // Empty line for spacing
+            parts.push('');
         }
 
         // Include world card if enabled
         if (settings.includeWorldCard && context.worldCard) {
-            parts.push('=== World Card ===');
+            parts.push('=== World Card (REFERENCE ONLY) ===');
             parts.push(context.worldCard);
-            parts.push(''); // Empty line for spacing
+            parts.push('');
         }
 
-        // Add user's prompt at the end
+        // User's instruction (the actual prompt) - THIS IS WHAT TO FOLLOW
         if (userPrompt.trim()) {
-            parts.push('=== Instruction ===');
+            parts.push('');
+            parts.push('═══════════════════════════════════════════════════════════');
+            parts.push('=== INSTRUCTION BLOCK - FOLLOW THIS STRICTLY ===');
+            parts.push('═══════════════════════════════════════════════════════════');
             parts.push(userPrompt);
+            parts.push('═══════════════════════════════════════════════════════════');
+            parts.push('');
+            parts.push('[OOC: Remember - ONLY execute the instruction above. Do NOT continue the story.]');
         }
 
         return parts.join('\n').trim();
