@@ -1,149 +1,73 @@
 /**
- * Sidecar AI Add-Ons Extension Styles
+ * Sidecar AI Extension Styles
  * Matches SillyTavern's design system
  */
 
 /* Main Settings Container */
-.add_ons_extension_settings {
-    padding: 0;
-    margin: 0;
+.sidecar_ai_settings {
+    width: 100%;
 }
 
-/* Disabled inputs styling - match SillyTavern */
-.settings_input:disabled,
-.add_ons_extension_settings *:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    pointer-events: none;
+.sidecar_settings_content {
+    padding: 5px;
 }
 
-/* Inline settings - dropdowns and inputs in a line of text (like qvink) */
-select.inline_setting {
-    margin: 0;
-    padding: 0 5px;
-    width: unset !important;
-    min-width: unset !important;
-    max-width: unset !important;
-    height: 1.2em;
-    line-height: 1em;
+/* Use SillyTavern's variables where possible */
+:root {
+    --sidecar-border: var(--SmartThemeBorderColor, #ccc);
+    --sidecar-bg: var(--SmartThemeBodyColor, #1e1e1e);
+    --sidecar-text: var(--SmartThemeBodyColor, #eee);
+    --sidecar-accent: var(--SmartThemeEmColor, #9fc);
 }
 
-input.inline_setting {
-    margin: 0;
-    padding: 0 0 0 5px;
-    width: unset !important;
-    min-width: unset !important;
-    max-width: unset !important;
-    height: 1em;
+/* Inline Drawer (Fallback if not provided by ST) */
+.inline-drawer {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--sidecar-border);
+    border-radius: 5px;
+    margin-bottom: 5px;
 }
 
-/* Button highlight for unsaved changes */
-.button_highlight {
-    color: var(--active, var(--SmartThemeEmColor));
-}
-
-/* Header */
-.add_ons_header {
-    margin-bottom: 1.5em;
-}
-
-.add_ons_header h3 {
-    margin: 0 0 0.5em 0;
-    font-size: 1.2em;
-    font-weight: 600;
-}
-
-.add_ons_description {
-    margin: 0;
-    font-size: 0.9em;
-    opacity: 0.8;
-    line-height: 1.5;
-}
-
-/* List Container */
-.add_ons_list_container {
-    margin-top: 1em;
-}
-
-.add_ons_controls {
-    margin-bottom: 1em;
-}
-
-/* Buttons - Use SillyTavern's menu_button class when possible */
-.add_ons_button {
-    /* Use SillyTavern's menu_button styling if available, fallback to custom */
-    padding: 0.5em 1em;
-    border: none;
-    border-radius: var(--SmartThemeBorderRadius, 4px);
+.inline-drawer-toggle {
     cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.2s ease;
-    background: var(--SmartThemeEmColor);
-    color: white;
-    display: inline-flex;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5em;
-    font-weight: 500;
+    user-select: none;
 }
 
-.add_ons_button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
+.inline-drawer-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-.add_ons_button:active {
-    transform: translateY(0);
-}
-
-.add_ons_button i {
-    font-size: 0.9em;
-}
-
-.add_ons_button_primary {
-    background: var(--SmartThemeEmColor);
-    color: white;
-}
-
-.add_ons_button_small {
-    padding: 0.3em 0.6em;
-    font-size: 0.85em;
-}
-
-.add_ons_button_danger {
-    background: #dc3545;
-    color: white;
-}
-
-.add_ons_button_danger:hover {
-    background: #c82333;
-}
-
-/* Use SillyTavern's menu_button class when applied */
-.menu_button.add_ons_button {
-    /* Inherit SillyTavern's menu_button styles */
+.inline-drawer-content {
+    padding: 10px;
+    border-top: 1px solid var(--sidecar-border);
+    display: block; /* ST usually manages display, default open for now or JS handles it */
 }
 
 /* Add-ons List */
 .add_ons_list {
     display: flex;
     flex-direction: column;
-    gap: 0.75em;
+    gap: 10px;
+    margin-top: 10px;
 }
 
-/* Add-on Item Card - similar to qvink_interface_card */
+/* Add-on Item Card - styling match */
 .add_ons_item {
-    background: var(--SmartThemeBodyColor);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: var(--SmartThemeBorderRadius, 6px);
-    padding: 1em;
-    transition: all 0.2s ease;
-    /* Match qvink card styling */
-    margin: 0 0.5em 0.75em 0;
+    margin: 0 0.5em;
+    padding: 10px;
+    border: 1px solid var(--sidecar-border);
+    border-radius: 5px;
     box-shadow: -1px 1px 5px rgba(0, 0, 0, 0.3);
+    background: var(--sidecar-bg);
+    transition: all 0.2s ease;
 }
 
 .add_ons_item:hover {
-    border-color: var(--SmartThemeEmColor);
+    border-color: var(--sidecar-accent);
     box-shadow: -1px 1px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -151,77 +75,209 @@ input.inline_setting {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0.75em;
+    margin-bottom: 10px;
     gap: 1em;
 }
 
-.add_ons_item_info {
-    flex: 1;
-    min-width: 0;
-}
-
 .add_ons_item_info h4 {
-    margin: 0 0 0.5em 0;
-    font-size: 1em;
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
     font-weight: 600;
-    word-wrap: break-word;
 }
 
 .add_ons_item_meta {
     display: flex;
-    gap: 0.5em;
+    gap: 5px;
     flex-wrap: wrap;
-    margin-top: 0.5em;
+    font-size: 0.8em;
+    opacity: 0.8;
 }
 
 .add_ons_badge {
-    display: inline-block;
-    padding: 0.2em 0.6em;
-    border-radius: 12px;
-    font-size: 0.75em;
-    font-weight: 500;
-    background: var(--SmartThemeBorderColor);
-    color: var(--SmartThemeBodyColor);
-    white-space: nowrap;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(128, 128, 128, 0.2);
+    border: 1px solid rgba(128, 128, 128, 0.3);
 }
 
 .add_ons_badge_enabled {
-    background: #28a745;
-    color: white;
+    color: #4cd137;
+    border-color: #4cd137;
+    background: rgba(76, 209, 55, 0.1);
 }
 
 .add_ons_badge_disabled {
-    background: #6c757d;
-    color: white;
-}
-
-.add_ons_item_actions {
-    display: flex;
-    gap: 0.5em;
-    align-items: center;
-    flex-shrink: 0;
+    color: #e84118;
+    border-color: #e84118;
+    background: rgba(232, 65, 24, 0.1);
 }
 
 .add_ons_item_description {
     margin: 0;
-    font-size: 0.85em;
+    font-size: 0.9em;
     opacity: 0.8;
-    line-height: 1.5;
+    line-height: 1.4;
+    padding-top: 5px;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
 }
 
-.add_ons_empty {
-    text-align: center;
-    padding: 3em 1em;
-    opacity: 0.6;
-    font-style: italic;
+/* Controls */
+.add_ons_controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+/* Modal */
+.add_ons_modal {
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.add_ons_modal_content {
+    background: var(--sidecar-bg);
+    border: 1px solid var(--sidecar-border);
+    border-radius: 10px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.add_ons_modal_header {
+    padding: 15px;
+    border-bottom: 1px solid var(--sidecar-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add_ons_modal_header h3 {
+    margin: 0;
+}
+
+.add_ons_modal_close {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.add_ons_modal_close:hover {
+    opacity: 1;
+}
+
+.add_ons_modal_body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.add_ons_modal_footer {
+    padding: 15px;
+    border-top: 1px solid var(--sidecar-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Form Styles */
+.add_ons_form_group {
+    margin-bottom: 15px;
+}
+
+.add_ons_form_group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* Fallback for text_pole if not available */
+.text_pole {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--sidecar-border);
+    color: inherit;
+    border-radius: 4px;
+}
+
+.text_pole:focus {
+    outline: none;
+    border-color: var(--sidecar-accent);
+}
+
+.add_ons_form_row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.add_ons_form_checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox_label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox_label input[type="checkbox"] {
+    margin: 0;
+}
+
+/* Button Styles - Fallback for menu_button */
+.menu_button {
+    padding: 8px 16px;
+    border: 1px solid var(--sidecar-border);
+    background: rgba(128, 128, 128, 0.1);
+    color: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.menu_button:hover {
+    background: rgba(128, 128, 128, 0.2);
+    border-color: var(--sidecar-accent);
+}
+
+.add_ons_button_danger {
+    color: #ff6b6b;
+    border-color: rgba(255, 107, 107, 0.3);
+}
+
+.add_ons_button_danger:hover {
+    background: rgba(255, 107, 107, 0.1);
+    border-color: #ff6b6b;
 }
 
 /* Toggle Switch */
 .add_ons_toggle {
     position: relative;
     display: inline-block;
-    width: 44px;
-    height: 24px;
+    width: 40px;
+    height: 20px;
 }
 
 .add_ons_toggle input {
@@ -237,268 +293,62 @@ input.inline_setting {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: 0.3s;
-    border-radius: 24px;
+    background-color: #555;
+    transition: .4s;
+    border-radius: 20px;
 }
 
 .add_ons_toggle_slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
     background-color: white;
-    transition: 0.3s;
+    transition: .4s;
     border-radius: 50%;
 }
 
-.add_ons_toggle input:checked + .add_ons_toggle_slider {
-    background-color: var(--SmartThemeEmColor);
+input:checked + .add_ons_toggle_slider {
+    background-color: var(--sidecar-accent);
 }
 
-.add_ons_toggle input:checked + .add_ons_toggle_slider:before {
+input:checked + .add_ons_toggle_slider:before {
     transform: translateX(20px);
 }
 
-/* Modal */
-.add_ons_modal {
-    position: fixed;
-    z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(2px);
-}
-
-.add_ons_modal_content {
-    background: var(--SmartThemeBodyColor);
-    border-radius: var(--SmartThemeBorderRadius, 8px);
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--SmartThemeBorderColor);
-}
-
-.add_ons_modal_header {
-    padding: 1.25em 1.5em;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.add_ons_modal_header h3 {
-    margin: 0;
-    font-size: 1.1em;
-    font-weight: 600;
-}
-
-.add_ons_modal_close {
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    cursor: pointer;
-    color: var(--SmartThemeBodyColor);
-    opacity: 0.7;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.add_ons_modal_close:hover {
-    opacity: 1;
-    background: var(--SmartThemeBorderColor);
-}
-
-.add_ons_modal_body {
-    padding: 1.5em;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.add_ons_modal_footer {
-    padding: 1.25em 1.5em;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75em;
-    flex-shrink: 0;
-}
-
-/* Form Elements - Match SillyTavern's text_pole style */
-.add_ons_form_group {
-    margin-bottom: 1.25em;
-}
-
-.add_ons_form_group:last-child {
-    margin-bottom: 0;
-}
-
-.add_ons_form_group label {
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: 500;
-    font-size: 0.9em;
-}
-
-/* Use SillyTavern's text_pole class when available, fallback to custom */
-.add_ons_form_group input[type="text"],
-.add_ons_form_group input[type="number"],
-.add_ons_form_group input[type="password"],
-.add_ons_form_group select,
-.add_ons_form_group textarea {
-    width: 100%;
-    padding: 0.5em 0.75em;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: var(--SmartThemeBorderRadius, 4px);
-    background: var(--SmartThemeBodyColor);
-    color: var(--SmartThemeBodyColor);
-    font-size: 0.9em;
-    box-sizing: border-box;
-    font-family: inherit;
-    transition: border-color 0.2s;
-}
-
-/* When text_pole class is applied, inherit its styles */
-.add_ons_form_group .text_pole {
-    /* SillyTavern's text_pole will override our custom styles */
-}
-
-.add_ons_form_group input:focus,
-.add_ons_form_group select:focus,
-.add_ons_form_group textarea:focus {
-    outline: none;
-    border-color: var(--SmartThemeEmColor);
-}
-
-.add_ons_form_group textarea {
-    resize: vertical;
-    font-family: 'Courier New', monospace;
-    min-height: 100px;
-}
-
-.add_ons_form_hint {
-    display: block;
-    margin-top: 0.4em;
-    font-size: 0.8em;
-    opacity: 0.7;
-    font-style: italic;
-}
-
-.add_ons_form_row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1em;
-}
-
-.add_ons_form_section {
-    margin-top: 2em;
-    padding-top: 1.5em;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-}
-
-.add_ons_form_section:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-}
-
-.add_ons_form_section h4 {
-    margin: 0 0 1em 0;
-    font-size: 1em;
-    font-weight: 600;
-}
-
-.add_ons_form_checkboxes {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75em;
-}
-
-.add_ons_checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    cursor: pointer;
-}
-
-.add_ons_checkbox input[type="checkbox"] {
-    width: auto;
-    cursor: pointer;
-    margin: 0;
-}
-
-.add_ons_checkbox span {
-    user-select: none;
-}
-
-/* Dropdown UI (for outsideChatlog results) */
-.add_ons_dropdown_container {
-    margin: 1em;
-    padding: 1em;
-    background: var(--SmartThemeBodyColor);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: var(--SmartThemeBorderRadius, 6px);
+/* Dropdown UI */
+.add-ons-dropdown-container {
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid var(--sidecar-border);
+    border-radius: 5px;
+    background: var(--sidecar-bg);
 }
 
 .addon_result_section {
-    margin-bottom: 1em;
-    background: var(--SmartThemeBodyColor);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: var(--SmartThemeBorderRadius, 6px);
+    margin-bottom: 10px;
+    border: 1px solid var(--sidecar-border);
+    border-radius: 5px;
     overflow: hidden;
 }
 
-.addon_result_section:last-child {
-    margin-bottom: 0;
-}
-
 .addon_result_summary {
-    padding: 0.75em 1em;
+    padding: 10px;
+    background: rgba(128, 128, 128, 0.1);
     cursor: pointer;
-    background: var(--SmartThemeBorderColor);
-    font-weight: 500;
-    user-select: none;
-    transition: background 0.2s;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
 }
 
 .addon_result_summary:hover {
-    background: var(--SmartThemeEmColor);
-    opacity: 0.9;
-}
-
-.addon_result_summary::after {
-    content: '▼';
-    font-size: 0.7em;
-    opacity: 0.7;
-    transition: transform 0.2s;
-}
-
-.addon_result_summary[aria-expanded="true"]::after {
-    transform: rotate(180deg);
+    background: rgba(128, 128, 128, 0.2);
 }
 
 .addon_result_content {
-    padding: 1em;
+    padding: 10px;
     display: none;
 }
 
@@ -506,92 +356,8 @@ input.inline_setting {
     display: block;
 }
 
-.addon_result_item {
-    padding: 0.75em;
-    margin-bottom: 0.75em;
-    background: var(--SmartThemeBorderColor);
-    border-radius: var(--SmartThemeBorderRadius, 4px);
-    border-left: 3px solid var(--SmartThemeEmColor);
-}
-
-.addon_result_item:last-child {
-    margin-bottom: 0;
-}
-
-.addon_result_timestamp {
-    margin-top: 0.5em;
-    font-size: 0.75em;
-    opacity: 0.6;
-}
-
-/* Manual Trigger Button */
-.add_ons_trigger_button {
-    padding: 0.5em 1em;
-    margin-right: 0.5em;
-    background: var(--SmartThemeEmColor);
-    color: white;
-    border: none;
-    border-radius: var(--SmartThemeBorderRadius, 4px);
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    font-weight: 500;
-}
-
-.add_ons_trigger_button:hover:not(:disabled) {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.add_ons_trigger_button:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.add_ons_trigger_button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.add_ons_trigger_button i {
-    font-size: 0.9em;
-}
-
-/* Card styling similar to qvink_interface_card for consistent look */
-.add_ons_card {
-    margin: 0 0.5em;
-    padding: 0.2em 0.5em;
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    box-shadow: -1px 1px 5px rgba(0, 0, 0, 0.3);
-    background: var(--SmartThemeBodyColor);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .add_ons_form_row {
         grid-template-columns: 1fr;
-    }
-    
-    .add_ons_modal_content {
-        width: 95%;
-        max-height: 95vh;
-    }
-    
-    .add_ons_trigger_button {
-        padding: 0.4em 0.8em;
-        font-size: 0.85em;
-    }
-
-    .add_ons_item_header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .add_ons_item_actions {
-        justify-content: flex-end;
-        margin-top: 0.5em;
     }
 }

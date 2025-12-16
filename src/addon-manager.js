@@ -30,10 +30,10 @@ export class AddonManager {
             // Ensure all add-ons have required fields
             this.addons = this.addons.map(addon => this.normalizeAddon(addon));
 
-            console.log(`[Add-Ons Extension] Loaded ${this.addons.length} add-on(s)`);
+            console.log(`[Sidecar AI] Loaded ${this.addons.length} sidecar(s)`);
             return this.addons;
         } catch (error) {
-            console.error('[Add-Ons Extension] Error loading add-ons:', error);
+            console.error('[Sidecar AI] Error loading sidecars:', error);
             this.addons = [];
             return [];
         }
@@ -160,7 +160,7 @@ export class AddonManager {
     normalizeAddon(addon) {
         return {
             id: addon.id || this.generateId(),
-            name: addon.name || 'Unnamed Add-On',
+            name: addon.name || 'Unnamed Sidecar',
             description: addon.description || '',
             prompt: addon.prompt || '',
             triggerMode: addon.triggerMode || 'auto',
