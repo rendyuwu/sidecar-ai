@@ -107,17 +107,17 @@ export class SettingsUI {
                             <input type="checkbox" ${addon.enabled ? 'checked' : ''} data-addon-id="${addon.id}" class="add_ons_enable_toggle">
                             <span class="add_ons_toggle_slider"></span>
                         </label>
-                        <button class="menu_button add_ons_button_small" data-action="edit" data-addon-id="${addon.id}">
-                            <i class="fa-solid fa-edit"></i> Edit
+                        <button class="menu_button add_ons_button_small" data-action="edit" data-addon-id="${addon.id}" title="Edit">
+                            <i class="fa-solid fa-edit"></i>
                         </button>
                         <button class="menu_button add_ons_button_small" data-action="history" data-addon-id="${addon.id}" title="View History">
-                            <i class="fa-solid fa-history"></i> History
+                            <i class="fa-solid fa-history"></i>
                         </button>
                         <button class="menu_button add_ons_button_small" data-action="duplicate" data-addon-id="${addon.id}" title="Duplicate">
                             <i class="fa-solid fa-copy"></i>
                         </button>
-                        <button class="menu_button add_ons_button_small add_ons_button_danger" data-action="delete" data-addon-id="${addon.id}">
-                            <i class="fa-solid fa-trash"></i> Delete
+                        <button class="menu_button add_ons_button_small add_ons_button_danger" data-action="delete" data-addon-id="${addon.id}" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 </div>

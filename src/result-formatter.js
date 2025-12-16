@@ -20,28 +20,30 @@ export class ResultFormatter {
      * @param {boolean} forDropdown - Whether this is for dropdown injection (no extra wrapping needed)
      */
     formatResult(addon, aiResponse, originalMessage = null, forDropdown = false) {
-        let formatted = aiResponse;
+        // CRITICAL: Sanitize AI response before any processing
+        let sanitized = this.sanitizeContent(aiResponse);
+        let formatted = sanitized;
 
         // If injecting into dropdown, we already have the structure, so don't wrap
         if (forDropdown) {
             // Clean up any existing wrapper tags that might conflict
-            formatted = this.cleanResponseForDropdown(aiResponse);
+            formatted = this.cleanResponseForDropdown(sanitized);
             return formatted;
         }
 
         // Apply result format for chat history injection
         switch (addon.resultFormat) {
             case 'append':
-                formatted = this.formatAppend(aiResponse);
+                formatted = this.formatAppend(sanitized);
                 break;
 
             case 'separate':
-                formatted = this.formatSeparate(aiResponse, addon);
+                formatted = this.formatSeparate(sanitized, addon);
                 break;
 
             case 'collapsible':
             default:
-                formatted = this.formatCollapsible(aiResponse, addon);
+                formatted = this.formatCollapsible(sanitized, addon);
                 break;
         }
 
@@ -71,13 +73,58 @@ export class ResultFormatter {
     }
 
     /**
-     * Pass-through - SillyTavern handles Markdown/HTML/XML/CSS natively
-     * No parsing needed
+     * Sanitize AI-generated content to prevent container escape
+     * 
+     * SillyTavern handles Markdown/HTML/XML/CSS natively, but we need to
+     * sanitize dangerous patterns that could break out of our isolated containers.
+     * 
+     * Security measures:
+     * - Strip position: fixed/absolute (prevents escaping container bounds)
+     * - Remove z-index (prevents stacking context issues)
+     * - Block iframe/embed/object (prevents external content injection)
+     * - Remove script tags (prevents JS execution)
+     * - Strip style blocks (prevents global CSS injection)
+     * - Remove event handlers (prevents inline JS)
+     * - Neutralize javascript: protocols
      */
-    markdownToHtml(response) {
-        // SillyTavern's message renderer handles all formats natively
-        // Just return the response as-is
-        return response;
+    sanitizeContent(response) {
+        if (typeof response !== 'string') {
+            return response;
+        }
+
+        let sanitized = response;
+
+        // Remove dangerous position styles that could escape container
+        sanitized = sanitized.replace(/position\s*:\s*(fixed|absolute)/gi, 'position: relative');
+
+        // Remove z-index that could create stacking issues
+        sanitized = sanitized.replace(/z-index\s*:\s*[^;]+;?/gi, '');
+
+        // Remove viewport units that could cause overflow
+        sanitized = sanitized.replace(/\b\d+v[wh]\b/gi, '100%');
+
+        // Block iframe/embed/object tags
+        sanitized = sanitized.replace(/<(iframe|embed|object)[^>]*>.*?<\/\1>/gis, '');
+        sanitized = sanitized.replace(/<(iframe|embed|object)[^>]*\/>/gi, '');
+
+        // Remove script tags (should never happen but just in case)
+        sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gis, '');
+        sanitized = sanitized.replace(/<script[^>]*\/>/gi, '');
+
+        // Remove style tags that could affect global styles
+        // Keep inline styles but remove style blocks
+        sanitized = sanitized.replace(/<style[^>]*>.*?<\/style>/gis, '');
+
+        // Remove link tags that could load external stylesheets
+        sanitized = sanitized.replace(/<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/gi, '');
+
+        // Remove event handlers
+        sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
+
+        // Remove javascript: protocol in links
+        sanitized = sanitized.replace(/href\s*=\s*["']javascript:/gi, 'href="#');
+
+        return sanitized;
     }
 
     /**
@@ -182,8 +229,9 @@ export class ResultFormatter {
         // Get message ID from the element
         const elementId = messageElement.id || messageElement.getAttribute('data-message-id') || `msg_${Date.now()}`;
 
-        // Get or create Sidecar container for this message
-        let sidecarContainer = messageElement.querySelector(`.sidecar-container`);
+        // Get or create Sidecar container for this message - check for ANY existing container first
+        let sidecarContainer = messageElement.querySelector('.sidecar-container');
+
         if (!sidecarContainer) {
             sidecarContainer = document.createElement('div');
             sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
@@ -199,7 +247,7 @@ export class ResultFormatter {
             }
         }
 
-        // Create or update loading indicator for this addon
+        // Check if loading indicator already exists for this addon - avoid duplicates
         let loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
         if (!loadingDiv) {
             loadingDiv = document.createElement('div');
@@ -311,7 +359,8 @@ export class ResultFormatter {
 
             const elementId = messageElement.id || messageElement.getAttribute('data-message-id') || `msg_${Date.now()}`;
 
-            let sidecarContainer = messageElement.querySelector(`.sidecar-container`);
+            // Get or create container - check for ANY existing container first
+            let sidecarContainer = messageElement.querySelector('.sidecar-container');
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
@@ -324,11 +373,30 @@ export class ResultFormatter {
                 }
             }
 
+            // Check if error indicator already exists for this addon - remove old one
+            const existingError = sidecarContainer.querySelector(`.sidecar-error-${addon.id}`);
+            if (existingError) {
+                existingError.remove();
+            }
+
             const errorDiv = document.createElement('div');
             errorDiv.className = `sidecar-error sidecar-error-${addon.id}`;
 
             const errorMsg = document.createElement('div');
-            errorMsg.innerHTML = `<i class="fa-solid fa-exclamation-triangle"></i> Error processing ${addon.name}: ${error.message || error}`;
+            // Escape error message to prevent HTML injection
+            const safeErrorMsg = String(error.message || error)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            const safeAddonName = String(addon.name)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            errorMsg.innerHTML = `<i class="fa-solid fa-exclamation-triangle"></i> Error processing ${safeAddonName}: ${safeErrorMsg}`;
             errorDiv.appendChild(errorMsg);
 
             const retryBtn = document.createElement('button');
@@ -373,8 +441,10 @@ export class ResultFormatter {
                 return false;
             }
 
-            // Get or create Sidecar container for this message
-            let sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`);
+            // Get or create Sidecar container for this message - check BOTH class patterns
+            let sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`) ||
+                messageElement.querySelector('.sidecar-container');
+
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
                 sidecarContainer.className = `sidecar-container sidecar-container-${messageId}`;
@@ -390,7 +460,7 @@ export class ResultFormatter {
                 }
             }
 
-            // Create or update add-on section
+            // Check if addon section already exists - if so, just update it
             let addonSection = sidecarContainer.querySelector(`.addon_section-${addon.id}`);
 
             if (!addonSection) {

@@ -54,12 +54,12 @@ export class ContextBuilder {
         parts.push('IGNORE the chat history for story purposes - it is provided ONLY for context reference.');
         parts.push('ONLY execute what the instruction block explicitly asks you to do.');
         parts.push('If the instruction asks you to add something to the response, add ONLY that - do not write new story content.');
-        parts.push('Any styling you will apply will be in the context of the chat - NEVER apply any styling that will affect global styles. This is NON negotiable CRITICAL INSTRUCTION.');
+        parts.push('Any styling you will apply will be in the context of the chat - NEVER apply any styling that will affect global styles. No CSS blocks - ONLY inline styles. This is NON negotiable CRITICAL INSTRUCTION.');
         parts.push('');
         parts.push('OUTPUT FORMATTING:');
 
         // Add format-specific instructions based on addon.formatStyle
-        const formatStyle = addon.formatStyle || 'markdown';
+        const formatStyle = addon.formatStyle || 'html-css';
 
         if (formatStyle === 'html-css') {
             parts.push('FORMAT AS HTML + CSS:');
@@ -88,17 +88,8 @@ export class ContextBuilder {
             parts.push('- Structure content with clear visual hierarchy.');
             parts.push('- Make it visually appealing while maintaining readability.');
             parts.push('');
-        } else {
-            // Default Markdown
-            parts.push('- ALWAYS use clean, standard Markdown formatting unless explicitly requested otherwise.');
-            parts.push('- Use ## or ### for headings (NOT # which renders too large).');
-            parts.push('- Use **bold** and *italic* for emphasis.');
-            parts.push('- Use - or * for unordered lists, with proper spacing (blank line before/after lists).');
-            parts.push('- Use blank lines between paragraphs for readability.');
-            parts.push('- Keep paragraphs short and well-spaced.');
-            parts.push('- NEVER mix Markdown and HTML - choose one format consistently.');
-            parts.push('');
         }
+
         parts.push('=== END OOC INSTRUCTION ===');
         parts.push('');
 
