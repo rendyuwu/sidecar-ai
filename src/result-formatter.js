@@ -56,7 +56,7 @@ export class ResultFormatter {
 
         // Remove outer <details> tags if present (we already have our own)
         let cleaned = response.trim();
-        
+
         // Match <details>...</details> at the start/end
         const detailsMatch = cleaned.match(/^<details[^>]*>(.*?)<\/details>$/is);
         if (detailsMatch) {
@@ -114,11 +114,11 @@ export class ResultFormatter {
         const lines = html.split('\n');
         let inList = false;
         let result = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const listMatch = line.match(/^[\-\*] (.+)$/);
-            
+
             if (listMatch) {
                 if (!inList) {
                     result.push('<ul>');
@@ -139,11 +139,11 @@ export class ResultFormatter {
                 }
             }
         }
-        
+
         if (inList) {
             result.push('</ul>');
         }
-        
+
         html = result.join('\n');
 
         // Line breaks - convert double newlines to paragraphs, but preserve existing HTML
@@ -223,50 +223,100 @@ export class ResultFormatter {
 
     /**
      * Show loading indicator for an add-on (inside chat, after message)
+     * CRITICAL: Only attaches to AI messages, not user messages
      */
     showLoadingIndicator(messageId, addon) {
         try {
-            const messageElement = this.findMessageElement(messageId);
+            // Always find the latest AI message element, not just any message
+            const messageElement = this.findAIMessageElement();
+            
             if (!messageElement) {
-                console.warn(`[Sidecar AI] Message element not found for loading indicator: ${messageId}`);
+                console.warn(`[Sidecar AI] AI message element not found for loading indicator. Waiting...`);
+                // Retry after a short delay in case the AI message is still rendering
+                setTimeout(() => {
+                    const retryElement = this.findAIMessageElement();
+                    if (retryElement) {
+                        this.attachLoadingToElement(retryElement, addon);
+                    } else {
+                        console.error(`[Sidecar AI] Failed to find AI message element after retry`);
+                    }
+                }, 500);
                 return;
             }
 
-            // Get or create Sidecar container for this message
-            let sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`);
-            if (!sidecarContainer) {
-                sidecarContainer = document.createElement('div');
-                sidecarContainer.className = `sidecar-container sidecar-container-${messageId}`;
-                sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
-
-                // Insert after message content
-                const messageContent = messageElement.querySelector('.mes_text') ||
-                    messageElement.querySelector('.message') ||
-                    messageElement;
-                if (messageContent.nextSibling) {
-                    messageContent.parentElement.insertBefore(sidecarContainer, messageContent.nextSibling);
-                } else {
-                    messageElement.appendChild(sidecarContainer);
+            // Verify it's actually an AI message
+            if (!this.isAIMessageElement(messageElement)) {
+                console.warn(`[Sidecar AI] Found element is not an AI message, searching for latest AI message...`);
+                const aiElement = this.findAIMessageElement();
+                if (aiElement) {
+                    this.attachLoadingToElement(aiElement, addon);
                 }
+                return;
             }
 
-            // Create or update loading indicator for this addon
-            let loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
-            if (!loadingDiv) {
-                loadingDiv = document.createElement('div');
-                loadingDiv.className = `sidecar-loading sidecar-loading-${addon.id}`;
-                loadingDiv.style.cssText = 'padding: 8px; display: flex; align-items: center; gap: 8px; color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important; background: transparent !important; background-color: transparent !important;';
-                loadingDiv.innerHTML = `
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <span>Processing ${addon.name}...</span>
-                `;
-                sidecarContainer.appendChild(loadingDiv);
-            }
-
-            console.log(`[Sidecar AI] Showing loading indicator for ${addon.name}`);
+            this.attachLoadingToElement(messageElement, addon);
         } catch (error) {
             console.error(`[Sidecar AI] Error showing loading indicator:`, error);
         }
+    }
+
+    /**
+     * Attach loading indicator to a specific message element
+     */
+    attachLoadingToElement(messageElement, addon) {
+        // Get message ID from the element
+        const elementId = messageElement.id || messageElement.getAttribute('data-message-id') || `msg_${Date.now()}`;
+        
+        // Get or create Sidecar container for this message
+        let sidecarContainer = messageElement.querySelector(`.sidecar-container`);
+        if (!sidecarContainer) {
+            sidecarContainer = document.createElement('div');
+            sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
+            sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
+
+            // Insert after message content (inside the AI message container)
+            const messageContent = messageElement.querySelector('.mes_text') ||
+                messageElement.querySelector('.message') ||
+                messageElement;
+            if (messageContent.nextSibling) {
+                messageContent.parentElement.insertBefore(sidecarContainer, messageContent.nextSibling);
+            } else {
+                messageElement.appendChild(sidecarContainer);
+            }
+        }
+
+        // Create or update loading indicator for this addon
+        let loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
+        if (!loadingDiv) {
+            loadingDiv = document.createElement('div');
+            loadingDiv.className = `sidecar-loading sidecar-loading-${addon.id}`;
+            loadingDiv.style.cssText = 'padding: 8px; display: flex; align-items: center; gap: 8px; color: var(--SmartThemeBodyColor, var(--text-color, rgba(255, 255, 255, 0.7))) !important; background: transparent !important; background-color: transparent !important;';
+            loadingDiv.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>Processing ${addon.name}...</span>
+            `;
+            sidecarContainer.appendChild(loadingDiv);
+        }
+
+        console.log(`[Sidecar AI] Showing loading indicator for ${addon.name} on AI message`);
+    }
+
+    /**
+     * Find the latest AI message element in the DOM
+     */
+    findAIMessageElement() {
+        // Get all message elements
+        const messageElements = document.querySelectorAll('.mes, .message');
+        
+        // Search backwards to find the latest AI message
+        for (let i = messageElements.length - 1; i >= 0; i--) {
+            const element = messageElements[i];
+            if (this.isAIMessageElement(element)) {
+                return element;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -274,33 +324,23 @@ export class ResultFormatter {
      */
     hideLoadingIndicator(messageId, addon) {
         try {
-            const messageElement = this.findMessageElement(messageId);
-            if (!messageElement) {
-                console.warn(`[Sidecar AI] Message element not found for hiding loading indicator: ${messageId}`);
-                // Try to find loading indicator by addon ID in any sidecar container
-                const loadingDiv = document.querySelector(`.sidecar-loading-${addon.id}`);
-                if (loadingDiv) {
-                    console.log(`[Sidecar AI] Found loading indicator by addon ID, removing`);
-                    loadingDiv.remove();
-                }
-                return;
-            }
-
-            const sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`);
-            if (sidecarContainer) {
-                const loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
-                if (loadingDiv) {
-                    console.log(`[Sidecar AI] Removing loading indicator for ${addon.name}`);
-                    loadingDiv.remove();
-                } else {
-                    console.warn(`[Sidecar AI] Loading indicator not found in container for ${addon.name}`);
-                }
+            // Find loading indicator by addon ID (more reliable than messageId)
+            const loadingDiv = document.querySelector(`.sidecar-loading-${addon.id}`);
+            if (loadingDiv) {
+                console.log(`[Sidecar AI] Removing loading indicator for ${addon.name}`);
+                loadingDiv.remove();
             } else {
-                // Try to find loading indicator by addon ID anywhere
-                const loadingDiv = document.querySelector(`.sidecar-loading-${addon.id}`);
-                if (loadingDiv) {
-                    console.log(`[Sidecar AI] Found loading indicator outside container, removing`);
-                    loadingDiv.remove();
+                // Fallback: try to find in the latest AI message
+                const messageElement = this.findAIMessageElement();
+                if (messageElement) {
+                    const sidecarContainer = messageElement.querySelector(`.sidecar-container`);
+                    if (sidecarContainer) {
+                        const loadingDiv = sidecarContainer.querySelector(`.sidecar-loading-${addon.id}`);
+                        if (loadingDiv) {
+                            console.log(`[Sidecar AI] Removing loading indicator for ${addon.name} from AI message`);
+                            loadingDiv.remove();
+                        }
+                    }
                 }
             }
         } catch (error) {
@@ -310,16 +350,29 @@ export class ResultFormatter {
 
     /**
      * Show error indicator
+     * CRITICAL: Only attaches to AI messages, not user messages
      */
     showErrorIndicator(messageId, addon, error) {
         try {
-            const messageElement = this.findMessageElement(messageId);
-            if (!messageElement) return;
+            // Always find the latest AI message element
+            const messageElement = this.findAIMessageElement();
+            if (!messageElement) {
+                console.warn(`[Sidecar AI] AI message element not found for error indicator`);
+                return;
+            }
 
-            let sidecarContainer = messageElement.querySelector(`.sidecar-container-${messageId}`);
+            // Verify it's actually an AI message
+            if (!this.isAIMessageElement(messageElement)) {
+                console.warn(`[Sidecar AI] Found element is not an AI message for error indicator`);
+                return;
+            }
+
+            const elementId = messageElement.id || messageElement.getAttribute('data-message-id') || `msg_${Date.now()}`;
+            
+            let sidecarContainer = messageElement.querySelector(`.sidecar-container`);
             if (!sidecarContainer) {
                 sidecarContainer = document.createElement('div');
-                sidecarContainer.className = `sidecar-container sidecar-container-${messageId}`;
+                sidecarContainer.className = `sidecar-container sidecar-container-${elementId}`;
                 sidecarContainer.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; background-color: var(--SmartThemeBodyColor, var(--body-color, #1e1e1e)) !important; border: 1px solid var(--SmartThemeBorderColor, #555) !important; border-radius: 5px !important; color: var(--SmartThemeBodyColor, var(--text-color, #eee)) !important;';
 
                 const messageContent = messageElement.querySelector('.mes_text') || messageElement;
