@@ -244,16 +244,18 @@ export class SettingsUI {
         let models = [];
 
         console.log('[Sidecar AI] Loading models for provider:', provider);
-        
+
         // Method 1: Try mainApi - SillyTavern's API connection manager
         if (this.context && this.context.mainApi) {
             console.log('[Sidecar AI] Found mainApi, checking for models...');
             const mainApi = this.context.mainApi;
-            
+            console.log('[Sidecar AI] mainApi keys:', Object.keys(mainApi));
+
             // Check if mainApi has getModels or similar method
             if (typeof mainApi.getModels === 'function') {
                 try {
                     const stModels = mainApi.getModels(provider);
+                    console.log('[Sidecar AI] mainApi.getModels result:', stModels);
                     if (stModels && Array.isArray(stModels)) {
                         console.log('[Sidecar AI] Found models via mainApi.getModels:', stModels.length);
                         models = stModels.map(m => ({
@@ -266,26 +268,65 @@ export class SettingsUI {
                     console.log('[Sidecar AI] mainApi.getModels error:', e);
                 }
             }
-            
-            // Check mainApi's internal state
-            if (models.length === 0 && mainApi.providers) {
-                console.log('[Sidecar AI] Found mainApi.providers:', Object.keys(mainApi.providers));
-                const providerData = mainApi.providers[provider];
-                if (providerData && providerData.models) {
-                    models = providerData.models.map(m => ({
-                        value: m.id || m.name || m,
-                        label: m.name || m.label || m.id || m,
-                        default: m.default || false
-                    }));
+
+            // Check mainApi's provider registry - this is likely where models are stored
+            if (models.length === 0) {
+                // Try different property names
+                const providerKeys = ['providers', 'providerRegistry', 'apiProviders', 'modelRegistry'];
+                for (const key of providerKeys) {
+                    if (mainApi[key]) {
+                        console.log(`[Sidecar AI] Found mainApi.${key}:`, Object.keys(mainApi[key]));
+                        const providerData = mainApi[key][provider];
+                        if (providerData) {
+                            console.log(`[Sidecar AI] Provider data keys:`, Object.keys(providerData));
+                            // Check for models in various locations
+                            const modelKeys = ['models', 'modelList', 'availableModels', 'model_options'];
+                            for (const modelKey of modelKeys) {
+                                if (providerData[modelKey] && Array.isArray(providerData[modelKey])) {
+                                    console.log(`[Sidecar AI] Found ${modelKey} with ${providerData[modelKey].length} models`);
+                                    models = providerData[modelKey].map(m => {
+                                        // Handle different model formats
+                                        if (typeof m === 'string') {
+                                            return { value: m, label: m, default: false };
+                                        }
+                                        return {
+                                            value: m.id || m.value || m.name || m,
+                                            label: m.label || m.name || m.id || m.value || m,
+                                            default: m.default || false
+                                        };
+                                    });
+                                    if (models.length > 0) break;
+                                }
+                            }
+                            if (models.length > 0) break;
+                        }
+                    }
                 }
             }
-            
+
+            // Check current connection profile for models
+            if (models.length === 0 && mainApi.currentProfile) {
+                console.log('[Sidecar AI] Checking mainApi.currentProfile');
+                const profile = mainApi.currentProfile;
+                if (profile && (profile.api_provider === provider || profile.provider === provider)) {
+                    console.log('[Sidecar AI] Profile keys:', Object.keys(profile));
+                    if (profile.models && Array.isArray(profile.models)) {
+                        models = profile.models.map(m => ({
+                            value: m.id || m.name || m,
+                            label: m.name || m.label || m.id || m,
+                            default: m.default || false
+                        }));
+                    }
+                }
+            }
+
             // Check connection profiles in mainApi
             if (models.length === 0 && mainApi.connectionProfiles) {
                 console.log('[Sidecar AI] Found mainApi.connectionProfiles');
                 const profiles = Object.values(mainApi.connectionProfiles || {});
                 for (const profile of profiles) {
                     if (profile && (profile.api_provider === provider || profile.provider === provider)) {
+                        console.log('[Sidecar AI] Profile keys:', Object.keys(profile));
                         if (profile.models && Array.isArray(profile.models)) {
                             models = profile.models.map(m => ({
                                 value: m.id || m.name || m,
@@ -299,14 +340,36 @@ export class SettingsUI {
             }
         }
 
-        // Method 2: Try connection profiles in settings
+        // Method 2: Check chatCompletionSettings - models might be stored there
+        if (models.length === 0 && this.context && this.context.chatCompletionSettings) {
+            console.log('[Sidecar AI] Checking chatCompletionSettings...');
+            const ccSettings = this.context.chatCompletionSettings;
+            console.log('[Sidecar AI] chatCompletionSettings keys:', Object.keys(ccSettings));
+            
+            // Check for provider-specific settings
+            if (ccSettings[provider]) {
+                const providerSettings = ccSettings[provider];
+                console.log('[Sidecar AI] Provider settings keys:', Object.keys(providerSettings));
+                if (providerSettings.models && Array.isArray(providerSettings.models)) {
+                    models = providerSettings.models.map(m => ({
+                        value: m.id || m.name || m,
+                        label: m.name || m.label || m.id || m,
+                        default: m.default || false
+                    }));
+                }
+            }
+        }
+
+        // Method 3: Try connection profiles in settings
         if (models.length === 0 && this.context && this.context.settings) {
             console.log('[Sidecar AI] Checking context.settings...');
+            console.log('[Sidecar AI] settings keys:', Object.keys(this.context.settings));
             if (this.context.settings.connection_profiles) {
                 console.log('[Sidecar AI] Found settings.connection_profiles');
                 const profiles = Object.values(this.context.settings.connection_profiles || {});
                 for (const profile of profiles) {
                     if (profile && (profile.api_provider === provider || profile.provider === provider)) {
+                        console.log('[Sidecar AI] Profile in settings keys:', Object.keys(profile));
                         if (profile.models && Array.isArray(profile.models)) {
                             models = profile.models.map(m => ({
                                 value: m.id || m.name || m,
@@ -455,7 +518,7 @@ export class SettingsUI {
         // Method 1: Check mainApi for connection profiles
         if (this.context && this.context.mainApi) {
             const mainApi = this.context.mainApi;
-            
+
             // Check mainApi's connection profiles
             if (mainApi.connectionProfiles) {
                 const profiles = Object.values(mainApi.connectionProfiles || {});
@@ -468,7 +531,7 @@ export class SettingsUI {
                     }
                 }
             }
-            
+
             // Check mainApi's current profile
             if (!apiKey && mainApi.currentProfile) {
                 const profile = mainApi.currentProfile;
