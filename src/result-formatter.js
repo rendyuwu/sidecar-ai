@@ -1366,10 +1366,10 @@ export class ResultFormatter {
     async handleMessageSwiped(messageIndex, addonManager = null) {
         try {
             console.log(`[Sidecar AI] Message swiped to index: ${messageIndex}`);
-            
+
             // First, hide all sidecar cards
             this.hideAllSidecarCards();
-            
+
             // Get the message from chat log
             const chatLog = this.context.chat || this.context.chatLog || this.context.currentChat || [];
             if (messageIndex < 0 || messageIndex >= chatLog.length) {
@@ -1391,7 +1391,7 @@ export class ResultFormatter {
                     const allAddons = addonManager.getAllAddons();
                     for (const addon of allAddons) {
                         if (!addon.enabled) continue;
-                        
+
                         const stored = message.extra.sidecarResults[addon.id];
                         if (!stored) continue;
 
