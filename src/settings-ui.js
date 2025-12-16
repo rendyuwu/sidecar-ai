@@ -600,20 +600,61 @@ export class SettingsUI {
         }
 
         // Method 3: Check connection manager extension profiles (if available)
+        // Connection Manager stores secret-id (UUID) in profiles, not the actual key
+        // We need to resolve the secret-id to get the actual API key from secret_state
         if (!apiKey && this.context && this.context.extensionSettings) {
             const extSettings = this.context.extensionSettings;
             if (extSettings.connectionManager && extSettings.connectionManager.profiles) {
                 console.log('[Sidecar AI] Checking connection manager profiles');
                 const profiles = extSettings.connectionManager.profiles;
+                
                 for (const profile of profiles) {
-                    // Match by API provider name or chat_completion_source
-                    const profileApi = profile.api || profile.chat_completion_source;
-                    if (profileApi === provider || profileApi === secretKey) {
-                        if (profile.api_key) {
-                            apiKey = profile.api_key;
-                            console.log('[Sidecar AI] Found API key in connection manager profile');
-                            break;
+                    // Match by API provider - check profile.api which contains the provider identifier
+                    // For OpenRouter, profile.api might be something like "openrouter" or a full identifier
+                    const profileApi = profile.api || '';
+                    const profileSource = profile['chat_completion_source'] || '';
+                    
+                    // Check if this profile matches our provider
+                    // profile.api might be like "openrouter" or a full API identifier
+                    const matchesProvider = profileApi.toLowerCase().includes(provider.toLowerCase()) ||
+                                         profileSource.toLowerCase() === provider.toLowerCase() ||
+                                         (provider === 'openrouter' && profileApi.toLowerCase().includes('openrouter'));
+                    
+                    if (matchesProvider && profile['secret-id']) {
+                        const secretId = profile['secret-id'];
+                        console.log(`[Sidecar AI] Found profile with secret-id: ${secretId}`);
+                        
+                        // Resolve secret-id to actual API key from secret_state
+                        // secret_state structure: { 'api_key_openrouter': [{id, value, label, active}, ...] }
+                        if (typeof window !== 'undefined' && window.secret_state) {
+                            // Search through all secret keys to find the one with matching ID
+                            for (const [key, secrets] of Object.entries(window.secret_state)) {
+                                if (Array.isArray(secrets)) {
+                                    const secret = secrets.find(s => s.id === secretId);
+                                    if (secret && secret.value) {
+                                        apiKey = secret.value;
+                                        console.log('[Sidecar AI] Resolved API key from connection manager profile secret-id');
+                                        break;
+                                    }
+                                }
+                            }
                         }
+                        
+                        // Also check context.secret_state if available
+                        if (!apiKey && this.context && this.context.secret_state) {
+                            for (const [key, secrets] of Object.entries(this.context.secret_state)) {
+                                if (Array.isArray(secrets)) {
+                                    const secret = secrets.find(s => s.id === secretId);
+                                    if (secret && secret.value) {
+                                        apiKey = secret.value;
+                                        console.log('[Sidecar AI] Resolved API key from context.secret_state');
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (apiKey) break;
                     }
                 }
             }

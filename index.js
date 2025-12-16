@@ -238,7 +238,7 @@ async function loadModules() {
         // Wait for Extensions menu to be ready
         setTimeout(() => {
             const extensionsMenu = document.querySelector('#extensionsMenu');
-            
+
             if (!extensionsMenu) {
                 console.warn('[Sidecar AI] Extensions menu not found, retrying...');
                 setTimeout(() => addSidecarToExtensionsMenu(eventHandler), 1000);
@@ -260,7 +260,7 @@ async function loadModules() {
             menuItem.className = 'list-group-item flex-container flexGap5';
             menuItem.style.cursor = 'pointer';
             menuItem.title = 'Run manual sidecar prompts';
-            
+
             menuItem.innerHTML = `
                 <div class="extensionsMenuExtensionButton fa-solid fa-bolt"></div>
                 Run Sidecar
@@ -302,7 +302,7 @@ async function loadModules() {
             });
 
             sidecarContainer.appendChild(menuItem);
-            
+
             // Append to extensions menu (add near the end, before translate)
             const translateContainer = document.querySelector('#translate_wand_container');
             if (translateContainer && translateContainer.parentNode) {
