@@ -16,6 +16,7 @@ export class EventHandler {
         // Prevent double-processing the same message id
         this.lastProcessedMessageId = null;
         this.lastProcessedSwipeId = null;
+        this.queuedTriggers = new Set(); // Set of addon IDs queued to run
     }
 
     /**
@@ -44,7 +45,14 @@ export class EventHandler {
                         eventSource.on(eventType, (data) => {
                             try {
                                 console.log(`[Sidecar AI] Event fired: ${eventType}`, data);
-                                this.handleMessageReceived(data);
+                                // For MESSAGE_SENT, wait a bit to ensure message is in chat array
+                                if (eventType === event_types.MESSAGE_SENT || eventType === 'MESSAGE_SENT') {
+                                    setTimeout(() => {
+                                        this.handleMessageReceived(data);
+                                    }, 100);
+                                } else {
+                                    this.handleMessageReceived(data);
+                                }
                             } catch (error) {
                                 console.error(`[Sidecar AI] Error in ${eventType} handler:`, error);
                             }
@@ -126,36 +134,133 @@ export class EventHandler {
             this.isProcessing = true;
             console.log('[Sidecar AI] Message received event fired', data);
 
-            // Get auto-triggered add-ons
-            const autoAddons = this.addonManager.getEnabledAddons()
-                .filter(addon => addon.triggerMode === 'auto');
+            // Get current message
+            let message = data?.message;
 
-            console.log(`[Sidecar AI] Found ${autoAddons.length} auto-triggered add-on(s)`);
-
-            if (autoAddons.length === 0) {
-                console.log('[Sidecar AI] No auto-triggered add-ons found');
-                return;
+            // If data is just an ID (number), try to find it
+            if (!message && typeof data === 'number') {
+                message = this.resultFormatter.findMessageObject(data);
             }
 
-            // Get current message
-            const message = data?.message || this.getLatestMessage();
+            // If message still not found, get the absolute latest message from log
+            if (!message) {
+                message = this.getLastMessageFromLog();
+            }
+
+            // Fallback to AI-specific search if still nothing (unlikely but safe)
+            if (!message) {
+                message = this.getLatestMessage();
+            }
+
             if (!message) {
                 console.log('[Sidecar AI] No message found, skipping');
                 return;
             }
 
-            // Check if message is from AI (not user)
-            // Only trigger on AI responses, not user messages
+            // Check if message is from user
             const isUserMessage = this.isUserMessage(message);
+            console.log('[Sidecar AI] Message type check:', { 
+                isUserMessage, 
+                messageType: typeof message,
+                hasMes: !!message?.mes,
+                isUser: message?.is_user,
+                role: message?.role,
+                name: message?.name
+            });
+
             if (isUserMessage) {
-                console.log('[Sidecar AI] Message is from user, skipping auto-trigger');
+                // USER MESSAGE: Check for triggers
+                const triggerAddons = this.addonManager.getEnabledAddons()
+                    .filter(addon => addon.triggerMode === 'trigger');
+                
+                console.log(`[Sidecar AI] Found ${triggerAddons.length} trigger mode sidecar(s)`);
+
+                if (triggerAddons.length > 0) {
+                    const messageText = this.getUserMessageText(message);
+                    console.log('[Sidecar AI] Checking triggers for user message:', messageText.substring(0, 50) + '...');
+
+                    let queuedCount = 0;
+                    triggerAddons.forEach(addon => {
+                        console.log(`[Sidecar AI] Checking addon ${addon.name} triggers:`, addon.triggerConfig);
+                        if (this.checkTriggerMatch(messageText, addon.triggerConfig)) {
+                            console.log(`[Sidecar AI] Trigger matched for addon: ${addon.name}`);
+                            this.queuedTriggers.add(addon.id);
+                            queuedCount++;
+                        } else {
+                            console.log(`[Sidecar AI] No match for addon: ${addon.name}`);
+                        }
+                    });
+
+                    if (queuedCount > 0) {
+                        console.log(`[Sidecar AI] Queued ${queuedCount} sidecar(s) for next AI response`);
+                    }
+                }
+                return; // Done with user message
+            }
+
+            // AI MESSAGE: Process auto add-ons AND queued triggers
+            console.log('[Sidecar AI] Processing add-ons for AI message');
+
+            // FALLBACK: Check if previous message was a user message and process triggers
+            // This handles cases where MESSAGE_SENT event wasn't caught
+            const chatLog = this.contextBuilder.getChatLog();
+            if (chatLog && chatLog.length >= 2) {
+                const previousMessage = chatLog[chatLog.length - 2]; // Second-to-last message
+                if (previousMessage && this.isUserMessage(previousMessage)) {
+                    console.log('[Sidecar AI] Fallback: Detected user message before AI response, checking triggers');
+                    const triggerAddons = this.addonManager.getEnabledAddons()
+                        .filter(addon => addon.triggerMode === 'trigger');
+                    
+                    if (triggerAddons.length > 0) {
+                        const messageText = this.getUserMessageText(previousMessage);
+                        console.log('[Sidecar AI] Fallback: Checking triggers for user message:', messageText.substring(0, 50) + '...');
+                        
+                        triggerAddons.forEach(addon => {
+                            console.log(`[Sidecar AI] Fallback: Checking addon ${addon.name} triggers:`, addon.triggerConfig);
+                            if (this.checkTriggerMatch(messageText, addon.triggerConfig)) {
+                                console.log(`[Sidecar AI] Fallback: Trigger matched for addon: ${addon.name}`);
+                                this.queuedTriggers.add(addon.id);
+                            } else {
+                                console.log(`[Sidecar AI] Fallback: No match for addon: ${addon.name}`);
+                            }
+                        });
+                    }
+                }
+            }
+
+            // 1. Get auto-triggered add-ons
+            const autoAddons = this.addonManager.getEnabledAddons()
+                .filter(addon => addon.triggerMode === 'auto');
+
+            // 2. Get queued trigger add-ons
+            const queuedAddons = [];
+            if (this.queuedTriggers.size > 0) {
+                console.log(`[Sidecar AI] Found ${this.queuedTriggers.size} queued trigger(s)`);
+                this.queuedTriggers.forEach(id => {
+                    const addon = this.addonManager.getAddon(id);
+                    if (addon && addon.enabled) {
+                        queuedAddons.push(addon);
+                    }
+                });
+                // Clear queue immediately so we don't re-process if something fails/retries
+                this.queuedTriggers.clear();
+            }
+
+            // Combine lists
+            const allAddonsToRun = [...autoAddons, ...queuedAddons];
+
+            // Remove duplicates (in case an addon is both auto and triggered?? shouldn't happen but safe)
+            const uniqueAddons = Array.from(new Set(allAddonsToRun.map(a => a.id)))
+                .map(id => allAddonsToRun.find(a => a.id === id));
+
+            console.log(`[Sidecar AI] Running ${uniqueAddons.length} sidecar(s) (${autoAddons.length} auto, ${queuedAddons.length} triggered)`);
+
+            if (uniqueAddons.length === 0) {
+                console.log('[Sidecar AI] No sidecars to run');
                 return;
             }
 
-            console.log('[Sidecar AI] Processing auto-triggered add-ons for AI message');
-
             // Wait a bit to ensure AI message is fully rendered in DOM
-            // This prevents loading indicators from attaching to wrong message
             await new Promise(resolve => setTimeout(resolve, 300));
 
             // Re-get the latest AI message to ensure we have the correct one
@@ -177,7 +282,7 @@ export class EventHandler {
             }
 
             // Process add-ons with the confirmed AI message
-            await this.processAddons(autoAddons, aiMessage);
+            await this.processAddons(uniqueAddons, aiMessage);
 
             // Record the processed message id and swipe id
             this.lastProcessedMessageId = aiMessageId || this.lastProcessedMessageId;
@@ -223,6 +328,92 @@ export class EventHandler {
         // Default: assume it's an AI message if we can't determine
         // (better to trigger than miss)
         return false;
+    }
+
+    /**
+     * Clean regex pattern by removing invalid inline flags
+     * JavaScript doesn't support inline flags like (?i), (?m), (?s)
+     * These are handled via RegExp constructor flags instead
+     */
+    cleanRegexPattern(pattern) {
+        // Remove common invalid inline flags: (?i), (?m), (?s), (?x), (?u)
+        // Also handle negated flags: (?-i), (?-m), etc.
+        return pattern
+            .replace(/\(\?[imsux-]+\)/gi, '') // Remove inline flags
+            .trim();
+    }
+
+    /**
+     * Check if message matches trigger config
+     */
+    checkTriggerMatch(text, config) {
+        if (!text || !config || !config.triggers || config.triggers.length === 0) {
+            return false;
+        }
+
+        const type = config.triggerType || 'keyword';
+
+        if (type === 'regex') {
+            for (const pattern of config.triggers) {
+                try {
+                    // Clean pattern to remove invalid inline flags
+                    const cleanedPattern = this.cleanRegexPattern(pattern);
+                    const regex = new RegExp(cleanedPattern, 'i'); // Case-insensitive by default
+                    if (regex.test(text)) {
+                        return true;
+                    }
+                } catch (e) {
+                    console.error(`[Sidecar AI] Invalid regex pattern: ${pattern}`, e);
+                    console.error(`[Sidecar AI] Hint: JavaScript regex doesn't support inline flags like (?i). Use the pattern without flags - case-insensitive matching is automatic.`);
+                }
+            }
+        } else {
+            // Keyword match (case-insensitive substring)
+            const lowerText = text.toLowerCase();
+            for (const keyword of config.triggers) {
+                if (lowerText.includes(keyword.toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Extract text from user message
+     */
+    getUserMessageText(message) {
+        if (!message) return '';
+
+        // Handle string
+        if (typeof message === 'string') return message;
+
+        // Handle jQuery object
+        if (message.jquery || (window.jQuery && message instanceof window.jQuery)) {
+            const $msg = message;
+            // Try to find message content in .mes_text
+            const content = $msg.find('.mes_text').text();
+            if (content) return content;
+            return $msg.text();
+        }
+
+        // Handle DOM element
+        if (message.nodeType === 1) { // Element
+            const $msg = $(message);
+            // Try to find message content
+            // SillyTavern usually puts content in .mes_text
+            const content = $msg.find('.mes_text').text();
+            if (content) return content;
+            return $msg.text();
+        }
+
+        // Handle message object
+        if (typeof message === 'object') {
+            return message.mes || message.content || message.text || '';
+        }
+
+        return '';
     }
 
     /**
@@ -475,6 +666,17 @@ export class EventHandler {
 
         // Trigger debounced save to ensure metadata persists
         this.debouncedSaveChat();
+    }
+
+    /**
+     * Get the absolute latest message from chat log (User or AI)
+     */
+    getLastMessageFromLog() {
+        const chatLog = this.contextBuilder.getChatLog();
+        if (chatLog && chatLog.length > 0) {
+            return chatLog[chatLog.length - 1];
+        }
+        return null;
     }
 
     /**

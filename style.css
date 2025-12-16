@@ -159,6 +159,13 @@
     font-weight: 600;
 }
 
+.add_ons_badge_trigger {
+    color: #ffffff !important;
+    background: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    font-weight: 600;
+}
+
 .add_ons_item_description {
     margin: 8px 0 0 0;
     padding-top: 8px;
@@ -384,6 +391,17 @@
 #add_ons_form_service_provider {
     max-height: 200px;
     overflow-y: auto;
+}
+
+/* Regex tester */
+#add_ons_regex_test_result {
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+#add_ons_regex_test_result div {
+    padding: 4px 8px;
+    border-radius: 3px;
 }
 
 /* Field states */

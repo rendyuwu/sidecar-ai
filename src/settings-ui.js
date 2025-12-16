@@ -78,6 +78,10 @@ export class SettingsUI {
 
             const isSelected = this.selectedAddons.has(addon.id);
 
+            let triggerBadgeClass = 'manual';
+            if (addon.triggerMode === 'auto') triggerBadgeClass = 'auto';
+            if (addon.triggerMode === 'trigger') triggerBadgeClass = 'trigger'; // You'll need CSS for this
+
             item.innerHTML = `
                 <div class="add_ons_item_header">
                     <div class="add_ons_item_select">
@@ -90,7 +94,7 @@ export class SettingsUI {
                         <h4>${addon.name || 'Unnamed Sidecar'}</h4>
                         <span class="add_ons_item_meta">
                             ${enabledBadge}
-                            <span class="add_ons_badge add_ons_badge_${(addon.triggerMode || 'auto') === 'auto' ? 'auto' : 'manual'}">${addon.triggerMode || 'auto'}</span>
+                            <span class="add_ons_badge add_ons_badge_${triggerBadgeClass}">${addon.triggerMode || 'auto'}</span>
                             <span class="add_ons_badge">${addon.requestMode || 'standalone'}</span>
                             <span class="add_ons_badge">${addon.responseLocation || 'outsideChatlog'}</span>
                             ${addon.formatStyle && addon.formatStyle !== 'html-css' ? `<span class="add_ons_badge" title="Format Style">${addon.formatStyle}</span>` : ''}
@@ -375,6 +379,53 @@ export class SettingsUI {
             }
         });
 
+        // Trigger mode change - show/hide trigger config
+        $(document).off('change.sidecar', '#add_ons_form_trigger_mode').on('change.sidecar', '#add_ons_form_trigger_mode', function (e) {
+            e.stopPropagation();
+            const mode = $(this).val();
+            const triggerConfigRow = $('#add_ons_trigger_config_row');
+            const regexTesterRow = $('#add_ons_regex_tester_row');
+            if (mode === 'trigger') {
+                triggerConfigRow.slideDown(200);
+                // Show regex tester if trigger type is regex
+                const triggerType = $('#add_ons_form_trigger_type').val();
+                if (triggerType === 'regex') {
+                    regexTesterRow.slideDown(200);
+                }
+            } else {
+                triggerConfigRow.slideUp(200);
+                regexTesterRow.slideUp(200);
+            }
+        });
+
+        // Trigger type change - show/hide regex tester
+        $(document).off('change.sidecar', '#add_ons_form_trigger_type').on('change.sidecar', '#add_ons_form_trigger_type', function (e) {
+            e.stopPropagation();
+            const triggerType = $(this).val();
+            const regexTesterRow = $('#add_ons_regex_tester_row');
+            const triggerMode = $('#add_ons_form_trigger_mode').val();
+            if (triggerMode === 'trigger' && triggerType === 'regex') {
+                regexTesterRow.slideDown(200);
+            } else {
+                regexTesterRow.slideUp(200);
+            }
+        });
+
+        // Regex tester button
+        $(document).off('click.sidecar', '#add_ons_regex_test_btn').on('click.sidecar', '#add_ons_regex_test_btn', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.testRegexPatterns();
+        });
+
+        // Test on Enter key in regex test input
+        $(document).off('keypress.sidecar', '#add_ons_regex_test_input').on('keypress.sidecar', '#add_ons_regex_test_input', function (e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                self.testRegexPatterns();
+            }
+        });
+
         // Bulk selection: Select all checkbox
         $(document).off('change.sidecar', '#add_ons_select_all').on('change.sidecar', '#add_ons_select_all', function (e) {
             e.stopPropagation();
@@ -536,6 +587,11 @@ export class SettingsUI {
             $('#add_ons_form_id').val('');
             $('#add_ons_modal_title').text('Create New Sidecar');
             $('#add_ons_form_save').text('Create Sidecar');
+            // Hide trigger config and regex tester
+            $('#add_ons_trigger_config_row').hide();
+            $('#add_ons_regex_tester_row').hide();
+            $('#add_ons_regex_test_result').hide().html('');
+            $('#add_ons_regex_test_input').val('');
             // Load models for default provider and check for saved API key
             setTimeout(async () => {
                 this.loadModelsForProvider('openai');
@@ -1186,6 +1242,9 @@ export class SettingsUI {
     closeModal() {
         $('#add_ons_modal').hide();
         $('#add_ons_form')[0].reset();
+        // Clear regex tester
+        $('#add_ons_regex_test_result').hide().html('');
+        $('#add_ons_regex_test_input').val('');
     }
 
     /**
@@ -1228,6 +1287,32 @@ export class SettingsUI {
         $('#add_ons_form_description').val(addon.description);
         $('#add_ons_form_prompt').val(addon.prompt);
         $('#add_ons_form_trigger_mode').val(addon.triggerMode);
+
+        // Handle trigger config visibility
+        if (addon.triggerMode === 'trigger') {
+            $('#add_ons_trigger_config_row').show();
+        } else {
+            $('#add_ons_trigger_config_row').hide();
+            $('#add_ons_regex_tester_row').hide();
+        }
+
+        // Load trigger config
+        const triggerConfig = addon.triggerConfig || {};
+        const triggerType = triggerConfig.triggerType || 'keyword';
+        $('#add_ons_form_trigger_type').val(triggerType);
+        $('#add_ons_form_triggers').val((triggerConfig.triggers || []).join('\n'));
+
+        // Show regex tester if trigger mode is trigger and type is regex
+        if (addon.triggerMode === 'trigger' && triggerType === 'regex') {
+            $('#add_ons_regex_tester_row').show();
+        } else {
+            $('#add_ons_regex_tester_row').hide();
+        }
+
+        // Clear test result when editing
+        $('#add_ons_regex_test_result').hide().html('');
+        $('#add_ons_regex_test_input').val('');
+
         $('#add_ons_form_request_mode').val(addon.requestMode);
         $('#add_ons_form_ai_provider').val(addon.aiProvider);
 
@@ -1300,6 +1385,88 @@ export class SettingsUI {
         } else {
             $('#add_ons_history_depth_group').hide();
         }
+    }
+
+    /**
+     * Test regex patterns against test input
+     */
+    testRegexPatterns() {
+        const testInput = $('#add_ons_regex_test_input').val().trim();
+        const triggersText = $('#add_ons_form_triggers').val();
+        const triggerType = $('#add_ons_form_trigger_type').val();
+        const resultDiv = $('#add_ons_regex_test_result');
+
+        if (!testInput) {
+            resultDiv.html('<span style="color: #ffc107;">⚠️ Please enter a test message</span>').show();
+            return;
+        }
+
+        if (!triggersText.trim()) {
+            resultDiv.html('<span style="color: #ffc107;">⚠️ Please enter at least one trigger pattern</span>').show();
+            return;
+        }
+
+        const triggers = triggersText.split('\n')
+            .map(t => t.trim())
+            .filter(t => t.length > 0);
+
+        if (triggers.length === 0) {
+            resultDiv.html('<span style="color: #ffc107;">⚠️ Please enter at least one trigger pattern</span>').show();
+            return;
+        }
+
+        const results = [];
+        let hasMatch = false;
+        let hasError = false;
+
+        if (triggerType === 'regex') {
+            // Test regex patterns
+            triggers.forEach((pattern, index) => {
+                try {
+                    // Clean pattern (remove invalid inline flags)
+                    const cleanedPattern = pattern.replace(/\(\?[imsux-]+\)/gi, '').trim();
+                    const regex = new RegExp(cleanedPattern, 'i');
+                    const matches = regex.test(testInput);
+                    
+                    if (matches) {
+                        hasMatch = true;
+                        // Find the match position for highlighting
+                        const match = testInput.match(regex);
+                        results.push(`<div style="color: #28a745; margin: 4px 0;"><strong>✓ Pattern ${index + 1}: "${pattern}"</strong> - MATCHED</div>`);
+                    } else {
+                        results.push(`<div style="color: #6c757d; margin: 4px 0;">✗ Pattern ${index + 1}: "${pattern}" - No match</div>`);
+                    }
+                } catch (e) {
+                    hasError = true;
+                    results.push(`<div style="color: #dc3545; margin: 4px 0;"><strong>✗ Pattern ${index + 1}: "${pattern}"</strong> - ERROR: ${e.message}</div>`);
+                }
+            });
+        } else {
+            // Test keyword patterns
+            const lowerTestInput = testInput.toLowerCase();
+            triggers.forEach((keyword, index) => {
+                const matches = lowerTestInput.includes(keyword.toLowerCase());
+                if (matches) {
+                    hasMatch = true;
+                    results.push(`<div style="color: #28a745; margin: 4px 0;"><strong>✓ Keyword ${index + 1}: "${keyword}"</strong> - MATCHED</div>`);
+                } else {
+                    results.push(`<div style="color: #6c757d; margin: 4px 0;">✗ Keyword ${index + 1}: "${keyword}" - No match</div>`);
+                }
+            });
+        }
+
+        // Build result HTML
+        let resultHTML = '';
+        if (hasMatch) {
+            resultHTML += '<div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>✓ At least one pattern matched!</strong></div>';
+        } else if (hasError) {
+            resultHTML += '<div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>✗ Errors found in patterns</strong></div>';
+        } else {
+            resultHTML += '<div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>⚠ No patterns matched</strong></div>';
+        }
+        
+        resultHTML += '<div style="font-size: 0.9em;">' + results.join('') + '</div>';
+        resultDiv.html(resultHTML).show();
     }
 
     /**
@@ -1569,6 +1736,12 @@ export class SettingsUI {
                 description: $('#add_ons_form_description').val(),
                 prompt: $('#add_ons_form_prompt').val(),
                 triggerMode: $('#add_ons_form_trigger_mode').val(),
+                triggerConfig: {
+                    triggerType: $('#add_ons_form_trigger_type').val(),
+                    triggers: $('#add_ons_form_triggers').val().split('\n')
+                        .map(t => t.trim())
+                        .filter(t => t.length > 0)
+                },
                 requestMode: $('#add_ons_form_request_mode').val(),
                 aiProvider: provider,
                 aiModel: model,
