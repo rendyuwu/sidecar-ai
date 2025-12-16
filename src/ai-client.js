@@ -390,6 +390,14 @@ export class AIClient {
                     console.warn('[Sidecar AI] Error type:', typeof chatServiceError);
                     console.warn('[Sidecar AI] Error keys:', chatServiceError ? Object.keys(chatServiceError) : 'null');
                     console.warn('[Sidecar AI] Full error object:', chatServiceError);
+                    
+                    // Log all properties to help debug
+                    if (chatServiceError && typeof chatServiceError === 'object') {
+                        console.warn('[Sidecar AI] Error object properties:', Object.getOwnPropertyNames(chatServiceError));
+                        for (const key in chatServiceError) {
+                            console.warn(`[Sidecar AI] Error.${key}:`, chatServiceError[key]);
+                        }
+                    }
 
                     // ChatCompletionService throws the JSON response directly when there's an error
                     // The error object is the API response, which may have nested error properties
@@ -440,9 +448,20 @@ export class AIClient {
                         errorMsg = String(chatServiceError);
                     }
 
-                    // If error message is still empty or just "true", provide a default
+                    // If error message is still empty or just "true", provide a helpful default
                     if (!errorMsg || errorMsg === 'true' || errorMsg === '{}' || errorMsg === '{"error":true}') {
-                        errorMsg = 'Bad Request (400) - Check model name and API configuration. The model name might be invalid or the API key may not have access to this model.';
+                        // The API returned {error: true} which means 400 Bad Request
+                        // Common causes: invalid model name, API key doesn't have access, or configuration issue
+                        errorMsg = `Bad Request (400) - The API rejected the request.\n\n` +
+                            `Common causes:\n` +
+                            `• Invalid model name: "${model}"\n` +
+                            `• API key doesn't have access to this model\n` +
+                            `• Model not available in your region/account\n` +
+                            `• Provider configuration issue in SillyTavern\n\n` +
+                            `Try:\n` +
+                            `1. Verify the model name is correct in SillyTavern's API Connection settings\n` +
+                            `2. Check if the model is available for your API key\n` +
+                            `3. Test the connection directly in SillyTavern's API Connection tab`;
                     }
 
                     // If using ST key and ChatCompletionService fails, it's likely a configuration issue
@@ -665,12 +684,40 @@ export class AIClient {
     }
 
     /**
-     * Get secret_state from window (if available)
+     * Get secret_state from window or fetch from API
      * secret_state only contains metadata, not actual API keys
+     * SillyTavern exports secret_state from secrets.js, it might be available globally
      */
-    getSecretState() {
+    async getSecretState() {
         if (typeof window !== 'undefined') {
-            return window.secret_state || (window.SillyTavern && window.SillyTavern.secret_state) || null;
+            // Try multiple ways to access secret_state
+            // Method 1: Direct window access
+            if (window.secret_state) {
+                return window.secret_state;
+            }
+            // Method 2: Through SillyTavern global
+            if (window.SillyTavern && window.SillyTavern.secret_state) {
+                return window.SillyTavern.secret_state;
+            }
+            // Method 3: Try to fetch from API (like SillyTavern does)
+            try {
+                const headers = this.getRequestHeaders();
+                const response = await fetch('/api/secrets/read', {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const secretState = await response.json();
+                    // Cache it for future use
+                    if (typeof window !== 'undefined') {
+                        window.secret_state = secretState;
+                    }
+                    return secretState;
+                }
+            } catch (e) {
+                console.warn('[Sidecar AI] Failed to fetch secret_state from API:', e);
+            }
         }
         return null;
     }
@@ -783,10 +830,10 @@ export class AIClient {
 
     /**
      * Check if API key exists for provider (without fetching the actual value)
-     * This is faster and doesn't require API access
-     * @returns {boolean} True if API key exists, false otherwise
+     * This checks connection profiles AND secret_state (like SillyTavern does)
+     * @returns {Promise<boolean>} True if API key exists, false otherwise
      */
-    hasProviderApiKey(provider) {
+    async hasProviderApiKey(provider) {
         if (!provider) {
             return false;
         }
@@ -812,27 +859,38 @@ export class AIClient {
 
         // Method 2: Check secret_state metadata (even if not in connection profile)
         // This checks if the API key exists in SillyTavern's secret storage
-        const secretState = this.getSecretState();
-        if (secretState) {
-            const secretKey = this.getSecretKeyForProvider(provider);
-            console.log(`[Sidecar AI] Checking secret_state for key: ${secretKey}`);
+        // SillyTavern checks secret_state[SECRET_KEYS.PROVIDER] directly - if truthy, key exists
+        const secretState = await this.getSecretState();
+        const secretKey = this.getSecretKeyForProvider(provider);
+        console.log(`[Sidecar AI] Checking secret_state for key: ${secretKey}`);
+        
+        if (secretState && secretKey) {
+            const secrets = secretState[secretKey];
+            console.log(`[Sidecar AI] secret_state[${secretKey}]:`, secrets);
             
-            if (secretKey && secretState[secretKey]) {
-                const secrets = secretState[secretKey];
+            // SillyTavern checks: if (!secret_state[SECRET_KEYS.DEEPSEEK]) - so if it's truthy, key exists
+            if (secrets) {
                 // secret_state can be an array of secrets or a truthy value
                 if (Array.isArray(secrets)) {
                     if (secrets.length > 0) {
                         console.log(`[Sidecar AI] Found secret_state entry for ${provider} (${secrets.length} secrets)`);
                         return true;
                     }
-                } else if (secrets) {
-                    // If it's not an array but truthy, the key exists
-                    console.log(`[Sidecar AI] Found secret_state entry for ${provider} (non-array)`);
+                } else {
+                    // If it's not an array but truthy, the key exists (like SillyTavern checks)
+                    console.log(`[Sidecar AI] Found secret_state entry for ${provider} (non-array, truthy)`);
                     return true;
                 }
+            } else {
+                console.log(`[Sidecar AI] secret_state[${secretKey}] is falsy`);
             }
         } else {
-            console.log(`[Sidecar AI] secret_state not available for checking`);
+            if (!secretState) {
+                console.log(`[Sidecar AI] secret_state not available for checking`);
+            }
+            if (!secretKey) {
+                console.log(`[Sidecar AI] No secret key mapping for provider: ${provider}`);
+            }
         }
 
         console.log(`[Sidecar AI] No API key found for ${provider}`);
@@ -853,7 +911,7 @@ export class AIClient {
         console.log(`[Sidecar AI] getProviderApiKey: Looking for API key for provider: ${provider}`);
 
         // Get secret_state (metadata only, doesn't contain actual keys)
-        const secretState = this.getSecretState();
+        const secretState = await this.getSecretState();
         console.log('[Sidecar AI] secret_state available:', !!secretState);
 
         // Method 1: Check Connection Manager profiles (ST's primary method)

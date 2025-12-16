@@ -647,7 +647,7 @@ export class SettingsUI {
 
         // Check if ST has API key configured (check existence without fetching value)
         // This avoids 403 errors and is faster
-        const hasApiKey = this.aiClient.hasProviderApiKey(provider);
+        const hasApiKey = await this.aiClient.hasProviderApiKey(provider);
         if (hasApiKey) {
             apiKeyField.val('Using saved key from SillyTavern');
             apiKeyField.attr('data-using-st-key', 'true');
