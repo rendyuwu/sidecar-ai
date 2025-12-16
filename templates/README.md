@@ -14,7 +14,7 @@ This folder contains pre-made sidecar configurations you can import and use imme
 
 ### Core Templates
 
-- **`perspective-flip.json`** - 🔄 Shows scenes from another character's viewpoint
+- **`starter-pack.json`** - 📦 Bundle of 4 essential templates (Perspective Flip, Director's Commentary, Soundtrack, Art Prompt)
 - **`directors-commentary.json`** - 🎬 Meta-analysis like DVD commentary
 - **`soundtrack-suggester.json`** - 🎵 Suggests fitting music for scenes
 - **`art-prompt-generator.json`** - 🎨 Creates prompts for AI image generation
@@ -22,18 +22,15 @@ This folder contains pre-made sidecar configurations you can import and use imme
 - **`actor-interview.json`** - 🎭 Behind-the-scenes actor interviews
 - **`relationship-matrix.json`** - 📊 Comprehensive scene tracking with relationship stats
 
-### Meta Template
-
-- **`_template-maker.json`** - 🏗️ Helps you create new templates from descriptions
-
 ## Creating Your Own Templates
 
-### Option 1: Use the Template Maker
+### Option 1: Use the Built-in AI Template Maker (Recommended)
 
-1. Import `_template-maker.json`
-2. Run it manually and describe your sidecar idea
-3. It will generate a complete JSON config
-4. Save the output as a new .json file in this folder
+1. Open Sidecar AI settings
+2. Click **🪄 AI Maker** button
+3. Describe your sidecar idea in plain English
+4. AI generates the complete JSON configuration
+5. Export it as a new .json file or add directly to your sidecars
 
 ### Option 2: Manual Creation
 
@@ -205,7 +202,6 @@ https://github.com/skirianov/sidecar-ai/tree/main/templates/community
 - Prefix files with category: `analysis-`, `creative-`, `tracking-`, `fun-`
 - Use kebab-case: `emotion-tracker.json`
 - Special prefixes:
-  - `_` for meta templates (like `_template-maker.json`)
   - `community-` for user-contributed templates
   - `experimental-` for beta/testing templates
 

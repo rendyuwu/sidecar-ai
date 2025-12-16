@@ -17,20 +17,6 @@
       ]
     },
     {
-      "id": "perspective-flip",
-      "file": "perspective-flip.json",
-      "name": "Perspective Flip",
-      "description": "Shows scenes from another character's viewpoint",
-      "category": "analysis",
-      "addonsCount": 1,
-      "featured": true,
-      "tags": [
-        "perspective",
-        "character",
-        "analysis"
-      ]
-    },
-    {
       "id": "directors-commentary",
       "file": "directors-commentary.json",
       "name": "Director's Commentary",
@@ -115,20 +101,6 @@
         "tracking",
         "stats",
         "comprehensive"
-      ]
-    },
-    {
-      "id": "template-maker",
-      "file": "_template-maker.json",
-      "name": "Template Maker",
-      "description": "AI assistant that creates new templates from your descriptions",
-      "category": "utility",
-      "addonsCount": 1,
-      "featured": false,
-      "tags": [
-        "meta",
-        "utility",
-        "creation"
       ]
     }
   ],

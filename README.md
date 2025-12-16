@@ -489,7 +489,7 @@ We welcome contributions! Areas where help is appreciated:
 
 See [templates/README.md](templates/README.md) for comprehensive template creation guide.
 
-Quick method: Import `_template-maker.json`, describe your idea, and let AI generate the config!
+Quick method: Use the built-in **🪄 AI Maker** button - just describe your idea and AI generates the config!
 
 ## 📚 Documentation
 

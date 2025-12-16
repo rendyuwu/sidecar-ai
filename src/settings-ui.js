@@ -1950,14 +1950,12 @@ export class SettingsUI {
             // List of known template files
             const templateFiles = [
                 'starter-pack.json',  // Bundle of 4 essential templates
-                'perspective-flip.json',
                 'directors-commentary.json',
                 'soundtrack-suggester.json',
                 'art-prompt-generator.json',
                 'commentary-section.json',
                 'actor-interview.json',
-                'relationship-matrix.json',
-                '_template-maker.json'
+                'relationship-matrix.json'
             ];
 
             listContainer.html('');

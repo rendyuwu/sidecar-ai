@@ -56,8 +56,8 @@ Feel free to modify:
 
 If you're new, try these first:
 
-1. **`starter-pack.json`** - Imports 4 essential templates at once
-2. **`_template-maker.json`** - AI assistant to create custom templates
+1. **`starter-pack.json`** - Imports 4 essential templates at once (Perspective Flip, Director's Commentary, Soundtrack, Art Prompt)
+2. **🪄 AI Maker** (built-in button) - Create custom templates by describing them
 3. **`commentary-section.json`** - Fun simulated reader comments
 
 ## Template Categories
@@ -77,23 +77,19 @@ If you're new, try these first:
 ### Meta & Fun
 - Actor Interview
 - Reader Comments
-- Perspective Flip
+- Perspective Flip (included in Starter Pack)
 - Meta Narrator (coming soon)
-
-### Utilities
-- Template Maker (creates new templates for you!)
-- Grammar Guardian (coming soon)
-- TLDR Generator (coming soon)
 
 ## Creating Your Own
 
-### Quick Method: Use Template Maker
+### Quick Method: Use Built-in AI Template Maker
 
-1. Import `_template-maker.json`
-2. Run it manually
-3. Describe your sidecar idea in chat
-4. Copy the generated JSON
-5. Save as new template file
+1. Click **🪄 AI Maker** button in Sidecar AI settings
+2. Describe your sidecar idea in plain English
+3. AI generates the complete JSON configuration
+4. Export it as a new template file or add directly to sidecars
+
+See [AI Template Maker Guide](../docs/AI-MAKER-GUIDE.md) for detailed instructions.
 
 ### Manual Method
 
