@@ -45,7 +45,14 @@ export class EventHandler {
                         eventSource.on(eventType, (data) => {
                             try {
                                 console.log(`[Sidecar AI] Event fired: ${eventType}`, data);
-                                this.handleMessageReceived(data);
+                                // For MESSAGE_SENT, wait a bit to ensure message is in chat array
+                                if (eventType === event_types.MESSAGE_SENT || eventType === 'MESSAGE_SENT') {
+                                    setTimeout(() => {
+                                        this.handleMessageReceived(data);
+                                    }, 100);
+                                } else {
+                                    this.handleMessageReceived(data);
+                                }
                             } catch (error) {
                                 console.error(`[Sidecar AI] Error in ${eventType} handler:`, error);
                             }
@@ -152,11 +159,21 @@ export class EventHandler {
 
             // Check if message is from user
             const isUserMessage = this.isUserMessage(message);
+            console.log('[Sidecar AI] Message type check:', { 
+                isUserMessage, 
+                messageType: typeof message,
+                hasMes: !!message?.mes,
+                isUser: message?.is_user,
+                role: message?.role,
+                name: message?.name
+            });
 
             if (isUserMessage) {
                 // USER MESSAGE: Check for triggers
                 const triggerAddons = this.addonManager.getEnabledAddons()
                     .filter(addon => addon.triggerMode === 'trigger');
+                
+                console.log(`[Sidecar AI] Found ${triggerAddons.length} trigger mode sidecar(s)`);
 
                 if (triggerAddons.length > 0) {
                     const messageText = this.getUserMessageText(message);
