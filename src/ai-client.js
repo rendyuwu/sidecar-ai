@@ -39,9 +39,9 @@ export class AIClient {
             // Use SillyTavern's ChatCompletionService - it handles everything!
             if (this.context && this.context.ChatCompletionService) {
                 console.log(`[Sidecar AI] Using SillyTavern ChatCompletionService for ${provider} (${model})`);
-                
-                const messages = Array.isArray(prompt) 
-                    ? prompt 
+
+                const messages = Array.isArray(prompt)
+                    ? prompt
                     : [{ role: 'user', content: prompt }];
 
                 const response = await this.context.ChatCompletionService.processRequest({
@@ -65,7 +65,7 @@ export class AIClient {
                 if (response && typeof response === 'object' && 'content' in response) {
                     return response.content;
                 }
-                
+
                 // Fallback extraction
                 return response?.choices?.[0]?.message?.content || response?.content || String(response);
             }

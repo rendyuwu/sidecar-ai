@@ -256,9 +256,9 @@ export class SettingsUI {
             const $el = $(selector);
             if ($el.length && $el.is('select') && $el.find('option').length > 1) { // >1 because of default "Select..." option
                 console.log(`[Sidecar AI] Found populated dropdown at ${selector}`);
-                $el.find('option').forEach((_, opt) => {
-                    const val = $(opt).val();
-                    const txt = $(opt).text();
+                $el.find('option').each(function() {
+                    const val = $(this).val();
+                    const txt = $(this).text();
                     if (val && val !== '') {
                         models.push({
                             value: val,
