@@ -549,33 +549,36 @@ export class SettingsUI {
         modal.show();
     }
 
-    loadModelsForProvider(provider) {
+    loadModelsForProvider(provider, retryCount = 0) {
         const modelSelect = $('#add_ons_form_ai_model');
-        modelSelect.empty();
-        modelSelect.append('<option value="">Loading models...</option>');
+        const maxRetries = 3;
+        const minModelsExpected = provider === 'openrouter' ? 10 : 1;
+
+        if (retryCount === 0) {
+            modelSelect.empty();
+            modelSelect.append('<option value="">Loading models...</option>');
+        }
 
         // Try to get models - if we don't find any, retry after a delay (dropdown might not be populated yet)
         let models = this.getProviderModels(provider);
 
-        // For OpenRouter, if we got fallback models (5 or less), wait longer and retry to get full list
-        // The dropdown might need more time to populate
-        if (provider === 'openrouter' && models.length <= 5) {
-            console.log(`[Sidecar AI] OpenRouter only found ${models.length} models, retrying after longer delay to get full list...`);
+        // For OpenRouter, if we got very few models, retry a few times
+        // The dropdown might still be loading from SillyTavern
+        if (models.length < minModelsExpected && retryCount < maxRetries) {
+            const delay = provider === 'openrouter' ? 1000 + (retryCount * 500) : 500;
+            console.log(`[Sidecar AI] ${provider} only found ${models.length} models (expected at least ${minModelsExpected}), retrying (${retryCount + 1}/${maxRetries}) after ${delay}ms...`);
             setTimeout(() => {
-                models = this.getProviderModels(provider);
-                this.populateModelDropdown(modelSelect, models);
-            }, 1500); // Longer delay for OpenRouter
+                this.loadModelsForProvider(provider, retryCount + 1);
+            }, delay);
             return;
         }
 
-        // If no models found, wait a bit and retry (dropdown might be loading)
-        if (models.length === 0) {
-            console.log(`[Sidecar AI] No models found for ${provider}, retrying after delay...`);
-            setTimeout(() => {
-                models = this.getProviderModels(provider);
-                this.populateModelDropdown(modelSelect, models);
-            }, 500);
-            return;
+        // If we still don't have enough models after retries, show a warning
+        if (provider === 'openrouter' && models.length < minModelsExpected && retryCount >= maxRetries) {
+            console.warn(`[Sidecar AI] OpenRouter: After ${maxRetries} retries, only found ${models.length} models. This might indicate:
+1. SillyTavern hasn't loaded OpenRouter models yet (try opening API Connections > OpenRouter tab first)
+2. No API key configured for OpenRouter in SillyTavern
+3. Network issues preventing model list fetch`);
         }
 
         this.populateModelDropdown(modelSelect, models);
@@ -604,7 +607,17 @@ export class SettingsUI {
 
     getProviderModels(provider) {
         let models = [];
-        console.log('[Sidecar AI] Loading models for provider:', provider);
+        console.log('[Sidecar AI] ========== Loading models for provider:', provider, '==========');
+
+        // Debug: Log what's available in window
+        if (provider === 'openrouter') {
+            console.log('[Sidecar AI] Debug - window.openRouterModels:', typeof window.openRouterModels, window.openRouterModels?.length || 'N/A');
+            console.log('[Sidecar AI] Debug - window.model_list:', typeof window.model_list, window.model_list?.length || 'N/A');
+            console.log('[Sidecar AI] Debug - #model_openrouter_select exists:', $('#model_openrouter_select').length > 0);
+            console.log('[Sidecar AI] Debug - #model_openrouter_select option count:', $('#model_openrouter_select option').length);
+            console.log('[Sidecar AI] Debug - #openrouter_model exists:', $('#openrouter_model').length > 0);
+            console.log('[Sidecar AI] Debug - #openrouter_model option count:', $('#openrouter_model option').length);
+        }
 
         // STRATEGY 1: "Steal" from SillyTavern's existing UI (The "Lazy" but effective method)
         // If the user has the API Connections tab loaded, the dropdowns might already be populated
@@ -643,53 +656,79 @@ export class SettingsUI {
                 }
 
                 const $el = $(selector);
-                if ($el.length && $el.is('select') && $el.find('option').length > 1) {
-                    // Check if this is a sorting/grouping dropdown by examining option values
-                    const firstOption = $el.find('option').eq(0).val();
-                    const isSortingDropdown = firstOption === 'alphabetically' ||
-                        firstOption === 'price' ||
-                        firstOption === 'context' ||
-                        $el.attr('id')?.includes('sort') ||
-                        $el.attr('id')?.includes('group');
+                if ($el.length && $el.is('select')) {
+                    // Check if select2 is initialized on this element
+                    const hasSelect2 = $el.hasClass('select2-hidden-accessible') || $el.data('select2');
 
-                    if (isSortingDropdown) {
-                        console.log(`[Sidecar AI] Skipping sorting/grouping dropdown: ${selector}`);
-                        continue;
+                    let optionCount = 0;
+                    let optionsSource = 'native';
+
+                    // If select2 is active, try to get options from select2 data
+                    if (hasSelect2) {
+                        try {
+                            const select2Data = $el.select2('data');
+                            if (select2Data && select2Data.length > 0) {
+                                optionCount = select2Data.length;
+                                optionsSource = 'select2 data';
+                                console.log(`[Sidecar AI] Found select2 dropdown at ${selector} with ${optionCount} options from select2 data`);
+                            }
+                        } catch (e) {
+                            console.log(`[Sidecar AI] select2 data() call failed for ${selector}, falling back to native options`);
+                        }
                     }
 
-                    const optionCount = $el.find('option').length;
-                    console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${optionCount} options`);
+                    // Fall back to native option elements
+                    if (optionCount === 0) {
+                        optionCount = $el.find('option').length;
+                        optionsSource = 'native options';
+                    }
 
-                    // For OpenRouter, if we only find 2 options, it might not be fully loaded yet
-                    // But let's still try to extract what we can
-                    $el.find('option').each(function () {
-                        const val = $(this).val();
-                        const txt = $(this).text();
-                        // Exclude sorting options and empty values
-                        if (val && val !== '' &&
-                            val !== 'Select a model...' && val !== 'Select...' &&
-                            val !== 'alphabetically' && val !== 'price' && val !== 'context' &&
-                            !txt.toLowerCase().includes('alphabetically') &&
-                            !txt.toLowerCase().includes('price (cheapest)') &&
-                            !txt.toLowerCase().includes('context size')) {
-                            models.push({
-                                value: val,
-                                label: txt,
-                                default: false
-                            });
+                    if (optionCount > 1) {
+                        // Check if this is a sorting/grouping dropdown by examining option values
+                        const firstOption = $el.find('option').eq(0).val();
+                        const isSortingDropdown = firstOption === 'alphabetically' ||
+                            firstOption === 'price' ||
+                            firstOption === 'context' ||
+                            $el.attr('id')?.includes('sort') ||
+                            $el.attr('id')?.includes('group');
+
+                        if (isSortingDropdown) {
+                            console.log(`[Sidecar AI] Skipping sorting/grouping dropdown: ${selector}`);
+                            continue;
                         }
-                    });
 
-                    // For OpenRouter, always continue to check window.openRouterModels for the full list
-                    // For other providers, return if we found models
-                    if (models.length > 0) {
-                        if (provider === 'openrouter') {
-                            console.log(`[Sidecar AI] OpenRouter dropdown has ${models.length} models, continuing to check window.openRouterModels for full list...`);
-                            // Don't return yet, continue to check window.openRouterModels which is more reliable
-                            // Keep models found so far, we'll use the best source later
-                        } else {
-                            console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
-                            return models;
+                        console.log(`[Sidecar AI] Found populated dropdown at ${selector} with ${optionCount} ${optionsSource}`);
+
+                        // Extract options (always use native <option> elements as they're the source of truth)
+                        $el.find('option').each(function () {
+                            const val = $(this).val();
+                            const txt = $(this).text();
+                            // Exclude sorting options and empty values
+                            if (val && val !== '' &&
+                                val !== 'Select a model...' && val !== 'Select...' &&
+                                val !== 'alphabetically' && val !== 'price' && val !== 'context' &&
+                                !txt.toLowerCase().includes('alphabetically') &&
+                                !txt.toLowerCase().includes('price (cheapest)') &&
+                                !txt.toLowerCase().includes('context size')) {
+                                models.push({
+                                    value: val,
+                                    label: txt,
+                                    default: false
+                                });
+                            }
+                        });
+
+                        // For OpenRouter, always continue to check globals for the full list
+                        // For other providers, return if we found models
+                        if (models.length > 0) {
+                            if (provider === 'openrouter') {
+                                console.log(`[Sidecar AI] OpenRouter dropdown has ${models.length} models, continuing to check globals for full list...`);
+                                // Don't return yet, continue to check globals which might have more
+                                // Keep models found so far, we'll use the best source later
+                            } else {
+                                console.log('[Sidecar AI] Successfully stole models from UI:', models.length);
+                                return models;
+                            }
                         }
                     }
                 }
@@ -698,30 +737,55 @@ export class SettingsUI {
             }
         }
 
-        // STRATEGY 2: Check for openRouterModels global (from textgen-models.js)
-        // This is the most reliable source for OpenRouter models
+        // STRATEGY 2: Check SillyTavern's model_list globals
+        // OpenRouter models can be in different places depending on which API interface is active
         if (provider === 'openrouter') {
-            // Try to access openRouterModels from window or module exports
-            let openRouterModelsList = null;
+            let modelsList = null;
+            let source = '';
 
             if (typeof window !== 'undefined') {
-                // Check if it's on window
-                if (window.openRouterModels && Array.isArray(window.openRouterModels)) {
-                    openRouterModelsList = window.openRouterModels;
-                    console.log('[Sidecar AI] Found openRouterModels on window:', openRouterModelsList.length);
+                // Try to dynamically import and access the model_list from openai.js module
+                // This requires checking if the module is already loaded
+                try {
+                    // Check if openai.js module exports are accessible
+                    // SillyTavern uses ES6 modules, so we need to check window scope for the export
+                    const scripts = document.querySelectorAll('script[src*="openai.js"]');
+                    if (scripts.length > 0) {
+                        console.log('[Sidecar AI] Found openai.js script loaded');
+                    }
+                } catch (e) { }
+
+                // Try accessing model_list from window scope (Chat Completions)
+                // This is the most reliable method as SillyTavern exports it globally
+                if (window.model_list && Array.isArray(window.model_list) && window.model_list.length > 0) {
+                    modelsList = window.model_list;
+                    source = 'window.model_list (Chat Completions)';
                 }
-                // Check if it's in SillyTavern global
-                else if (window.SillyTavern && window.SillyTavern.openRouterModels && Array.isArray(window.SillyTavern.openRouterModels)) {
-                    openRouterModelsList = window.SillyTavern.openRouterModels;
-                    console.log('[Sidecar AI] Found openRouterModels in SillyTavern:', openRouterModelsList.length);
+
+                // Try Text Completions openRouterModels (from textgen-models.js)
+                if (!modelsList && window.openRouterModels && Array.isArray(window.openRouterModels) && window.openRouterModels.length > 0) {
+                    modelsList = window.openRouterModels;
+                    source = 'window.openRouterModels (Text Completions)';
+                }
+
+                // Try SillyTavern global namespace (backup)
+                if (!modelsList && window.SillyTavern) {
+                    if (window.SillyTavern.model_list && Array.isArray(window.SillyTavern.model_list) && window.SillyTavern.model_list.length > 0) {
+                        modelsList = window.SillyTavern.model_list;
+                        source = 'SillyTavern.model_list';
+                    } else if (window.SillyTavern.openRouterModels && Array.isArray(window.SillyTavern.openRouterModels) && window.SillyTavern.openRouterModels.length > 0) {
+                        modelsList = window.SillyTavern.openRouterModels;
+                        source = 'SillyTavern.openRouterModels';
+                    }
                 }
             }
 
-            if (openRouterModelsList && openRouterModelsList.length > 0) {
-                // Use openRouterModels if it has more models than what we found in DOM
-                // This is the most reliable source
+            if (modelsList && modelsList.length > 0) {
+                console.log(`[Sidecar AI] Found ${modelsList.length} models from ${source}`);
+
+                // Convert to our format
                 const newModels = [];
-                openRouterModelsList.forEach(m => {
+                modelsList.forEach(m => {
                     const id = m.id || m.name || m;
                     const name = m.name || m.id || m;
                     newModels.push({
@@ -731,23 +795,25 @@ export class SettingsUI {
                     });
                 });
 
-                // If we got more models from openRouterModels, use that instead
+                // Use the model list with more models
                 if (newModels.length > models.length) {
-                    console.log(`[Sidecar AI] openRouterModels has ${newModels.length} models (more than DOM's ${models.length}), using openRouterModels`);
+                    console.log(`[Sidecar AI] ${source} has ${newModels.length} models (more than DOM's ${models.length}), using ${source}`);
                     models = newModels;
                 } else if (models.length === 0) {
-                    // If we didn't find any in DOM, use openRouterModels
-                    console.log('[Sidecar AI] No models found in DOM, using openRouterModels');
+                    console.log(`[Sidecar AI] No models found in DOM, using ${source}`);
                     models = newModels;
                 } else {
-                    console.log(`[Sidecar AI] DOM has ${models.length} models, openRouterModels has ${newModels.length}, keeping DOM models`);
+                    console.log(`[Sidecar AI] DOM has ${models.length} models, ${source} has ${newModels.length}, keeping DOM models`);
                 }
 
-                // If we got models from openRouterModels (most reliable source), return them
+                // If we have models, return them
                 if (models.length > 0) {
-                    console.log('[Sidecar AI] Loaded', models.length, 'models from openRouterModels (most reliable source)');
+                    console.log('[Sidecar AI] Loaded', models.length, 'OpenRouter models successfully');
                     return models;
                 }
+            } else {
+                console.warn('[Sidecar AI] Could not find OpenRouter models in window.model_list or window.openRouterModels');
+                console.log('[Sidecar AI] Available window properties:', Object.keys(window).filter(k => k.toLowerCase().includes('model') || k.toLowerCase().includes('router')));
             }
         }
 

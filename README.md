@@ -4,7 +4,7 @@ A SillyTavern extension that lets you run extra AI tasks alongside your main rol
 
 ## What's This For?
 
-Running GPT-4 or Claude Opus for everything gets expensive fast. Sidecar AI lets you offload auxiliary tasks to cheaper models (like GPT-4o-mini or Deepseek) so you can add cool features without breaking the bank.
+Running Gemini 3 Pro or Claude Opus for everything gets expensive fast. Sidecar AI lets you offload auxiliary tasks to cheaper models (like GPT-4o-mini or Deepseek) so you can add cool features without breaking the bank.
 
 **Example setup:**
 - Main AI (Claude Opus): Handles roleplay responses
