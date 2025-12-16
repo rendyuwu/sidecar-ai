@@ -128,12 +128,22 @@ export class AIClient {
 
         const requestBody = this.buildRequestBody(provider, model, prompt);
 
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        // OpenRouter uses different header format
+        if (provider === 'openrouter') {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+            headers['HTTP-Referer'] = window.location.origin || 'https://github.com/skirianov/sidecar-ai';
+            headers['X-Title'] = 'Sidecar AI';
+        } else {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
+            headers: headers,
             body: JSON.stringify(requestBody)
         });
 
@@ -152,6 +162,7 @@ export class AIClient {
     getProviderEndpoint(provider) {
         const endpoints = {
             'openai': 'https://api.openai.com/v1/chat/completions',
+            'openrouter': 'https://openrouter.ai/api/v1/chat/completions',
             'anthropic': 'https://api.anthropic.com/v1/messages',
             'deepseek': 'https://api.deepseek.com/v1/chat/completions',
             'google': 'https://generativelanguage.googleapis.com/v1beta/models',
@@ -177,6 +188,14 @@ export class AIClient {
 
         // Provider-specific adjustments
         switch (provider) {
+            case 'openrouter':
+                // OpenRouter uses OpenAI-compatible format
+                return {
+                    ...baseBody,
+                    temperature: 0.7,
+                    max_tokens: 4096
+                };
+
             case 'anthropic':
                 return {
                     model: model,

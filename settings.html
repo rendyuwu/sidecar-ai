@@ -47,8 +47,15 @@
 
                     <div class="add_ons_form_group">
                         <label for="add_ons_form_prompt">Prompt Template *</label>
+                        <div class="add_ons_variable_buttons">
+                            <button type="button" class="menu_button add_ons_var_button" data-variable="{{lastMessages}}" title="Insert last messages">Insert {{lastMessages}}</button>
+                            <button type="button" class="menu_button add_ons_var_button" data-variable="{{charCard}}" title="Insert character card">Insert {{charCard}}</button>
+                            <button type="button" class="menu_button add_ons_var_button" data-variable="{{userCard}}" title="Insert user card">Insert {{userCard}}</button>
+                            <button type="button" class="menu_button add_ons_var_button" data-variable="{{worldCard}}" title="Insert world card">Insert {{worldCard}}</button>
+                            <button type="button" class="menu_button add_ons_var_button" data-variable="{{currentMessage}}" title="Insert current message">Insert {{currentMessage}}</button>
+                        </div>
                         <textarea id="add_ons_form_prompt" name="prompt" class="text_pole" rows="10" required placeholder="Enter your prompt template here. Use variables: {{lastMessages}}, {{charCard}}, {{userCard}}, {{worldCard}}, {{currentMessage}}"></textarea>
-                        <small class="add_ons_form_hint">Available variables: {{lastMessages}}, {{charCard}}, {{userCard}}, {{worldCard}}, {{currentMessage}}</small>
+                        <small class="add_ons_form_hint">Click buttons above to insert variables. Variables will only be replaced if the corresponding checkbox below is enabled.</small>
                     </div>
 
                     <div class="add_ons_form_row">
@@ -74,6 +81,7 @@
                             <label for="add_ons_form_ai_provider">AI Provider *</label>
                             <select id="add_ons_form_ai_provider" name="aiProvider" class="text_pole" required>
                                 <option value="openai">OpenAI</option>
+                                <option value="openrouter">OpenRouter</option>
                                 <option value="deepseek">Deepseek</option>
                                 <option value="anthropic">Anthropic (Claude)</option>
                                 <option value="google">Google (Gemini)</option>
@@ -83,14 +91,20 @@
 
                         <div class="add_ons_form_group">
                             <label for="add_ons_form_ai_model">AI Model *</label>
-                            <input type="text" id="add_ons_form_ai_model" name="aiModel" class="text_pole" required placeholder="e.g., gpt-3.5-turbo" value="gpt-3.5-turbo">
+                            <select id="add_ons_form_ai_model" name="aiModel" class="text_pole" required>
+                                <option value="">Select a model...</option>
+                            </select>
+                            <small class="add_ons_form_hint" id="add_ons_model_hint">Models will load based on selected provider</small>
                         </div>
                     </div>
 
                     <div class="add_ons_form_group">
                         <label for="add_ons_form_api_key">API Key (Optional)</label>
-                        <input type="password" id="add_ons_form_api_key" name="apiKey" class="text_pole" placeholder="Leave empty to use SillyTavern's configured key">
-                        <small class="add_ons_form_hint">If left empty, will use the API key configured in SillyTavern settings</small>
+                        <div class="add_ons_api_key_row">
+                            <input type="password" id="add_ons_form_api_key" name="apiKey" class="text_pole" placeholder="Leave empty to use SillyTavern's configured key">
+                            <button type="button" class="menu_button add_ons_button_small" id="add_ons_use_st_key" title="Use API key from SillyTavern's API Connection settings">Use ST Key</button>
+                        </div>
+                        <small class="add_ons_form_hint">If left empty, will use the API key configured in SillyTavern's API Connection settings for this provider</small>
                     </div>
 
                     <div class="add_ons_form_row">
@@ -124,19 +138,20 @@
                         </div>
 
                         <div class="add_ons_form_checkboxes">
-                            <label class="add_ons_checkbox checkbox_label">
+                            <label class="add_ons_checkbox checkbox_label" title="Enable to make {{charCard}} variable available in your prompt">
                                 <input type="checkbox" id="add_ons_form_include_char_card" name="includeCharCard" checked>
-                                <span>Include Character Card</span>
+                                <span>Enable {{charCard}} variable</span>
                             </label>
-                            <label class="add_ons_checkbox checkbox_label">
+                            <label class="add_ons_checkbox checkbox_label" title="Enable to make {{userCard}} variable available in your prompt">
                                 <input type="checkbox" id="add_ons_form_include_user_card" name="includeUserCard" checked>
-                                <span>Include User Card</span>
+                                <span>Enable {{userCard}} variable</span>
                             </label>
-                            <label class="add_ons_checkbox checkbox_label">
+                            <label class="add_ons_checkbox checkbox_label" title="Enable to make {{worldCard}} variable available in your prompt">
                                 <input type="checkbox" id="add_ons_form_include_world_card" name="includeWorldCard" checked>
-                                <span>Include World Card</span>
+                                <span>Enable {{worldCard}} variable</span>
                             </label>
                         </div>
+                        <small class="add_ons_form_hint">These checkboxes control which variables are available. Variables in your prompt will only be replaced if the corresponding checkbox is enabled.</small>
                     </div>
                 </form>
             </div>

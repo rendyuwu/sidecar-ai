@@ -317,6 +317,29 @@
     gap: 15px;
 }
 
+.add_ons_variable_buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.add_ons_var_button {
+    padding: 4px 8px !important;
+    font-size: 0.8em !important;
+    white-space: nowrap;
+}
+
+.add_ons_api_key_row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.add_ons_api_key_row .text_pole {
+    flex: 1;
+}
+
 .add_ons_form_checkboxes {
     display: flex;
     flex-direction: column;

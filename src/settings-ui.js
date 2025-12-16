@@ -152,6 +152,37 @@ export class SettingsUI {
         $(document).off('click.sidecar', '.add_ons_modal select').on('click.sidecar', '.add_ons_modal select', function (e) {
             e.stopPropagation();
         });
+
+        // Variable insertion buttons
+        $(document).off('click.sidecar', '.add_ons_var_button').on('click.sidecar', '.add_ons_var_button', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const variable = $(this).data('variable');
+            const textarea = $('#add_ons_form_prompt')[0];
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                const before = text.substring(0, start);
+                const after = text.substring(end);
+                textarea.value = before + variable + after;
+                textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+                textarea.focus();
+            }
+        });
+
+        // Provider change - load models
+        $(document).off('change.sidecar', '#add_ons_form_ai_provider').on('change.sidecar', '#add_ons_form_ai_provider', function (e) {
+            e.stopPropagation();
+            self.loadModelsForProvider($(this).val());
+        });
+
+        // Use ST API Key button
+        $(document).off('click.sidecar', '#add_ons_use_st_key').on('click.sidecar', '#add_ons_use_st_key', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.loadAPIKeyFromST();
+        });
     }
 
     openModal(addonId = null) {
@@ -174,11 +205,120 @@ export class SettingsUI {
             $('#add_ons_form_id').val('');
             $('#add_ons_modal_title').text('Create New Sidecar');
             $('#add_ons_form_save').text('Create Sidecar');
+            // Load models for default provider
+            setTimeout(() => this.loadModelsForProvider('openai'), 100);
         }
 
         // FORCE dark theme colors from actual computed styles
         this.applyThemeColors();
         modal.show();
+    }
+
+    loadModelsForProvider(provider) {
+        const modelSelect = $('#add_ons_form_ai_model');
+        modelSelect.empty();
+        modelSelect.append('<option value="">Loading models...</option>');
+
+        const models = this.getProviderModels(provider);
+        
+        setTimeout(() => {
+            modelSelect.empty();
+            if (models.length === 0) {
+                modelSelect.append('<option value="">No models available</option>');
+                return;
+            }
+            
+            models.forEach(model => {
+                const option = $('<option></option>').val(model.value).text(model.label);
+                if (model.default) {
+                    option.prop('selected', true);
+                }
+                modelSelect.append(option);
+            });
+        }, 100);
+    }
+
+    getProviderModels(provider) {
+        // Try to get models from SillyTavern's API connection settings
+        if (this.context && this.context.api_settings) {
+            const providerSettings = this.context.api_settings[provider];
+            if (providerSettings && providerSettings.models) {
+                return providerSettings.models.map(m => ({
+                    value: m.id || m.name,
+                    label: m.name || m.id,
+                    default: m.default || false
+                }));
+            }
+        }
+
+        // Fallback: return default models for each provider
+        const defaultModels = {
+            'openai': [
+                { value: 'gpt-4o', label: 'GPT-4o', default: false },
+                { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', default: false },
+                { value: 'gpt-4', label: 'GPT-4', default: false },
+                { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', default: true }
+            ],
+            'openrouter': [
+                { value: 'openai/gpt-4o', label: 'OpenAI GPT-4o', default: false },
+                { value: 'openai/gpt-4-turbo', label: 'OpenAI GPT-4 Turbo', default: false },
+                { value: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', default: false },
+                { value: 'google/gemini-pro-1.5', label: 'Google Gemini Pro 1.5', default: false },
+                { value: 'openai/gpt-3.5-turbo', label: 'OpenAI GPT-3.5 Turbo', default: true }
+            ],
+            'deepseek': [
+                { value: 'deepseek-chat', label: 'DeepSeek Chat', default: true },
+                { value: 'deepseek-coder', label: 'DeepSeek Coder', default: false }
+            ],
+            'anthropic': [
+                { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet', default: true },
+                { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus', default: false },
+                { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet', default: false },
+                { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku', default: false }
+            ],
+            'google': [
+                { value: 'gemini-pro', label: 'Gemini Pro', default: true },
+                { value: 'gemini-pro-vision', label: 'Gemini Pro Vision', default: false }
+            ],
+            'cohere': [
+                { value: 'command', label: 'Command', default: true },
+                { value: 'command-light', label: 'Command Light', default: false }
+            ]
+        };
+
+        return defaultModels[provider] || [];
+    }
+
+    loadAPIKeyFromST() {
+        const provider = $('#add_ons_form_ai_provider').val();
+        if (!provider) {
+            alert('Please select a provider first');
+            return;
+        }
+
+        // Try to get API key from SillyTavern's settings
+        let apiKey = null;
+        
+        if (this.context && this.context.api_settings) {
+            const providerSettings = this.context.api_settings[provider];
+            if (providerSettings && providerSettings.api_key) {
+                apiKey = providerSettings.api_key;
+            }
+        }
+
+        // Try alternative paths
+        if (!apiKey && this.context && this.context.settings) {
+            if (this.context.settings.api_keys && this.context.settings.api_keys[provider]) {
+                apiKey = this.context.settings.api_keys[provider];
+            }
+        }
+
+        if (apiKey) {
+            $('#add_ons_form_api_key').val(apiKey);
+            $('#add_ons_form_api_key').attr('placeholder', 'Using API key from SillyTavern settings');
+        } else {
+            alert(`No API key found for ${provider} in SillyTavern settings. Please configure it in Settings > API Connection first.`);
+        }
     }
 
     applyThemeColors() {
@@ -223,10 +363,15 @@ export class SettingsUI {
         $('#add_ons_form_trigger_mode').val(addon.triggerMode);
         $('#add_ons_form_request_mode').val(addon.requestMode);
         $('#add_ons_form_ai_provider').val(addon.aiProvider);
-        $('#add_ons_form_ai_model').val(addon.aiModel);
         $('#add_ons_form_api_key').val(addon.apiKey || '');
         $('#add_ons_form_result_format').val(addon.resultFormat);
         $('#add_ons_form_response_location').val(addon.responseLocation);
+
+        // Load models for provider, then set selected model
+        this.loadModelsForProvider(addon.aiProvider);
+        setTimeout(() => {
+            $('#add_ons_form_ai_model').val(addon.aiModel);
+        }, 200);
 
         const ctx = addon.contextSettings || {};
         $('#add_ons_form_messages_count').val(ctx.messagesCount || 10);
