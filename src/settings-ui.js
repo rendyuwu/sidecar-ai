@@ -766,8 +766,8 @@ export class SettingsUI {
         // Get API key - check if using ST's saved key or user-entered key
         const apiKeyField = $('#add_ons_form_api_key');
         let apiKey = apiKeyField.val();
-        const isUsingSTKey = apiKeyField.attr('data-using-st-key') === 'true' || 
-                             apiKey === 'Using saved key from SillyTavern';
+        const isUsingSTKey = apiKeyField.attr('data-using-st-key') === 'true' ||
+            apiKey === 'Using saved key from SillyTavern';
 
         // If using ST's saved key, get it from ST settings
         if (isUsingSTKey) {
