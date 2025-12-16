@@ -560,11 +560,24 @@ export class SettingsUI {
         let apiKey = null;
 
         // Method 1: Check secret_state (SillyTavern's primary API key storage)
+        // secret_state stores arrays: [{id, value, label, active}, ...]
+        // We need to find the active secret or the first one
         if (typeof window !== 'undefined' && window.secret_state) {
             console.log('[Sidecar AI] Checking window.secret_state');
             if (secretKey && window.secret_state[secretKey]) {
-                apiKey = window.secret_state[secretKey];
-                console.log('[Sidecar AI] Found API key in secret_state');
+                const secrets = window.secret_state[secretKey];
+                if (Array.isArray(secrets) && secrets.length > 0) {
+                    // Find active secret, or use first one
+                    const activeSecret = secrets.find(s => s.active) || secrets[0];
+                    if (activeSecret && activeSecret.value) {
+                        apiKey = activeSecret.value;
+                        console.log('[Sidecar AI] Found API key in secret_state');
+                    }
+                } else if (typeof secrets === 'string') {
+                    // Fallback: if it's stored as a string directly
+                    apiKey = secrets;
+                    console.log('[Sidecar AI] Found API key in secret_state (string format)');
+                }
             }
         }
 
@@ -572,8 +585,17 @@ export class SettingsUI {
         if (!apiKey && this.context) {
             // Try to access secret_state through various paths
             if (this.context.secret_state && secretKey) {
-                apiKey = this.context.secret_state[secretKey];
-                console.log('[Sidecar AI] Found API key in context.secret_state');
+                const secrets = this.context.secret_state[secretKey];
+                if (Array.isArray(secrets) && secrets.length > 0) {
+                    const activeSecret = secrets.find(s => s.active) || secrets[0];
+                    if (activeSecret && activeSecret.value) {
+                        apiKey = activeSecret.value;
+                        console.log('[Sidecar AI] Found API key in context.secret_state');
+                    }
+                } else if (typeof secrets === 'string') {
+                    apiKey = secrets;
+                    console.log('[Sidecar AI] Found API key in context.secret_state (string format)');
+                }
             }
         }
 
