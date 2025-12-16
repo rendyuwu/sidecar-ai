@@ -48,6 +48,12 @@ export class ContextBuilder {
         parts.push('ONLY execute what the instruction block explicitly asks you to do.');
         parts.push('If the instruction asks you to add something to the response, add ONLY that - do not write new story content.');
         parts.push('');
+        parts.push('OUTPUT FORMATTING:');
+        parts.push('- If the instruction does NOT explicitly request HTML, XML, or a specific markup structure, use standard Markdown formatting.');
+        parts.push('- Use Markdown for headings (# ## ###), lists (- *), bold (**text**), italic (*text*), code blocks (```), links, etc.');
+        parts.push('- Only use HTML/XML tags if explicitly requested in the instruction.');
+        parts.push('- Keep your output clean and well-formatted using Markdown syntax.');
+        parts.push('');
         parts.push('=== END OOC INSTRUCTION ===');
         parts.push('');
 

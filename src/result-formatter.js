@@ -10,11 +10,24 @@ export class ResultFormatter {
 
     /**
      * Format result based on add-on settings
+     * @param {Object} addon - The add-on configuration
+     * @param {string} aiResponse - The raw AI response
+     * @param {Object} originalMessage - Original message object
+     * @param {boolean} forDropdown - Whether this is for dropdown injection (no extra wrapping needed)
      */
-    formatResult(addon, aiResponse, originalMessage = null) {
+    formatResult(addon, aiResponse, originalMessage = null, forDropdown = false) {
         let formatted = aiResponse;
 
-        // Apply result format
+        // If injecting into dropdown, we already have the structure, so don't wrap
+        if (forDropdown) {
+            // Clean up any existing wrapper tags that might conflict
+            formatted = this.cleanResponseForDropdown(aiResponse);
+            // Convert Markdown to HTML if needed
+            formatted = this.markdownToHtml(formatted);
+            return formatted;
+        }
+
+        // Apply result format for chat history injection
         switch (addon.resultFormat) {
             case 'append':
                 formatted = this.formatAppend(aiResponse);
@@ -31,6 +44,125 @@ export class ResultFormatter {
         }
 
         return formatted;
+    }
+
+    /**
+     * Clean response for dropdown injection - remove conflicting wrapper tags
+     */
+    cleanResponseForDropdown(response) {
+        if (!response || typeof response !== 'string') {
+            return response;
+        }
+
+        // Remove outer <details> tags if present (we already have our own)
+        let cleaned = response.trim();
+        
+        // Match <details>...</details> at the start/end
+        const detailsMatch = cleaned.match(/^<details[^>]*>(.*?)<\/details>$/is);
+        if (detailsMatch) {
+            cleaned = detailsMatch[1].trim();
+        }
+
+        // Also handle cases where there might be nested details - extract inner content
+        // But preserve the structure if it's intentional (like the user's example)
+        return cleaned;
+    }
+
+    /**
+     * Convert Markdown to HTML (basic conversion)
+     * Uses browser's built-in capabilities or simple regex replacements
+     */
+    markdownToHtml(markdown) {
+        if (!markdown || typeof markdown !== 'string') {
+            return markdown;
+        }
+
+        // If it already contains HTML tags (like <details>, <div>, etc.), assume it's already HTML
+        // and just clean it up, don't convert
+        if (markdown.match(/<[a-z][\s\S]*>/i)) {
+            return markdown;
+        }
+
+        let html = markdown;
+
+        // Code blocks first (before other formatting)
+        html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Headers
+        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+        // Bold (must come before italic to avoid conflicts)
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+        // Italic (but not if it's part of bold)
+        html = html.replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+        html = html.replace(/(?<!_)_(?!_)([^_]+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+
+        // Links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+        // Horizontal rules
+        html = html.replace(/^---$/gim, '<hr>');
+        html = html.replace(/^\*\*\*$/gim, '<hr>');
+
+        // Lists (unordered) - handle multi-line
+        const lines = html.split('\n');
+        let inList = false;
+        let result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const listMatch = line.match(/^[\-\*] (.+)$/);
+            
+            if (listMatch) {
+                if (!inList) {
+                    result.push('<ul>');
+                    inList = true;
+                }
+                result.push(`<li>${listMatch[1]}</li>`);
+            } else {
+                if (inList) {
+                    result.push('</ul>');
+                    inList = false;
+                }
+                // Ordered lists
+                const orderedMatch = line.match(/^\d+\. (.+)$/);
+                if (orderedMatch) {
+                    result.push(`<ol><li>${orderedMatch[1]}</li></ol>`);
+                } else {
+                    result.push(line);
+                }
+            }
+        }
+        
+        if (inList) {
+            result.push('</ul>');
+        }
+        
+        html = result.join('\n');
+
+        // Line breaks - convert double newlines to paragraphs, but preserve existing HTML
+        html = html.split(/\n\n+/).map(para => {
+            para = para.trim();
+            if (!para) return '';
+            // Don't wrap if it's already an HTML tag
+            if (para.match(/^<[a-z][\s\S]*>$/i) || para.match(/^<[a-z]/i)) {
+                return para;
+            }
+            return `<p>${para}</p>`;
+        }).join('\n');
+
+        // Single line breaks within paragraphs
+        html = html.replace(/<p>([\s\S]*?)<\/p>/g, (match, content) => {
+            return `<p>${content.replace(/\n/g, '<br>')}</p>`;
+        });
+
+        return html;
     }
 
     /**

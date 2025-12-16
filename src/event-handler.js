@@ -363,15 +363,17 @@ export class EventHandler {
      */
     async injectResult(addon, response, message) {
         console.log(`[Sidecar AI] Injecting result for ${addon.name}, location: ${addon.responseLocation}`);
-        const formatted = this.resultFormatter.formatResult(addon, response, message);
         const messageId = this.resultFormatter.getMessageId(message);
 
         if (addon.responseLocation === 'chatHistory') {
             console.log(`[Sidecar AI] Injecting into chat history for message: ${messageId}`);
+            const formatted = this.resultFormatter.formatResult(addon, response, message, false);
             this.resultFormatter.injectIntoChatHistory(messageId, addon, formatted);
         } else {
             // For outsideChatlog, inject inside chat after the message (with dropdown UI)
+            // Don't wrap in extra structure - we already have details element
             console.log(`[Sidecar AI] Injecting into dropdown inside chat for: ${addon.name}`);
+            const formatted = this.resultFormatter.formatResult(addon, response, message, true);
             const success = this.resultFormatter.injectIntoDropdown(addon, formatted, messageId);
             if (!success) {
                 console.error(`[Sidecar AI] Failed to inject result into dropdown for: ${addon.name}`);
