@@ -17,9 +17,16 @@ export class ContextBuilder {
         // Gather last N messages
         const lastMessages = this.getLastMessages(chatLog, settings.messagesCount || 10);
 
+        // Gather add-on history if enabled
+        let addonHistory = '';
+        if (settings.includeHistory) {
+            addonHistory = this.getAddonHistory(chatLog, addon.id, settings.historyDepth || 5);
+        }
+
         // Build context object
         const context = {
             lastMessages: this.formatMessages(lastMessages),
+            addonHistory: addonHistory,
             charCard: settings.includeCharCard ? this.formatCharCard(charData) : '',
             userCard: settings.includeUserCard ? this.formatUserCard(userData) : '',
             worldCard: settings.includeWorldCard ? this.formatWorldCard(worldData) : '',
@@ -49,10 +56,13 @@ export class ContextBuilder {
         parts.push('If the instruction asks you to add something to the response, add ONLY that - do not write new story content.');
         parts.push('');
         parts.push('OUTPUT FORMATTING:');
-        parts.push('- If the instruction does NOT explicitly request HTML, XML, or a specific markup structure, use standard Markdown formatting.');
-        parts.push('- Use Markdown for headings (# ## ###), lists (- *), bold (**text**), italic (*text*), code blocks (```), links, etc.');
-        parts.push('- Only use HTML/XML tags if explicitly requested in the instruction.');
-        parts.push('- Keep your output clean and well-formatted using Markdown syntax.');
+        parts.push('- ALWAYS use clean, standard Markdown formatting unless explicitly requested otherwise.');
+        parts.push('- Use ## or ### for headings (NOT # which renders too large).');
+        parts.push('- Use **bold** and *italic* for emphasis.');
+        parts.push('- Use - or * for unordered lists, with proper spacing (blank line before/after lists).');
+        parts.push('- Use blank lines between paragraphs for readability.');
+        parts.push('- Keep paragraphs short and well-spaced.');
+        parts.push('- NEVER mix Markdown and HTML - choose one format consistently.');
         parts.push('');
         parts.push('=== END OOC INSTRUCTION ===');
         parts.push('');
@@ -62,6 +72,13 @@ export class ContextBuilder {
         if (context.lastMessages && context.lastMessages !== 'No previous messages.') {
             parts.push('=== Chat History (REFERENCE ONLY - DO NOT CONTINUE) ===');
             parts.push(context.lastMessages);
+            parts.push('');
+        }
+
+        // Include add-on history if available
+        if (context.addonHistory) {
+            parts.push('=== Previous Output History (This Add-on) ===');
+            parts.push(context.addonHistory);
             parts.push('');
         }
 
@@ -112,6 +129,42 @@ export class ContextBuilder {
         });
 
         return prompts.join('\n\n---\n\n');
+    }
+
+    /**
+     * Get add-on history from chat log metadata
+     */
+    getAddonHistory(chatLog, addonId, count) {
+        if (!chatLog || !Array.isArray(chatLog) || !addonId) {
+            return '';
+        }
+
+        const history = [];
+        const pattern = new RegExp(`<!-- sidecar-storage:${addonId}:(.+?) -->`);
+
+        // Iterate backwards through chat log to find most recent history first
+        for (let i = chatLog.length - 1; i >= 0 && history.length < count; i--) {
+            const msg = chatLog[i];
+            if (msg && msg.mes) {
+                const match = msg.mes.match(pattern);
+                if (match && match[1]) {
+                    try {
+                        // Decode base64 content
+                        // Handle unicode strings correctly
+                        const decoded = decodeURIComponent(escape(atob(match[1])));
+                        history.unshift(decoded); // Add to front to maintain chronological order
+                    } catch (e) {
+                        console.warn('[Sidecar AI] Failed to decode history item:', e);
+                    }
+                }
+            }
+        }
+
+        if (history.length === 0) {
+            return '';
+        }
+
+        return history.map((item, index) => `--- Result ${index + 1} ---\n${item}`).join('\n\n');
     }
 
     /**

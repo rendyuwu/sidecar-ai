@@ -144,6 +144,21 @@
                 </div>
 
                     <div class="add_ons_form_section">
+                        <h4>Add-on History</h4>
+                        <div class="add_ons_form_checkboxes">
+                            <label class="add_ons_checkbox checkbox_label" title="Enable history for this add-on to remember its previous outputs">
+                                <input type="checkbox" id="add_ons_form_include_history" name="includeHistory">
+                                <span>Include previous results history</span>
+                            </label>
+                        </div>
+                        <div class="add_ons_form_group" id="add_ons_history_depth_group" style="display: none; margin-top: 10px;">
+                            <label for="add_ons_form_history_depth">History Depth</label>
+                            <input type="number" id="add_ons_form_history_depth" name="historyDepth" class="text_pole" min="1" max="20" value="5">
+                            <small class="add_ons_form_hint">Number of previous results from this specific add-on to include in context.</small>
+                        </div>
+                    </div>
+
+                    <div class="add_ons_form_section">
                         <h4>Context Settings</h4>
                         
                         <div class="add_ons_form_group">

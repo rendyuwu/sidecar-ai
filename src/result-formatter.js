@@ -69,98 +69,92 @@ export class ResultFormatter {
     }
 
     /**
-     * Convert Markdown to HTML (basic conversion)
-     * Uses browser's built-in capabilities or simple regex replacements
+     * Convert Markdown to HTML (simplified and more robust)
      */
     markdownToHtml(markdown) {
         if (!markdown || typeof markdown !== 'string') {
             return markdown;
         }
 
-        // If it already contains HTML tags (like <details>, <div>, etc.), assume it's already HTML
-        // and just clean it up, don't convert
+        // If it already contains HTML tags, assume it's already HTML and return as-is
         if (markdown.match(/<[a-z][\s\S]*>/i)) {
             return markdown;
         }
 
         let html = markdown;
 
-        // Code blocks first (before other formatting)
-        html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        // Code blocks first (protect from other conversions)
+        html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+            return `<pre><code>${code.trim()}</code></pre>`;
+        });
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-        // Headers
-        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+        // Headers (process line by line to avoid matching within text)
+        html = html.split('\n').map(line => {
+            if (line.match(/^#{1,6}\s/)) {
+                const level = line.match(/^#+/)[0].length;
+                const text = line.replace(/^#+\s*/, '');
+                return `<h${level}>${text}</h${level}>`;
+            }
+            return line;
+        }).join('\n');
 
-        // Bold (must come before italic to avoid conflicts)
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-
-        // Italic (but not if it's part of bold)
-        html = html.replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-        html = html.replace(/(?<!_)_(?!_)([^_]+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+        // Bold and italic - using non-greedy matching
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+        html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>');
+        html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
 
         // Links
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 
         // Horizontal rules
-        html = html.replace(/^---$/gim, '<hr>');
-        html = html.replace(/^\*\*\*$/gim, '<hr>');
+        html = html.replace(/^[-*]{3,}$/gm, '<hr>');
 
-        // Lists (unordered) - handle multi-line
+        // Lists - improved handling
         const lines = html.split('\n');
         let inList = false;
         let result = [];
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            const listMatch = line.match(/^[\-\*] (.+)$/);
+            const listMatch = line.match(/^[-*]\s+(.+)$/);
+            const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
 
             if (listMatch) {
                 if (!inList) {
                     result.push('<ul>');
-                    inList = true;
+                    inList = 'ul';
                 }
                 result.push(`<li>${listMatch[1]}</li>`);
+            } else if (orderedMatch) {
+                if (!inList) {
+                    result.push('<ol>');
+                    inList = 'ol';
+                } else if (inList === 'ul') {
+                    result.push('</ul>');
+                    result.push('<ol>');
+                    inList = 'ol';
+                }
+                result.push(`<li>${orderedMatch[1]}</li>`);
             } else {
                 if (inList) {
-                    result.push('</ul>');
+                    result.push(inList === 'ul' ? '</ul>' : '</ol>');
                     inList = false;
                 }
-                // Ordered lists
-                const orderedMatch = line.match(/^\d+\. (.+)$/);
-                if (orderedMatch) {
-                    result.push(`<ol><li>${orderedMatch[1]}</li></ol>`);
-                } else {
-                    result.push(line);
-                }
+                result.push(line);
             }
         }
 
         if (inList) {
-            result.push('</ul>');
+            result.push(inList === 'ul' ? '</ul>' : '</ol>');
         }
 
         html = result.join('\n');
 
-        // Line breaks - convert double newlines to paragraphs, but preserve existing HTML
-        html = html.split(/\n\n+/).map(para => {
-            para = para.trim();
-            if (!para) return '';
-            // Don't wrap if it's already an HTML tag
-            if (para.match(/^<[a-z][\s\S]*>$/i) || para.match(/^<[a-z]/i)) {
-                return para;
-            }
-            return `<p>${para}</p>`;
-        }).join('\n');
-
-        // Single line breaks within paragraphs
-        html = html.replace(/<p>([\s\S]*?)<\/p>/g, (match, content) => {
-            return `<p>${content.replace(/\n/g, '<br>')}</p>`;
-        });
+        // Preserve line breaks - convert to <br> tags
+        // But don't add <br> after block elements
+        html = html.replace(/\n(?!<\/?(h\d|ul|ol|li|p|pre|hr|div))/g, '<br>');
 
         return html;
     }
@@ -479,6 +473,34 @@ export class ResultFormatter {
         } catch (error) {
             console.error(`[Sidecar AI] Error injecting into dropdown:`, error);
             return false;
+        }
+    }
+
+    /**
+     * Save result to message metadata (hidden comment) for history retrieval
+     * This ensures state persistence regardless of display mode
+     */
+    saveResultToMetadata(message, addon, result) {
+        if (!message || !addon || !result) return;
+
+        try {
+            // Encode result to Base64 to avoid HTML comment syntax conflicts
+            // Use utf-8 safe encoding
+            const encoded = btoa(unescape(encodeURIComponent(result)));
+            const storageTag = `<!-- sidecar-storage:${addon.id}:${encoded} -->`;
+
+            // Append to message content if not already present (avoid duplicates)
+            // We append to the 'mes' property which acts as the source of truth
+            if (message.mes && !message.mes.includes(`sidecar-storage:${addon.id}:`)) {
+                message.mes += '\n' + storageTag;
+
+                // If this is a DOM element, we can't easily update it here without potentially duplicating
+                // But since we updated the object, ST should handle saving
+                // We mainly care about the object being updated for next turns
+                console.log(`[Sidecar AI] Saved result metadata for ${addon.name}`);
+            }
+        } catch (error) {
+            console.error(`[Sidecar AI] Error saving result metadata:`, error);
         }
     }
 

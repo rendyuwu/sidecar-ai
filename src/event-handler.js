@@ -391,6 +391,14 @@ export class EventHandler {
                 console.error(`[Sidecar AI] Failed to inject result into dropdown for: ${addon.name}`);
             }
         }
+
+        // Save metadata for history retrieval (and persistence)
+        this.resultFormatter.saveResultToMetadata(message, addon, response);
+
+        // Trigger save to ensure metadata persists
+        if (this.context.saveChat) {
+            this.context.saveChat();
+        }
     }
 
     /**

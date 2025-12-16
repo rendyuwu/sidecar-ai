@@ -183,6 +183,18 @@ export class SettingsUI {
             }
         });
 
+        // Toggle history depth input
+        $(document).off('change.sidecar', '#add_ons_form_include_history').on('change.sidecar', '#add_ons_form_include_history', function (e) {
+            e.stopPropagation();
+            const checked = $(this).is(':checked');
+            const historyDepthGroup = $('#add_ons_history_depth_group');
+            if (checked) {
+                historyDepthGroup.slideDown(200);
+            } else {
+                historyDepthGroup.slideUp(200);
+            }
+        });
+
     }
 
     async openModal(addonId = null) {
@@ -791,6 +803,17 @@ export class SettingsUI {
         $('#add_ons_form_include_char_card').prop('checked', ctx.includeCharCard !== false);
         $('#add_ons_form_include_user_card').prop('checked', ctx.includeUserCard !== false);
         $('#add_ons_form_include_world_card').prop('checked', ctx.includeWorldCard !== false);
+
+        // Add-on History settings
+        const includeHistory = ctx.includeHistory === true;
+        $('#add_ons_form_include_history').prop('checked', includeHistory);
+        $('#add_ons_form_history_depth').val(ctx.historyDepth || 5);
+
+        if (includeHistory) {
+            $('#add_ons_history_depth_group').show();
+        } else {
+            $('#add_ons_history_depth_group').hide();
+        }
     }
 
     /**
@@ -1072,7 +1095,9 @@ export class SettingsUI {
                     messagesCount: parseInt($('#add_ons_form_messages_count').val()) || 10,
                     includeCharCard: $('#add_ons_form_include_char_card').is(':checked'),
                     includeUserCard: $('#add_ons_form_include_user_card').is(':checked'),
-                    includeWorldCard: $('#add_ons_form_include_world_card').is(':checked')
+                    includeWorldCard: $('#add_ons_form_include_world_card').is(':checked'),
+                    includeHistory: $('#add_ons_form_include_history').is(':checked'),
+                    historyDepth: parseInt($('#add_ons_form_history_depth').val()) || 5
                 },
                 enabled: true
             };

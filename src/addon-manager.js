@@ -11,7 +11,9 @@ export class AddonManager {
             messagesCount: 10,
             includeCharCard: true,
             includeUserCard: true,
-            includeWorldCard: true
+            includeWorldCard: true,
+            includeHistory: false,
+            historyDepth: 5
         };
     }
 
@@ -176,7 +178,9 @@ export class AddonManager {
                 messagesCount: addon.contextSettings?.messagesCount ?? this.defaultSettings.messagesCount,
                 includeCharCard: addon.contextSettings?.includeCharCard ?? this.defaultSettings.includeCharCard,
                 includeUserCard: addon.contextSettings?.includeUserCard ?? this.defaultSettings.includeUserCard,
-                includeWorldCard: addon.contextSettings?.includeWorldCard ?? this.defaultSettings.includeWorldCard
+                includeWorldCard: addon.contextSettings?.includeWorldCard ?? this.defaultSettings.includeWorldCard,
+                includeHistory: addon.contextSettings?.includeHistory ?? this.defaultSettings.includeHistory,
+                historyDepth: addon.contextSettings?.historyDepth ?? this.defaultSettings.historyDepth
             },
             enabled: addon.enabled !== undefined ? addon.enabled : true
         };
