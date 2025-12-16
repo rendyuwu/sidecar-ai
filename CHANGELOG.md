@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling and logging for model loading debugging
 - Better handling of select2-enhanced dropdowns in SillyTavern
 
-
 ## [0.3.0] - 2025-12-16
 
 ### Added
