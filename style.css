@@ -159,6 +159,13 @@
     font-weight: 600;
 }
 
+.add_ons_badge_trigger {
+    color: #ffffff !important;
+    background: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    font-weight: 600;
+}
+
 .add_ons_item_description {
     margin: 8px 0 0 0;
     padding-top: 8px;

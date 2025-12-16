@@ -72,6 +72,15 @@ Pre-made sidecar configurations ready to import.
 - Best for: Optional features, heavy analysis, on-demand tasks
 - Example: Director's commentary, actor interviews
 
+**Trigger** (🔵 Blue badge)
+- Runs when user message contains specific keywords or regex
+- Runs once on the next AI response
+- Best for: Context-aware features, specific user requests
+- Example: "Inventory" command triggers inventory list, "Status" triggers character status
+- **Configuration:**
+  - **Trigger Type:** Keyword (simple substring) or Regex (advanced pattern)
+  - **Triggers:** One per line. For keywords, case-insensitive. For regex, standard JavaScript regex syntax.
+
 ---
 
 ## 🎨 Format Styles
