@@ -1660,6 +1660,7 @@ export class SettingsUI {
     $("#add_ons_form_name").val(addon.name);
     $("#add_ons_form_description").val(addon.description);
     $("#add_ons_form_prompt").val(addon.prompt);
+    $("#add_ons_form_prefill").val(addon.prefill || ""); // Add prefill field
     $("#add_ons_form_trigger_mode").val(addon.triggerMode);
 
     // Handle trigger config visibility
@@ -2101,6 +2102,7 @@ export class SettingsUI {
         name: $("#add_ons_form_name").val(),
         description: $("#add_ons_form_description").val(),
         prompt: $("#add_ons_form_prompt").val(),
+        prefill: $("#add_ons_form_prefill").val(), // Add prefill field
         triggerMode: $("#add_ons_form_trigger_mode").val(),
         triggerConfig: {
           triggerType: $("#add_ons_form_trigger_type").val(),
