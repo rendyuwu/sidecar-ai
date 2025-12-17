@@ -451,14 +451,13 @@ export class SettingsUI {
 
     // Variable insertion buttons removed - no longer needed
 
-    // Provider change - load models and populate API key dropdown
+    // Provider change - load models
     $(document)
       .off("change.sidecar", "#add_ons_form_ai_provider")
       .on("change.sidecar", "#add_ons_form_ai_provider", async function (e) {
         e.stopPropagation();
         const provider = $(this).val();
         self.loadModelsForProvider(provider);
-        await self.loadSavedAPIKeys(provider);
         self.toggleServiceProviderField(provider);
       });
 
@@ -767,10 +766,9 @@ export class SettingsUI {
       $("#add_ons_regex_tester_row").hide();
       $("#add_ons_regex_test_result").hide().html("");
       $("#add_ons_regex_test_input").val("");
-      // Load models for default provider and populate API key dropdown
+      // Load models for default provider
       setTimeout(async () => {
         this.loadModelsForProvider("openai");
-        await this.loadSavedAPIKeys("openai");
         this.toggleServiceProviderField("openai");
       }, 100);
     }
@@ -1657,73 +1655,6 @@ export class SettingsUI {
     $("#add_ons_regex_test_input").val("");
   }
 
-  /**
-   * Load saved API keys from SillyTavern and populate the dropdown
-   */
-  async loadSavedAPIKeys(provider) {
-    if (!provider || !this.aiClient) {
-      return;
-    }
-
-    const apiKeyField = $("#add_ons_form_api_key");
-    apiKeyField.empty();
-    apiKeyField.append(
-      '<option value="">Select a saved API key or enter a new one</option>'
-    );
-
-    try {
-      // Get connection profiles from SillyTavern
-      const profiles =
-        this.context?.extensionSettings?.connectionManager?.profiles || [];
-
-      // Filter profiles by provider
-      // Special handling for Google - it uses "google" as provider name but "makersuite" as API key identifier
-      let providerProfiles;
-      if (provider.toLowerCase() === "google") {
-        providerProfiles = profiles.filter(
-          (profile) =>
-            profile.api?.toLowerCase() === "google" ||
-            profile.api?.toLowerCase() === "makersuite"
-        );
-      } else {
-        providerProfiles = profiles.filter(
-          (profile) => profile.api?.toLowerCase() === provider.toLowerCase()
-        );
-      }
-
-      // Add "Use saved key from SillyTavern" option if any profiles exist for this provider
-      if (providerProfiles.length > 0) {
-        apiKeyField.append(
-          '<option value="USE_SAVED_KEY">Use saved key from SillyTavern</option>'
-        );
-
-        // Add individual profiles as options
-        providerProfiles.forEach((profile, index) => {
-          const profileName = profile.name || `Profile ${index + 1}`;
-          const profileId = profile.id || profileName;
-          apiKeyField.append(
-            `<option value="${profileId}">${profileName} (${profile.api})</option>`
-          );
-        });
-      } else {
-        // Check if ST has API key configured (check existence without fetching value)
-        // This avoids 403 errors and is faster
-        const hasApiKey = await this.aiClient.hasProviderApiKey(provider);
-        if (hasApiKey) {
-          apiKeyField.append(
-            '<option value="USE_SAVED_KEY">Use saved key from SillyTavern</option>'
-          );
-        }
-      }
-
-      console.log(
-        `[Sidecar AI] Loaded ${providerProfiles.length} saved API keys for ${provider}`
-      );
-    } catch (error) {
-      console.error("[Sidecar AI] Error loading saved API keys:", error);
-    }
-  }
-
   async populateForm(addon) {
     $("#add_ons_form_id").val(addon.id);
     $("#add_ons_form_name").val(addon.name);
@@ -1758,48 +1689,6 @@ export class SettingsUI {
 
     $("#add_ons_form_request_mode").val(addon.requestMode);
     $("#add_ons_form_ai_provider").val(addon.aiProvider);
-
-    // Handle API key - if addon has one, use it; otherwise populate dropdown and select appropriate option
-    if (addon.apiKey && addon.apiKey.trim() !== "") {
-      // For backward compatibility, if addon has an API key, we'll add it as an option
-      const apiKeyField = $("#add_ons_form_api_key");
-      // Check if the key is already in the dropdown
-      let keyExists = false;
-      apiKeyField.find("option").each(function () {
-        if ($(this).val() === addon.apiKey) {
-          keyExists = true;
-          return false;
-        }
-      });
-
-      if (!keyExists) {
-        // Add the existing key as an option
-        apiKeyField.append(
-          `<option value="${addon.apiKey}">Existing API Key</option>`
-        );
-      }
-
-      // Select the existing key
-      apiKeyField.val(addon.apiKey);
-      apiKeyField.removeAttr("data-using-st-key");
-      apiKeyField.css("font-style", "normal");
-      apiKeyField.css("color", "");
-    } else {
-      // Populate dropdown with saved keys
-      await this.loadSavedAPIKeys(addon.aiProvider);
-
-      // Check if addon has a reference to a saved key
-      if (addon.savedApiKeyRef) {
-        $("#add_ons_form_api_key").val(addon.savedApiKeyRef);
-      } else {
-        // Default to "Use saved key from SillyTavern" if available
-        const hasSavedKeyOption =
-          $("#add_ons_form_api_key option[value='USE_SAVED_KEY']").length > 0;
-        if (hasSavedKeyOption) {
-          $("#add_ons_form_api_key").val("USE_SAVED_KEY");
-        }
-      }
-    }
 
     $("#add_ons_form_api_url").val(addon.apiUrl || "");
 
@@ -2024,96 +1913,11 @@ export class SettingsUI {
       return;
     }
 
-    // Get API key - check if using ST's saved key or user-entered key
-    const apiKeyField = $("#add_ons_form_api_key");
-    let apiKey = apiKeyField.val();
-
-    // Check if the selected value is a saved key reference
-    // It's a saved key if:
-    // 1. It's "USE_SAVED_KEY"
-    // 2. It matches a profile ID from connection manager (we can assume non-empty values that aren't actual keys are profile IDs if we want, or just check if it's not a raw key)
-    // Actually, since we populated the dropdown, we know what the values mean.
-    // If the user typed a key manually (if we allowed it), it would be different.
-    // But now it's a select element. The values are either profile IDs, "USE_SAVED_KEY", or an actual key (if we preserved one).
-
-    // Simple heuristic: If the value is "USE_SAVED_KEY" or contained in the profiles list (which we can't easily check here without fetching again), treat as reference.
-    // But simpler: If it's NOT a long string looking like a key (sk-...) and matches what we put in the dropdown as IDs.
-
-    // Better approach: assume everything from the dropdown IS a reference/ID unless it was an "Existing API Key" option.
-    // "Existing API Key" option has the actual key as value.
-
-    const isSavedKeyRef =
-      apiKey === "USE_SAVED_KEY" ||
-      (apiKey &&
-        !apiKey.startsWith("sk-") &&
-        !apiKey.startsWith("xai-") &&
-        apiKey.length < 40);
-    // This heuristic might be risky if profile IDs look like keys or keys look like IDs.
-
-    // Let's check if it matches the "Existing API Key" option
-    const selectedOption = apiKeyField.find("option:selected");
-    const isExistingKey = selectedOption.text() === "Existing API Key";
-
-    const isUsingSTKey =
-      apiKey === "USE_SAVED_KEY" || (!isExistingKey && apiKey !== "");
-    // If it's not the "Existing API Key" option and not empty, it must be a profile ID or USE_SAVED_KEY
-
-    // Wait, if the user selects "Select a saved API key..." (value=""), apiKey is "".
-
-    // Refined logic:
-    // 1. If value is "USE_SAVED_KEY", we use ST's generic key.
-    // 2. If value is "" (empty), it's invalid (unless handled elsewhere).
-    // 3. If value is an actual key (from "Existing API Key"), we use it as raw key.
-    // 4. Otherwise, it's a profile ID.
-
-    let savedApiKeyRef = null;
-    let rawApiKey = "";
-
-    if (apiKey === "USE_SAVED_KEY") {
-      // Generic saved key
-      // We don't set savedApiKeyRef, just treat as enabled
-    } else if (isExistingKey) {
-      rawApiKey = apiKey;
-    } else if (apiKey && apiKey !== "") {
-      // It's a profile ID
-      savedApiKeyRef = apiKey;
-      // For testing/validation, we might need to treat this as "using ST key"
-    }
-
-    const isUsingSavedKey = apiKey === "USE_SAVED_KEY" || !!savedApiKeyRef;
-
     // Get service provider for OpenRouter
     const serviceProvider =
       provider === "openrouter"
         ? $("#add_ons_form_service_provider").val() || []
         : [];
-
-    // If using ST's saved key, we'll use ChatCompletionService which handles keys internally
-    // Otherwise, we need the actual key for testing
-    if (!isUsingSTKey) {
-      apiKey = apiKey.trim();
-      if (!apiKey || apiKey.trim() === "") {
-        alert(
-          "Please enter an API Key or configure it in SillyTavern's API Connection settings."
-        );
-        $("#add_ons_form_api_key").focus();
-        this.highlightError("#add_ons_form_api_key");
-        return;
-      }
-    } else {
-      // Check if key exists (without fetching)
-      const hasKey = this.aiClient.hasProviderApiKey(provider);
-      if (!hasKey) {
-        alert(
-          "No API key found in SillyTavern's settings. Please configure it in API Connection settings or enter a key manually."
-        );
-        $("#add_ons_form_api_key").focus();
-        this.highlightError("#add_ons_form_api_key");
-        return;
-      }
-      // Set apiKey to null - ChatCompletionService will fetch it
-      apiKey = null;
-    }
 
     // Clear previous errors
     this.clearErrors();
@@ -2128,31 +1932,29 @@ export class SettingsUI {
         throw new Error("AI Client not initialized");
       }
 
-      // Use ChatCompletionService for testing if using ST key (avoids 403 errors)
+      // Use ChatCompletionService for testing (avoids 403 errors)
+      // Pass null for apiKey to use SillyTavern's saved key
       const result = await this.aiClient.testConnection(
         provider,
         model,
-        apiKey,
+        null, // apiKey - will use SillyTavern's saved key
         apiUrl,
         serviceProvider,
-        isUsingSTKey
+        true // isUsingSTKey - always true now since we removed the dropdown
       );
 
       if (result.success) {
         alert("✓ Connection successful!");
-        this.highlightSuccess("#add_ons_form_api_key");
         this.highlightSuccess("#add_ons_form_ai_provider");
         this.highlightSuccess("#add_ons_form_ai_model");
       } else {
         alert(`✗ Connection failed: ${result.message}`);
-        this.highlightError("#add_ons_form_api_key");
         this.highlightError("#add_ons_form_ai_provider");
         this.highlightError("#add_ons_form_ai_model");
       }
     } catch (error) {
       console.error("[Sidecar AI] Connection test error:", error);
       alert(`✗ Connection test failed: ${error.message || String(error)}`);
-      this.highlightError("#add_ons_form_api_key");
       this.highlightError("#add_ons_form_ai_provider");
       this.highlightError("#add_ons_form_ai_model");
     } finally {
@@ -2251,44 +2053,11 @@ export class SettingsUI {
     const model = $("#add_ons_form_ai_model").val();
     const apiUrl = $("#add_ons_form_api_url").val()?.trim() || null;
 
-    // Get API key - check if using ST's saved key or user-entered key
-    const apiKeyField = $("#add_ons_form_api_key");
-    let apiKey = apiKeyField.val();
-    const isUsingSTKey =
-      apiKeyField.attr("data-using-st-key") === "true" ||
-      apiKey === "Using saved key from SillyTavern";
-
     // Get service provider for OpenRouter
     const serviceProvider =
       provider === "openrouter"
         ? $("#add_ons_form_service_provider").val() || []
         : [];
-
-    // If using ST's saved key (generic or specific profile), we don't need to fetch it
-    // testConnection will use ChatCompletionService
-
-    // Only validate that we have a selection
-    if (!isUsingSavedKey && !rawApiKey) {
-      alert(
-        "API Key is required. Please select a saved key or configure one in SillyTavern's API Connection settings."
-      );
-      $("#add_ons_form_api_key").focus();
-      this.highlightError("#add_ons_form_api_key");
-      return;
-    }
-
-    // If generic saved key, check if one exists in ST
-    if (apiKey === "USE_SAVED_KEY") {
-      const hasKey = await this.aiClient.hasProviderApiKey(provider);
-      if (!hasKey) {
-        alert(
-          "API Key is required. Please configure it in SillyTavern's API Connection settings."
-        );
-        $("#add_ons_form_api_key").focus();
-        this.highlightError("#add_ons_form_api_key");
-        return;
-      }
-    }
 
     // Test connection before saving
     const saveButton = $("#add_ons_form_save");
@@ -2300,25 +2069,20 @@ export class SettingsUI {
       this.clearErrors();
 
       if (this.aiClient) {
-        // Pass isUsingSavedKey and serviceProvider to testConnection
-        // We pass the profile ID as apiKey if it's a specific profile, or empty string if it's generic/raw
-        const testApiKey = savedApiKeyRef || rawApiKey;
-
         // When isUsingSavedKey=true, testConnection will use ChatCompletionService
         const testResult = await this.aiClient.testConnection(
           provider,
           model,
-          testApiKey,
+          null, // apiKey - will use SillyTavern's saved key
           apiUrl,
           serviceProvider,
-          isUsingSavedKey
+          true // isUsingSTKey - always true now since we removed the dropdown
         );
 
         if (!testResult.success) {
           alert(
             `✗ Cannot save: Connection test failed.\n\n${testResult.message}\n\nPlease check your API key, model, and endpoint settings.`
           );
-          this.highlightError("#add_ons_form_api_key");
           this.highlightError("#add_ons_form_ai_provider");
           this.highlightError("#add_ons_form_ai_model");
           if (apiUrl) {
@@ -2331,8 +2095,6 @@ export class SettingsUI {
 
       // Connection test passed, proceed with save
       saveButton.text("Saving...");
-
-      // serviceProvider is already defined above
 
       const formData = {
         id: $("#add_ons_form_id").val(),
@@ -2351,8 +2113,8 @@ export class SettingsUI {
         requestMode: $("#add_ons_form_request_mode").val(),
         aiProvider: provider,
         aiModel: model,
-        apiKey: rawApiKey, // Save raw key if entered
-        savedApiKeyRef: savedApiKeyRef, // Save reference if selected
+        apiKey: "", // No longer saving API keys in addon config
+        savedApiKeyRef: null, // No longer saving API key references
         apiUrl: apiUrl || "", // Optional
         serviceProvider: serviceProvider, // Array of service providers for OpenRouter
         resultFormat: $("#add_ons_form_result_format").val(),
@@ -2394,7 +2156,6 @@ export class SettingsUI {
     } catch (error) {
       console.error("Error saving Sidecar:", error);
       alert("Error saving Sidecar: " + error.message);
-      this.highlightError("#add_ons_form_api_key");
     } finally {
       saveButton.prop("disabled", false).text(originalText);
     }
