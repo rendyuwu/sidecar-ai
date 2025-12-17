@@ -1677,9 +1677,19 @@ export class SettingsUI {
         this.context?.extensionSettings?.connectionManager?.profiles || [];
 
       // Filter profiles by provider
-      const providerProfiles = profiles.filter(
-        (profile) => profile.api?.toLowerCase() === provider.toLowerCase()
-      );
+      // Special handling for Google - it uses "google" as provider name but "makersuite" as API key identifier
+      let providerProfiles;
+      if (provider.toLowerCase() === "google") {
+        providerProfiles = profiles.filter(
+          (profile) =>
+            profile.api?.toLowerCase() === "google" ||
+            profile.api?.toLowerCase() === "makersuite"
+        );
+      } else {
+        providerProfiles = profiles.filter(
+          (profile) => profile.api?.toLowerCase() === provider.toLowerCase()
+        );
+      }
 
       // Add "Use saved key from SillyTavern" option if any profiles exist for this provider
       if (providerProfiles.length > 0) {
