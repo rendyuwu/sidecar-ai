@@ -1,410 +1,850 @@
 <div id="sidecar_ai_settings" class="sidecar_ai_settings">
-    <div class="inline-drawer">
-        <div class="inline-drawer-toggle inline-drawer-header">
-            <b>Sidecar AI</b>
-            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-        </div>
-        <div class="inline-drawer-content">
-            <div class="sidecar_settings_content">
-                <p class="add_ons_description">
-                    Define custom prompts that execute using cheaper AI models.
-                    <a href="https://ko-fi.com/sidecarai" target="_blank" rel="noopener noreferrer" style="margin-left: 8px; opacity: 0.8; text-decoration: none;" title="Support Sidecar AI development">
-                        ☕ Support on Ko-fi
-                    </a>
-                </p>
-                
-                <div class="add_ons_controls">
-                    <div class="add_ons_controls_left">
-                        <button class="menu_button" id="sidecar_create_button">
-                            <i class="fa-solid fa-plus"></i> Create Sidecar
-                        </button>
-                        <button class="menu_button" id="sidecar_ai_maker_button" title="AI Template Maker">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Maker
-                        </button>
-                        <button class="menu_button" id="sidecar_templates_button" title="Browse Community Templates">
-                            <i class="fa-solid fa-box-open"></i> Templates
-                        </button>
-                    </div>
-                    <div class="add_ons_controls_right">
-                        <button class="menu_button add_ons_button_small" id="sidecar_export_button" title="Export All Add-ons">
-                            <i class="fa-solid fa-download"></i> Export
-                        </button>
-                        <button class="menu_button add_ons_button_small" id="sidecar_import_button" title="Import Add-ons">
-                            <i class="fa-solid fa-upload"></i> Import
-                        </button>
-                    </div>
-                </div>
-
-                <div class="add_ons_list" id="add_ons_list">
-                    <!-- Add-ons will be rendered here by JavaScript -->
-                    <div class="add_ons_empty">
-                        <p>No Sidecars configured. Click "Create Sidecar" to create one.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="inline-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+      <b>Sidecar AI</b>
+      <div
+        class="inline-drawer-icon fa-solid fa-circle-chevron-down down"
+      ></div>
     </div>
+    <div class="inline-drawer-content">
+      <div class="sidecar_settings_content">
+        <p class="add_ons_description">
+          Define custom prompts that execute using cheaper AI models.
+          <a
+            href="https://ko-fi.com/sidecarai"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="margin-left: 8px; opacity: 0.8; text-decoration: none"
+            title="Support Sidecar AI development"
+          >
+            ☕ Support on Ko-fi
+          </a>
+        </p>
 
-    <!-- Add/Edit Form Modal -->
-    <div class="add_ons_modal" id="add_ons_modal" style="display: none;">
-        <div class="add_ons_modal_content">
-            <div class="add_ons_modal_header">
-                <h3 id="add_ons_modal_title">Create New Sidecar</h3>
-                <button class="add_ons_modal_close" id="add_ons_modal_close">&times;</button>
-            </div>
-            <div class="add_ons_modal_body">
-                <form id="add_ons_form">
-                    <input type="hidden" id="add_ons_form_id" name="id">
-
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_name">Name *</label>
-                        <input type="text" id="add_ons_form_name" name="name" class="text_pole" required placeholder="e.g., Gemini Nazi Module">
-                    </div>
-
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_description">Description</label>
-                        <textarea id="add_ons_form_description" name="description" class="text_pole" rows="2" placeholder="Brief description of what this Sidecar does"></textarea>
-                    </div>
-
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_prompt">Prompt / Instruction *</label>
-                        <textarea id="add_ons_form_prompt" name="prompt" class="text_pole" rows="8" required placeholder="Enter your instruction here. Context (chat history, character card, user card, world card) will be automatically included based on settings below."></textarea>
-                        <small class="add_ons_form_hint">Just write your instruction. All necessary context (chat history, cards) will be automatically included based on the checkboxes below.</small>
-                    </div>
-
-                    <div class="add_ons_form_row">
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_trigger_mode">Trigger Mode *</label>
-                            <select id="add_ons_form_trigger_mode" name="triggerMode" class="text_pole" required>
-                                <option value="auto">Auto (after each AI response)</option>
-                                <option value="manual">Manual (triggered by button)</option>
-                                <option value="trigger">Trigger (keyword/regex)</option>
-                            </select>
-                        </div>
-
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_request_mode">Request Mode *</label>
-                            <select id="add_ons_form_request_mode" name="requestMode" class="text_pole" required>
-                                <option value="standalone">Standalone</option>
-                                <option value="batch">Batch (group with same provider/model)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="add_ons_form_row" id="add_ons_trigger_config_row" style="display: none;">
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_trigger_type">Trigger Type</label>
-                            <select id="add_ons_form_trigger_type" name="triggerType" class="text_pole">
-                                <option value="keyword">Keyword (case-insensitive)</option>
-                                <option value="regex">Regex Pattern</option>
-                            </select>
-                        </div>
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_triggers">Triggers (One per line)</label>
-                            <textarea id="add_ons_form_triggers" name="triggers" class="text_pole" rows="3" placeholder="Enter triggers here..."></textarea>
-                            <small class="add_ons_form_hint">If user message contains any of these, sidecar will run on next AI response.</small>
-                        </div>
-                    </div>
-
-                    <div class="add_ons_form_row" id="add_ons_regex_tester_row" style="display: none;">
-                        <div class="add_ons_form_group" style="grid-column: 1 / -1;">
-                            <label for="add_ons_regex_test_input">Test Regex Pattern</label>
-                            <div style="display: flex; gap: 8px; align-items: flex-start;">
-                                <input type="text" id="add_ons_regex_test_input" class="text_pole" placeholder="Enter test message (e.g., 'check my inventory')" style="flex: 1;">
-                                <button type="button" id="add_ons_regex_test_btn" class="menu_button" style="white-space: nowrap;">Test</button>
-                            </div>
-                            <div id="add_ons_regex_test_result" style="margin-top: 8px; padding: 8px; border-radius: 4px; display: none;"></div>
-                            <small class="add_ons_form_hint">Test your regex patterns against sample messages before saving.</small>
-                        </div>
-                    </div>
-
-                    <div class="add_ons_form_row">
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_ai_provider">AI Provider *</label>
-                            <select id="add_ons_form_ai_provider" name="aiProvider" class="text_pole" required>
-                                <option value="openai">OpenAI</option>
-                            <option value="openrouter">OpenRouter</option>
-                            <option value="custom">Custom / Local (OpenAI Compatible)</option>
-                            <option value="deepseek">Deepseek</option>
-                                <option value="anthropic">Anthropic (Claude)</option>
-                                <option value="google">Google (Gemini)</option>
-                                <option value="cohere">Cohere</option>
-                            </select>
-                        </div>
-
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_ai_model">AI Model *</label>
-                        <select id="add_ons_form_ai_model" name="aiModel" class="text_pole" required>
-                            <option value="">Select a model...</option>
-                        </select>
-                        <small class="add_ons_form_hint" id="add_ons_model_hint">Models will load based on selected provider</small>
-                    </div>
-                </div>
-
-                <div class="add_ons_form_row" id="add_ons_service_provider_row" style="display: none;">
-                    <div class="add_ons_form_group" style="grid-column: 1 / -1;">
-                        <label for="add_ons_form_service_provider">Service Provider (OpenRouter only)</label>
-                        <select id="add_ons_form_service_provider" name="serviceProvider" class="text_pole" multiple>
-                            <!-- Options will be populated dynamically from SillyTavern's OpenRouter providers -->
-                        </select>
-                        <small class="add_ons_form_hint">Select one or more service providers (e.g., Chutes, Nvidia, Parasails). Leave empty to use all providers.</small>
-                    </div>
-                </div>
-
-                <div class="add_ons_form_row" id="add_ons_api_url_row">
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_api_url">API URL (Optional)</label>
-                        <input type="text" id="add_ons_form_api_url" name="apiUrl" class="text_pole" placeholder="Default for provider if empty">
-                        <small class="add_ons_form_hint">Required for Custom/Local providers. Overrides default endpoint.</small>
-                    </div>
-                </div>
-
-                <div class="add_ons_form_row" id="add_ons_api_key_row">
-                    <div class="add_ons_form_group" style="grid-column: 1 / -1;">
-                        <label for="add_ons_form_api_key">API Key *</label>
-                        <div style="display: flex; gap: 8px; align-items: stretch;">
-                            <input type="password" id="add_ons_form_api_key" name="apiKey" class="text_pole" required placeholder="Enter your API key" style="flex: 1; min-width: 0;">
-                            <button type="button" class="menu_button add_ons_button_small" id="add_ons_test_connection" title="Test API connection">Test Connection</button>
-                        </div>
-                        <small class="add_ons_form_hint">API key is saved securely in extension settings. Test connection before saving.</small>
-                    </div>
-                </div>
-
-                <div class="add_ons_form_row">
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_result_format">Result Format * <i class="fa-solid fa-circle-question" title="How should results be formatted when injected into chat history? (Only matters for 'Chat History' location)" style="font-size: 0.9em; opacity: 0.7; cursor: help;"></i></label>
-                        <select id="add_ons_form_result_format" name="resultFormat" class="text_pole" required>
-                            <option value="collapsible" selected>Collapsible - Click to expand/collapse</option>
-                            <option value="separate">Separate Block - Visible with separators</option>
-                            <option value="append">Append - Seamlessly inline</option>
-                        </select>
-                        <small class="add_ons_form_hint" id="add_ons_result_format_hint">
-                            Collapsible: &lt;details&gt; tag with clickable summary (best for long content)
-                        </small>
-                    </div>
-
-                    <div class="add_ons_form_group">
-                        <label for="add_ons_form_response_location">Response Location * <i class="fa-solid fa-circle-question" title="Where should results appear? Outside Chatlog (recommended): Clean cards below messages. Chat History: Injected into message as HTML comment, visible to main AI." style="font-size: 0.9em; opacity: 0.7; cursor: help;"></i></label>
-                        <select id="add_ons_form_response_location" name="responseLocation" class="text_pole" required>
-                            <option value="outsideChatlog" selected>Outside Chatlog - Clean cards below chat</option>
-                            <option value="chatHistory">Chat History - Main AI can see it</option>
-                        </select>
-                        <small class="add_ons_form_hint" id="add_ons_response_location_hint">
-                            Outside: Shows in card below message (clean, doesn't clutter chat)
-                        </small>
-                    </div>
-                </div>
-
-                <div style="grid-column: 1 / -1; margin-bottom: 15px; padding: 12px; background: rgba(59,130,246,0.1); border: 1px solid #3b82f6; border-radius: 8px; font-size: 0.9em;">
-                    <strong style="color: #3b82f6;"><i class="fa-solid fa-lightbulb"></i> Quick Explanation:</strong>
-                    <div style="margin-top: 8px; line-height: 1.5;">
-                        <strong>Result Format</strong> (only for Chat History location):<br>
-                        • <strong>Collapsible:</strong> <code>&lt;details&gt;&lt;summary&gt;Name&lt;/summary&gt;content&lt;/details&gt;</code> - Click to expand<br>
-                        • <strong>Separate Block:</strong> <code>--- Name ---<br>content<br>---</code> - Always visible with borders<br>
-                        • <strong>Append:</strong> Content flows directly into message - No wrapper<br><br>
-                        
-                        <strong>Response Location:</strong><br>
-                        • <strong>Outside Chatlog:</strong> Shows in nice card below message (doesn't clutter, always expandable)<br>
-                        • <strong>Chat History:</strong> Injected INTO the message as HTML comment (main AI can reference it)<br><br>
-                        
-                        <em style="opacity: 0.8;">💡 Tip: Use "Outside Chatlog" for 99% of cases - it's cleaner!</em>
-                    </div>
-                </div>
-
-                <div class="add_ons_form_row">
-                    <div class="add_ons_form_group" style="grid-column: 1 / -1;">
-                        <label for="add_ons_form_format_style">Format Style</label>
-                        <select id="add_ons_form_format_style" name="formatStyle" class="text_pole">
-                            <option value="html-css" selected>HTML + CSS (default)</option>
-                            <option value="markdown">Markdown</option>
-                            <option value="xml">XML</option>
-                            <option value="beautify">Random Beautify ✨</option>
-                        </select>
-                        <small class="add_ons_form_hint">
-                            Choose how the AI should format its response. HTML+CSS uses safe, theme-compatible styles with accessibility. Markdown for simple text. XML for structured data. Random Beautify for creative styling.
-                        </small>
-                    </div>
-                </div>
-
-                    <div class="add_ons_form_section">
-                        <h4>Add-on History</h4>
-                        <div class="add_ons_form_checkboxes">
-                            <label class="add_ons_checkbox checkbox_label" title="Enable history for this add-on to remember its previous outputs">
-                                <input type="checkbox" id="add_ons_form_include_history" name="includeHistory" checked>
-                                <span>Include previous results history</span>
-                            </label>
-                        </div>
-                        <div class="add_ons_form_group" id="add_ons_history_depth_group" style="margin-top: 10px;">
-                            <label for="add_ons_form_history_depth">History Depth</label>
-                            <input type="number" id="add_ons_form_history_depth" name="historyDepth" class="text_pole" min="1" max="20" value="1">
-                            <small class="add_ons_form_hint">Number of previous results to include (minimum 1 for consistency).</small>
-                        </div>
-                    </div>
-
-                    <div class="add_ons_form_section">
-                        <h4>Context Settings</h4>
-                        
-                        <div class="add_ons_form_group">
-                            <label for="add_ons_form_messages_count">Number of Messages</label>
-                            <input type="number" id="add_ons_form_messages_count" name="messagesCount" class="text_pole" min="1" max="50" value="10">
-                        </div>
-
-                        <div class="add_ons_form_checkboxes">
-                            <label class="add_ons_checkbox checkbox_label" title="Include character card data in the context sent to AI">
-                                <input type="checkbox" id="add_ons_form_include_char_card" name="includeCharCard" checked>
-                                <span>Include Character Card</span>
-                            </label>
-                            <label class="add_ons_checkbox checkbox_label" title="Include user card data in the context sent to AI">
-                                <input type="checkbox" id="add_ons_form_include_user_card" name="includeUserCard" checked>
-                                <span>Include User Card</span>
-                            </label>
-                            <label class="add_ons_checkbox checkbox_label" title="Include world card data in the context sent to AI">
-                                <input type="checkbox" id="add_ons_form_include_world_card" name="includeWorldCard" checked>
-                                <span>Include World Card</span>
-                            </label>
-                        </div>
-                        <small class="add_ons_form_hint">These checkboxes control which context data is automatically included. Chat history is always included based on "Number of Messages" above.</small>
-                    </div>
-                </form>
-            </div>
-            <div class="add_ons_modal_footer">
-                <button class="menu_button" id="add_ons_form_cancel">Cancel</button>
-                <button class="menu_button" id="add_ons_form_save">Save Sidecar</button>
-            </div>
+        <div class="add_ons_controls">
+          <div class="add_ons_controls_left">
+            <button class="menu_button" id="sidecar_create_button">
+              <i class="fa-solid fa-plus"></i> Create Sidecar
+            </button>
+            <button
+              class="menu_button"
+              id="sidecar_ai_maker_button"
+              title="AI Template Maker"
+            >
+              <i class="fa-solid fa-wand-magic-sparkles"></i> AI Maker
+            </button>
+            <button
+              class="menu_button"
+              id="sidecar_templates_button"
+              title="Browse Community Templates"
+            >
+              <i class="fa-solid fa-box-open"></i> Templates
+            </button>
+          </div>
+          <div class="add_ons_controls_right">
+            <button
+              class="menu_button add_ons_button_small"
+              id="sidecar_export_button"
+              title="Export All Add-ons"
+            >
+              <i class="fa-solid fa-download"></i> Export
+            </button>
+            <button
+              class="menu_button add_ons_button_small"
+              id="sidecar_import_button"
+              title="Import Add-ons"
+            >
+              <i class="fa-solid fa-upload"></i> Import
+            </button>
+          </div>
         </div>
-    </div>
 
-    <!-- AI Template Maker Modal -->
-    <div class="add_ons_modal" id="add_ons_ai_maker_modal" style="display: none;">
-        <div class="add_ons_modal_content" style="max-width: 800px;">
-            <div class="add_ons_modal_header">
-                <h3>🪄 AI Template Maker</h3>
-                <button class="add_ons_modal_close" id="add_ons_ai_maker_modal_close">&times;</button>
-            </div>
-            <div class="add_ons_modal_body">
-                <p style="margin: 0 0 15px 0;">Describe the sidecar you want to create, and AI will generate it for you!</p>
-                
-                <div class="add_ons_form_group">
-                    <label for="ai_maker_description">What sidecar do you want to create?</label>
-                    <textarea id="ai_maker_description" class="text_pole" rows="6" placeholder="Example: &quot;I want a sidecar that tracks character emotions and displays them as colored emoji with intensity ratings. It should run automatically after each message and show results in a collapsible card.&quot;"></textarea>
-                    <small class="add_ons_form_hint">Be as detailed as you want - describe what it should do, when it should trigger, what format to use, etc.</small>
-                </div>
-
-                <div class="add_ons_form_row">
-                    <div class="add_ons_form_group">
-                        <label for="ai_maker_connection">Connection Profile</label>
-                        <select id="ai_maker_connection" class="text_pole">
-                            <option value="">Loading profiles...</option>
-                        </select>
-                        <small class="add_ons_form_hint">Uses your existing API connection</small>
-                    </div>
-                    <div class="add_ons_form_group">
-                        <label for="ai_maker_preset">Completion Preset</label>
-                        <select id="ai_maker_preset" class="text_pole">
-                            <option value="">Default</option>
-                        </select>
-                        <small class="add_ons_form_hint">Optional - uses default if not selected</small>
-                    </div>
-                </div>
-
-                <div style="margin: 15px 0; padding: 12px; background: rgba(59,130,246,0.1); border: 1px solid #3b82f6; border-radius: 8px;">
-                    <strong style="color: #3b82f6;"><i class="fa-solid fa-info-circle"></i> How it works:</strong>
-                    <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 0.9em; line-height: 1.6;">
-                        <li>AI analyzes your description</li>
-                        <li>Generates complete sidecar configuration</li>
-                        <li>You can preview, edit, export, or add directly</li>
-                        <li>Uses your existing SillyTavern API connection</li>
-                    </ol>
-                </div>
-
-                <div id="ai_maker_result" style="display: none; margin-top: 15px;">
-                    <h4 style="margin: 0 0 10px 0;">Generated Configuration:</h4>
-                    <div id="ai_maker_preview" style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--SmartThemeBorderColor); border-radius: 8px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85em; white-space: pre-wrap; word-wrap: break-word;"></div>
-                </div>
-            </div>
-            <div class="add_ons_modal_footer">
-                <button class="menu_button" id="ai_maker_cancel">Cancel</button>
-                <button class="menu_button" id="ai_maker_generate" style="background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #3b82f6;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Template
-                </button>
-                <button class="menu_button" id="ai_maker_export" style="display: none;">
-                    <i class="fa-solid fa-download"></i> Export JSON
-                </button>
-                <button class="menu_button" id="ai_maker_add" style="display: none; background: rgba(34,197,94,0.2); border-color: #22c55e; color: #22c55e;">
-                    <i class="fa-solid fa-plus"></i> Add to Sidecars
-                </button>
-                <button class="menu_button" id="ai_maker_test" style="display: none; background: rgba(168,85,247,0.2); border-color: #a855f7; color: #a855f7;">
-                    <i class="fa-solid fa-flask"></i> Test Template
-                </button>
-                <button class="menu_button" id="ai_maker_publish" style="display: none; background: rgba(251,146,60,0.2); border-color: #fb923c; color: #fb923c;">
-                    <i class="fa-brands fa-github"></i> Publish to GitHub
-                </button>
-            </div>
-            <div id="ai_maker_test_result" style="display: none; margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border: 1px solid var(--SmartThemeBorderColor); border-radius: 8px;">
-                <h4 style="margin: 0 0 10px 0;">Test Result Preview:</h4>
-                <div id="ai_maker_test_preview" style="max-height: 400px; overflow-y: auto;"></div>
-            </div>
+        <div class="add_ons_list" id="add_ons_list">
+          <!-- Add-ons will be rendered here by JavaScript -->
+          <div class="add_ons_empty">
+            <p>No Sidecars configured. Click "Create Sidecar" to create one.</p>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Templates Browser Modal -->
-    <div class="add_ons_modal" id="add_ons_templates_modal" style="display: none;">
-        <div class="add_ons_modal_content" style="max-width: 900px;">
-            <div class="add_ons_modal_header">
-                <h3>📦 Template Library</h3>
-                <button class="add_ons_modal_close" id="add_ons_templates_modal_close">&times;</button>
-            </div>
-            <div class="add_ons_modal_body">
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 10px 0;">Import pre-made sidecar templates to get started quickly!</p>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="menu_button" id="sidecar_browse_local_templates">
-                            <i class="fa-solid fa-folder-open"></i> Browse Local Templates
-                        </button>
-                        <button class="menu_button" id="sidecar_browse_community_templates">
-                            <i class="fa-brands fa-github"></i> Community Templates
-                        </button>
-                    </div>
-                </div>
-                <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--SmartThemeBorderColor);">
-                <div id="add_ons_templates_list" style="display: flex; flex-direction: column; gap: 10px;">
-                    <p style="opacity: 0.7;">Loading templates...</p>
-                </div>
-            </div>
-            <div class="add_ons_modal_footer">
-                <button class="menu_button" id="add_ons_templates_close">Close</button>
-            </div>
-        </div>
-    </div>
+  <!-- Add/Edit Form Modal -->
+  <div class="add_ons_modal" id="add_ons_modal" style="display: none">
+    <div class="add_ons_modal_content">
+      <div class="add_ons_modal_header">
+        <h3 id="add_ons_modal_title">Create New Sidecar</h3>
+        <button class="add_ons_modal_close" id="add_ons_modal_close">
+          &times;
+        </button>
+      </div>
+      <div class="add_ons_modal_body">
+        <form id="add_ons_form">
+          <input type="hidden" id="add_ons_form_id" name="id" />
 
-    <!-- History Viewer Modal -->
-    <div class="add_ons_modal" id="add_ons_history_modal" style="display: none;">
-        <div class="add_ons_modal_content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-            <div class="add_ons_modal_header">
-                <h3 id="add_ons_history_modal_title">Result History</h3>
-                <button class="add_ons_modal_close" id="add_ons_history_modal_close">&times;</button>
+          <div class="add_ons_form_group">
+            <label for="add_ons_form_name">Name *</label>
+            <input
+              type="text"
+              id="add_ons_form_name"
+              name="name"
+              class="text_pole"
+              required
+              placeholder="e.g., Gemini Nazi Module"
+            />
+          </div>
+
+          <div class="add_ons_form_group">
+            <label for="add_ons_form_description">Description</label>
+            <textarea
+              id="add_ons_form_description"
+              name="description"
+              class="text_pole"
+              rows="2"
+              placeholder="Brief description of what this Sidecar does"
+            ></textarea>
+          </div>
+
+          <div class="add_ons_form_group">
+            <label for="add_ons_form_prompt">Prompt / Instruction *</label>
+            <textarea
+              id="add_ons_form_prompt"
+              name="prompt"
+              class="text_pole"
+              rows="8"
+              required
+              placeholder="Enter your instruction here. Context (chat history, character card, user card, world card) will be automatically included based on settings below."
+            ></textarea>
+            <small class="add_ons_form_hint"
+              >Just write your instruction. All necessary context (chat history,
+              cards) will be automatically included based on the checkboxes
+              below.</small
+            >
+          </div>
+
+          <div class="add_ons_form_row">
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_trigger_mode">Trigger Mode *</label>
+              <select
+                id="add_ons_form_trigger_mode"
+                name="triggerMode"
+                class="text_pole"
+                required
+              >
+                <option value="auto">Auto (after each AI response)</option>
+                <option value="manual">Manual (triggered by button)</option>
+                <option value="trigger">Trigger (keyword/regex)</option>
+              </select>
             </div>
-            <div class="add_ons_modal_body">
-                <div id="add_ons_history_filters" style="margin-bottom: 15px; padding: 10px; background: rgba(128, 128, 128, 0.1); border-radius: 5px;">
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <input type="text" id="add_ons_history_search" class="text_pole" placeholder="Search results..." style="flex: 1; min-width: 200px;">
-                        <select id="add_ons_history_sort" class="text_pole" style="width: 150px;">
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                        </select>
-                        <button class="menu_button add_ons_button_small" id="add_ons_history_clear_filters">
-                            <i class="fa-solid fa-times"></i> Clear
-                        </button>
-                    </div>
-                </div>
-                <div id="add_ons_history_list" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- History items will be rendered here -->
-                </div>
+
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_request_mode">Request Mode *</label>
+              <select
+                id="add_ons_form_request_mode"
+                name="requestMode"
+                class="text_pole"
+                required
+              >
+                <option value="standalone">Standalone</option>
+                <option value="batch">
+                  Batch (group with same provider/model)
+                </option>
+              </select>
             </div>
-            <div class="add_ons_modal_footer">
-                <button class="menu_button" id="add_ons_history_close">Close</button>
+          </div>
+
+          <div
+            class="add_ons_form_row"
+            id="add_ons_trigger_config_row"
+            style="display: none"
+          >
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_trigger_type">Trigger Type</label>
+              <select
+                id="add_ons_form_trigger_type"
+                name="triggerType"
+                class="text_pole"
+              >
+                <option value="keyword">Keyword (case-insensitive)</option>
+                <option value="regex">Regex Pattern</option>
+              </select>
             </div>
-        </div>
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_triggers">Triggers (One per line)</label>
+              <textarea
+                id="add_ons_form_triggers"
+                name="triggers"
+                class="text_pole"
+                rows="3"
+                placeholder="Enter triggers here..."
+              ></textarea>
+              <small class="add_ons_form_hint"
+                >If user message contains any of these, sidecar will run on next
+                AI response.</small
+              >
+            </div>
+          </div>
+
+          <div
+            class="add_ons_form_row"
+            id="add_ons_regex_tester_row"
+            style="display: none"
+          >
+            <div class="add_ons_form_group" style="grid-column: 1 / -1">
+              <label for="add_ons_regex_test_input">Test Regex Pattern</label>
+              <div style="display: flex; gap: 8px; align-items: flex-start">
+                <input
+                  type="text"
+                  id="add_ons_regex_test_input"
+                  class="text_pole"
+                  placeholder="Enter test message (e.g., 'check my inventory')"
+                  style="flex: 1"
+                />
+                <button
+                  type="button"
+                  id="add_ons_regex_test_btn"
+                  class="menu_button"
+                  style="white-space: nowrap"
+                >
+                  Test
+                </button>
+              </div>
+              <div
+                id="add_ons_regex_test_result"
+                style="
+                  margin-top: 8px;
+                  padding: 8px;
+                  border-radius: 4px;
+                  display: none;
+                "
+              ></div>
+              <small class="add_ons_form_hint"
+                >Test your regex patterns against sample messages before
+                saving.</small
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_row">
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_ai_provider">AI Provider *</label>
+              <select
+                id="add_ons_form_ai_provider"
+                name="aiProvider"
+                class="text_pole"
+                required
+              >
+                <option value="openai">OpenAI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="custom">
+                  Custom / Local (OpenAI Compatible)
+                </option>
+                <option value="deepseek">Deepseek</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="google">Google (Gemini)</option>
+                <option value="cohere">Cohere</option>
+              </select>
+            </div>
+
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_ai_model">AI Model *</label>
+              <select
+                id="add_ons_form_ai_model"
+                name="aiModel"
+                class="text_pole"
+                required
+              >
+                <option value="">Select a model...</option>
+              </select>
+              <small class="add_ons_form_hint" id="add_ons_model_hint"
+                >Models will load based on selected provider</small
+              >
+            </div>
+          </div>
+
+          <div
+            class="add_ons_form_row"
+            id="add_ons_service_provider_row"
+            style="display: none"
+          >
+            <div class="add_ons_form_group" style="grid-column: 1 / -1">
+              <label for="add_ons_form_service_provider"
+                >Service Provider (OpenRouter only)</label
+              >
+              <select
+                id="add_ons_form_service_provider"
+                name="serviceProvider"
+                class="text_pole"
+                multiple
+              >
+                <!-- Options will be populated dynamically from SillyTavern's OpenRouter providers -->
+              </select>
+              <small class="add_ons_form_hint"
+                >Select one or more service providers (e.g., Chutes, Nvidia,
+                Parasails). Leave empty to use all providers.</small
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_row" id="add_ons_api_url_row">
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_api_url">API URL (Optional)</label>
+              <input
+                type="text"
+                id="add_ons_form_api_url"
+                name="apiUrl"
+                class="text_pole"
+                placeholder="Default for provider if empty"
+              />
+              <small class="add_ons_form_hint"
+                >Required for Custom/Local providers. Overrides default
+                endpoint.</small
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_row" id="add_ons_api_key_row">
+            <div class="add_ons_form_group" style="grid-column: 1 / -1">
+              <label for="add_ons_form_api_key">API Key *</label>
+              <div style="display: flex; gap: 8px; align-items: stretch">
+                <select
+                  id="add_ons_form_api_key"
+                  name="apiKey"
+                  class="text_pole"
+                  required
+                  style="flex: 1; min-width: 0"
+                >
+                  <option value="">
+                    Select a saved API key or enter a new one
+                  </option>
+                </select>
+                <button
+                  type="button"
+                  class="menu_button add_ons_button_small"
+                  id="add_ons_test_connection"
+                  title="Test API connection"
+                >
+                  Test Connection
+                </button>
+              </div>
+              <small class="add_ons_form_hint"
+                >Select a saved API key from SillyTavern or enter a new one.
+                Test connection before saving.</small
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_row">
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_result_format"
+                >Result Format *
+                <i
+                  class="fa-solid fa-circle-question"
+                  title="How should results be formatted when injected into chat history? (Only matters for 'Chat History' location)"
+                  style="font-size: 0.9em; opacity: 0.7; cursor: help"
+                ></i
+              ></label>
+              <select
+                id="add_ons_form_result_format"
+                name="resultFormat"
+                class="text_pole"
+                required
+              >
+                <option value="collapsible" selected>
+                  Collapsible - Click to expand/collapse
+                </option>
+                <option value="separate">
+                  Separate Block - Visible with separators
+                </option>
+                <option value="append">Append - Seamlessly inline</option>
+              </select>
+              <small class="add_ons_form_hint" id="add_ons_result_format_hint">
+                Collapsible: &lt;details&gt; tag with clickable summary (best
+                for long content)
+              </small>
+            </div>
+
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_response_location"
+                >Response Location *
+                <i
+                  class="fa-solid fa-circle-question"
+                  title="Where should results appear? Outside Chatlog (recommended): Clean cards below messages. Chat History: Injected into message as HTML comment, visible to main AI."
+                  style="font-size: 0.9em; opacity: 0.7; cursor: help"
+                ></i
+              ></label>
+              <select
+                id="add_ons_form_response_location"
+                name="responseLocation"
+                class="text_pole"
+                required
+              >
+                <option value="outsideChatlog" selected>
+                  Outside Chatlog - Clean cards below chat
+                </option>
+                <option value="chatHistory">
+                  Chat History - Main AI can see it
+                </option>
+              </select>
+              <small
+                class="add_ons_form_hint"
+                id="add_ons_response_location_hint"
+              >
+                Outside: Shows in card below message (clean, doesn't clutter
+                chat)
+              </small>
+            </div>
+          </div>
+
+          <div
+            style="
+              grid-column: 1 / -1;
+              margin-bottom: 15px;
+              padding: 12px;
+              background: rgba(59, 130, 246, 0.1);
+              border: 1px solid #3b82f6;
+              border-radius: 8px;
+              font-size: 0.9em;
+            "
+          >
+            <strong style="color: #3b82f6"
+              ><i class="fa-solid fa-lightbulb"></i> Quick Explanation:</strong
+            >
+            <div style="margin-top: 8px; line-height: 1.5">
+              <strong>Result Format</strong> (only for Chat History
+              location):<br />
+              • <strong>Collapsible:</strong>
+              <code
+                >&lt;details&gt;&lt;summary&gt;Name&lt;/summary&gt;content&lt;/details&gt;</code
+              >
+              - Click to expand<br />
+              • <strong>Separate Block:</strong>
+              <code>--- Name ---<br />content<br />---</code> - Always visible
+              with borders<br />
+              • <strong>Append:</strong> Content flows directly into message -
+              No wrapper<br /><br />
+
+              <strong>Response Location:</strong><br />
+              • <strong>Outside Chatlog:</strong> Shows in nice card below
+              message (doesn't clutter, always expandable)<br />
+              • <strong>Chat History:</strong> Injected INTO the message as HTML
+              comment (main AI can reference it)<br /><br />
+
+              <em style="opacity: 0.8"
+                >💡 Tip: Use "Outside Chatlog" for 99% of cases - it's
+                cleaner!</em
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_row">
+            <div class="add_ons_form_group" style="grid-column: 1 / -1">
+              <label for="add_ons_form_format_style">Format Style</label>
+              <select
+                id="add_ons_form_format_style"
+                name="formatStyle"
+                class="text_pole"
+              >
+                <option value="html-css" selected>HTML + CSS (default)</option>
+                <option value="markdown">Markdown</option>
+                <option value="xml">XML</option>
+                <option value="beautify">Random Beautify ✨</option>
+              </select>
+              <small class="add_ons_form_hint">
+                Choose how the AI should format its response. HTML+CSS uses
+                safe, theme-compatible styles with accessibility. Markdown for
+                simple text. XML for structured data. Random Beautify for
+                creative styling.
+              </small>
+            </div>
+          </div>
+
+          <div class="add_ons_form_section">
+            <h4>Add-on History</h4>
+            <div class="add_ons_form_checkboxes">
+              <label
+                class="add_ons_checkbox checkbox_label"
+                title="Enable history for this add-on to remember its previous outputs"
+              >
+                <input
+                  type="checkbox"
+                  id="add_ons_form_include_history"
+                  name="includeHistory"
+                  checked
+                />
+                <span>Include previous results history</span>
+              </label>
+            </div>
+            <div
+              class="add_ons_form_group"
+              id="add_ons_history_depth_group"
+              style="margin-top: 10px"
+            >
+              <label for="add_ons_form_history_depth">History Depth</label>
+              <input
+                type="number"
+                id="add_ons_form_history_depth"
+                name="historyDepth"
+                class="text_pole"
+                min="1"
+                max="20"
+                value="1"
+              />
+              <small class="add_ons_form_hint"
+                >Number of previous results to include (minimum 1 for
+                consistency).</small
+              >
+            </div>
+          </div>
+
+          <div class="add_ons_form_section">
+            <h4>Context Settings</h4>
+
+            <div class="add_ons_form_group">
+              <label for="add_ons_form_messages_count"
+                >Number of Messages</label
+              >
+              <input
+                type="number"
+                id="add_ons_form_messages_count"
+                name="messagesCount"
+                class="text_pole"
+                min="1"
+                max="50"
+                value="10"
+              />
+            </div>
+
+            <div class="add_ons_form_checkboxes">
+              <label
+                class="add_ons_checkbox checkbox_label"
+                title="Include character card data in the context sent to AI"
+              >
+                <input
+                  type="checkbox"
+                  id="add_ons_form_include_char_card"
+                  name="includeCharCard"
+                  checked
+                />
+                <span>Include Character Card</span>
+              </label>
+              <label
+                class="add_ons_checkbox checkbox_label"
+                title="Include user card data in the context sent to AI"
+              >
+                <input
+                  type="checkbox"
+                  id="add_ons_form_include_user_card"
+                  name="includeUserCard"
+                  checked
+                />
+                <span>Include User Card</span>
+              </label>
+              <label
+                class="add_ons_checkbox checkbox_label"
+                title="Include world card data in the context sent to AI"
+              >
+                <input
+                  type="checkbox"
+                  id="add_ons_form_include_world_card"
+                  name="includeWorldCard"
+                  checked
+                />
+                <span>Include World Card</span>
+              </label>
+            </div>
+            <small class="add_ons_form_hint"
+              >These checkboxes control which context data is automatically
+              included. Chat history is always included based on "Number of
+              Messages" above.</small
+            >
+          </div>
+        </form>
+      </div>
+      <div class="add_ons_modal_footer">
+        <button class="menu_button" id="add_ons_form_cancel">Cancel</button>
+        <button class="menu_button" id="add_ons_form_save">Save Sidecar</button>
+      </div>
     </div>
+  </div>
+
+  <!-- AI Template Maker Modal -->
+  <div class="add_ons_modal" id="add_ons_ai_maker_modal" style="display: none">
+    <div class="add_ons_modal_content" style="max-width: 800px">
+      <div class="add_ons_modal_header">
+        <h3>🪄 AI Template Maker</h3>
+        <button class="add_ons_modal_close" id="add_ons_ai_maker_modal_close">
+          &times;
+        </button>
+      </div>
+      <div class="add_ons_modal_body">
+        <p style="margin: 0 0 15px 0">
+          Describe the sidecar you want to create, and AI will generate it for
+          you!
+        </p>
+
+        <div class="add_ons_form_group">
+          <label for="ai_maker_description"
+            >What sidecar do you want to create?</label
+          >
+          <textarea
+            id="ai_maker_description"
+            class="text_pole"
+            rows="6"
+            placeholder='Example: "I want a sidecar that tracks character emotions and displays them as colored emoji with intensity ratings. It should run automatically after each message and show results in a collapsible card."'
+          ></textarea>
+          <small class="add_ons_form_hint"
+            >Be as detailed as you want - describe what it should do, when it
+            should trigger, what format to use, etc.</small
+          >
+        </div>
+
+        <div class="add_ons_form_row">
+          <div class="add_ons_form_group">
+            <label for="ai_maker_connection">Connection Profile</label>
+            <select id="ai_maker_connection" class="text_pole">
+              <option value="">Loading profiles...</option>
+            </select>
+            <small class="add_ons_form_hint"
+              >Uses your existing API connection</small
+            >
+          </div>
+          <div class="add_ons_form_group">
+            <label for="ai_maker_preset">Completion Preset</label>
+            <select id="ai_maker_preset" class="text_pole">
+              <option value="">Default</option>
+            </select>
+            <small class="add_ons_form_hint"
+              >Optional - uses default if not selected</small
+            >
+          </div>
+        </div>
+
+        <div
+          style="
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+          "
+        >
+          <strong style="color: #3b82f6"
+            ><i class="fa-solid fa-info-circle"></i> How it works:</strong
+          >
+          <ol
+            style="
+              margin: 8px 0 0 0;
+              padding-left: 20px;
+              font-size: 0.9em;
+              line-height: 1.6;
+            "
+          >
+            <li>AI analyzes your description</li>
+            <li>Generates complete sidecar configuration</li>
+            <li>You can preview, edit, export, or add directly</li>
+            <li>Uses your existing SillyTavern API connection</li>
+          </ol>
+        </div>
+
+        <div id="ai_maker_result" style="display: none; margin-top: 15px">
+          <h4 style="margin: 0 0 10px 0">Generated Configuration:</h4>
+          <div
+            id="ai_maker_preview"
+            style="
+              padding: 12px;
+              background: rgba(0, 0, 0, 0.3);
+              border: 1px solid var(--SmartThemeBorderColor);
+              border-radius: 8px;
+              max-height: 400px;
+              overflow-y: auto;
+              font-family: monospace;
+              font-size: 0.85em;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            "
+          ></div>
+        </div>
+      </div>
+      <div class="add_ons_modal_footer">
+        <button class="menu_button" id="ai_maker_cancel">Cancel</button>
+        <button
+          class="menu_button"
+          id="ai_maker_generate"
+          style="
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            color: #3b82f6;
+          "
+        >
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Template
+        </button>
+        <button class="menu_button" id="ai_maker_export" style="display: none">
+          <i class="fa-solid fa-download"></i> Export JSON
+        </button>
+        <button
+          class="menu_button"
+          id="ai_maker_add"
+          style="
+            display: none;
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+            color: #22c55e;
+          "
+        >
+          <i class="fa-solid fa-plus"></i> Add to Sidecars
+        </button>
+        <button
+          class="menu_button"
+          id="ai_maker_test"
+          style="
+            display: none;
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #a855f7;
+            color: #a855f7;
+          "
+        >
+          <i class="fa-solid fa-flask"></i> Test Template
+        </button>
+        <button
+          class="menu_button"
+          id="ai_maker_publish"
+          style="
+            display: none;
+            background: rgba(251, 146, 60, 0.2);
+            border-color: #fb923c;
+            color: #fb923c;
+          "
+        >
+          <i class="fa-brands fa-github"></i> Publish to GitHub
+        </button>
+      </div>
+      <div
+        id="ai_maker_test_result"
+        style="
+          display: none;
+          margin-top: 15px;
+          padding: 15px;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--SmartThemeBorderColor);
+          border-radius: 8px;
+        "
+      >
+        <h4 style="margin: 0 0 10px 0">Test Result Preview:</h4>
+        <div
+          id="ai_maker_test_preview"
+          style="max-height: 400px; overflow-y: auto"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Templates Browser Modal -->
+  <div class="add_ons_modal" id="add_ons_templates_modal" style="display: none">
+    <div class="add_ons_modal_content" style="max-width: 900px">
+      <div class="add_ons_modal_header">
+        <h3>📦 Template Library</h3>
+        <button class="add_ons_modal_close" id="add_ons_templates_modal_close">
+          &times;
+        </button>
+      </div>
+      <div class="add_ons_modal_body">
+        <div style="margin-bottom: 15px">
+          <p style="margin: 0 0 10px 0">
+            Import pre-made sidecar templates to get started quickly!
+          </p>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px">
+            <button class="menu_button" id="sidecar_browse_local_templates">
+              <i class="fa-solid fa-folder-open"></i> Browse Local Templates
+            </button>
+            <button class="menu_button" id="sidecar_browse_community_templates">
+              <i class="fa-brands fa-github"></i> Community Templates
+            </button>
+          </div>
+        </div>
+        <hr
+          style="
+            margin: 15px 0;
+            border: none;
+            border-top: 1px solid var(--SmartThemeBorderColor);
+          "
+        />
+        <div
+          id="add_ons_templates_list"
+          style="display: flex; flex-direction: column; gap: 10px"
+        >
+          <p style="opacity: 0.7">Loading templates...</p>
+        </div>
+      </div>
+      <div class="add_ons_modal_footer">
+        <button class="menu_button" id="add_ons_templates_close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Viewer Modal -->
+  <div class="add_ons_modal" id="add_ons_history_modal" style="display: none">
+    <div
+      class="add_ons_modal_content"
+      style="max-width: 900px; max-height: 90vh; overflow-y: auto"
+    >
+      <div class="add_ons_modal_header">
+        <h3 id="add_ons_history_modal_title">Result History</h3>
+        <button class="add_ons_modal_close" id="add_ons_history_modal_close">
+          &times;
+        </button>
+      </div>
+      <div class="add_ons_modal_body">
+        <div
+          id="add_ons_history_filters"
+          style="
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 5px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              align-items: center;
+            "
+          >
+            <input
+              type="text"
+              id="add_ons_history_search"
+              class="text_pole"
+              placeholder="Search results..."
+              style="flex: 1; min-width: 200px"
+            />
+            <select
+              id="add_ons_history_sort"
+              class="text_pole"
+              style="width: 150px"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+            <button
+              class="menu_button add_ons_button_small"
+              id="add_ons_history_clear_filters"
+            >
+              <i class="fa-solid fa-times"></i> Clear
+            </button>
+          </div>
+        </div>
+        <div
+          id="add_ons_history_list"
+          style="display: flex; flex-direction: column; gap: 10px"
+        >
+          <!-- History items will be rendered here -->
+        </div>
+      </div>
+      <div class="add_ons_modal_footer">
+        <button class="menu_button" id="add_ons_history_close">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
-
